@@ -65,3 +65,7 @@
   .up{color:#2f7d4a}.down{color:#a8382f}.flat{color:#8a7a5a}
   #board p{font-size:12.5px;color:#6b5a3c;margin:8px 0 0}
   .shopSec{margin:14px 0 2px;font-size:13px;font-weight:700;color:#7a4a18;text-transform:uppercase;letter-spacing:.04em}
+  #rotate{display:none;position:fixed;inset:0;z-index:100;background:#2f4a35;color:#f3ead7;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:18px;font-weight:600}
+  #rotate .phone{font-size:64px;animation:tourne 2s ease-in-out infinite}
+  @keyframes tourne{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+  @media (orientation:portrait){body.pwa #rotate{display:flex}}

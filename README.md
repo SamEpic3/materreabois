@@ -8,6 +8,8 @@ Jeu de navigateur coopératif en 3D (vue isométrique) : une terre à bois québ
 
 Ouvrir `index.html` dans un navigateur récent, sur ordinateur ou sur téléphone. Le moteur 3D (Three.js r128) est chargé depuis cdnjs, donc il faut une connexion Internet.
 
+**Comme une app (PWA) :** sur GitHub Pages, ouvrir le jeu dans le navigateur du téléphone, puis « Ajouter à l'écran d'accueil » (Chrome : menu ⋮ › Installer l'application ; Safari : Partager › Sur l'écran d'accueil). L'app s'ouvre en plein écran, à l'horizontale, et fonctionne hors ligne après la première ouverture.
+
 Le jeu commence avec 35 000 $ pour pouvoir tout tester.
 
 ## Ce qu'on peut faire
@@ -66,7 +68,13 @@ js/joueur.js          Déplacement et animations du joueur à pied
 js/physique.js        Physique des véhicules et des remorques
 js/hud.js             Flèche d'objectif et affichage
 js/boucle.js          Boucle de jeu et placement des caméras
+js/pwa.js             App installable : service worker, vue horizontale forcée
+sw.js                 Service worker (mise en cache pour jouer hors ligne)
+manifest.webmanifest  Description de l'app (nom, icônes, plein écran, horizontal)
+icones/               Icônes de l'app
 ```
+
+Quand on ajoute un fichier au jeu, il faut aussi l'ajouter à la liste `FICHIERS` de `sw.js` (et changer `VERSION`) pour qu'il soit disponible hors ligne.
 
 Les scripts sont des fichiers JavaScript classiques chargés dans l'ordre de `index.html` : ils partagent leurs variables globales. Le jeu s'ouvre donc aussi en double-cliquant sur `index.html`, sans serveur. Les fonctions peuvent appeler celles des fichiers suivants, mais le code exécuté au chargement ne doit utiliser que ce qui est déclaré dans les fichiers précédents.
 

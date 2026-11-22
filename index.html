@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Ma terre à bois — prototype</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f4a35">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Terre à bois">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -97,6 +105,10 @@
     <button id="boardClose">Fermer</button>
   </div>
 </div>
+<div id="rotate">
+  <div class="phone">📱</div>
+  <p>Tourne ton téléphone à l'horizontale pour jouer</p>
+</div>
 <div id="err">Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion Internet, puis recharge la page.</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -119,5 +131,6 @@
 <script src="js/physique.js"></script>
 <script src="js/hud.js"></script>
 <script src="js/boucle.js"></script>
+<script src="js/pwa.js"></script>
 </body>
 </html>
