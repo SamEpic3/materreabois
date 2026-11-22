@@ -39,6 +39,8 @@
   </div>
 </div>
 
+<div id="hotbar" class="hidden"></div>
+<button id="toolBtn" class="hidden" title="Changer d'outil"></button>
 <div id="joy" class="hidden"><div id="joyKnob"></div></div>
 <div id="toast"></div>
 
@@ -50,7 +52,7 @@
     <ul>
       <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou les flèches : marcher, ou conduire (gaz, frein et recul, direction)</li>
       <li>Clic sur le terrain : marcher jusque-là · <kbd>Maj</kbd> : courir</li>
-      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
+      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>6</kbd> : choisir un outil ou les mains vides · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
       <li>Grue : <kbd>E</kbd> près de la grue pour l'opérer · <kbd>W</kbd>/<kbd>S</kbd> portée · <kbd>A</kbd>/<kbd>D</kbd> pivot · <kbd>Espace</kbd> prendre ou déposer · <kbd>Q</kbd>/<kbd>R</kbd> tourner le billot</li>
       <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (iso, 3e personne, 1re personne), glisser la souris pour tourner autour</li>
     </ul>
@@ -60,6 +62,7 @@
       <li>Toucher le terrain à droite : marcher jusque-là</li>
       <li>En VTT : joystick gauche-droite pour la direction, boutons Gaz et Frein / recul pour avancer et reculer</li>
       <li>Pincer pour zoomer · ⟲ ⟳ pour tourner la caméra</li>
+      <li>Bouton en bas à gauche : changer d'outil ou garder les mains vides</li>
     </ul>
     <h2>Comment ça marche</h2>
     <ul>
@@ -93,6 +96,7 @@
 <script src="js/etat.js"></script>
 <script src="js/controles.js"></script>
 <script src="js/magasin.js"></script>
+<script src="js/inventaire.js"></script>
 <script src="js/actions.js"></script>
 <script src="js/debusqueuse.js"></script>
 <script src="js/grue.js"></script>

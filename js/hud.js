@@ -29,7 +29,7 @@ function updateHUD(){
   if(c.act)ba.textContent=c.act.label+(isTouch?'':' (Espace)');
   const cooling=!!(c.act&&c.act.cool&&(P.cool>0));
   ba.classList.toggle('cool',cooling);
-  ba.style.setProperty('--p',cooling?(100*(1-P.cool/TOOL.delay)).toFixed(0)+'%':'100%');
+  ba.style.setProperty('--p',cooling&&TOOL?(100*(1-P.cool/TOOL.delay)).toFixed(0)+'%':'100%');
   const b2=$('btnAct2');b2.classList.toggle('hidden',!c.act2);
   if(c.act2)b2.textContent=c.act2.label+(isTouch?'':' (F)');
   b2.classList.toggle('cool',!!(c.act2&&P.cool>0));
@@ -38,6 +38,8 @@ function updateHUD(){
   bh.classList.toggle('hidden',!hc);
   if(hc)bh.textContent=hc.label+(isTouch?'':' (R)');
   $('pedals').classList.toggle('hidden',!(isTouch&&S.mode==='vtt'));
+  $('hotbar').classList.toggle('hidden',isTouch||S.mode!=='foot');
+  $('toolBtn').classList.toggle('hidden',!isTouch||S.mode!=='foot');
   $('gripBtns').classList.toggle('hidden',!(isTouch&&S.mode==='crane'));
   let hint=c.info||'';
   if(S.mode==='foot'&&!hint){
@@ -58,10 +60,13 @@ function updateHUD(){
     else if(hasLoad)hint='Direction la cour à bois du camp';
     else if(mudAt(V.x,V.z)>0.3)hint='Boue ! Ça avance moins vite…';
   }
-  const loadTxt=trailers.map(t=>`${t.spec.label} : ${t.c.load.length}/${t.c.cap}`).concat(vehicles.filter(v=>v.bed).map(v=>`Boîte : ${v.bed.load.length}/${v.bed.cap}`)).join(' · ');
+  const grp={};
+  trailers.forEach(t=>{const g=grp[t.spec.label]||(grp[t.spec.label]={n:0,l:0,c:0});g.n++;g.l+=t.c.load.length;g.c+=t.c.cap;});
+  vehicles.forEach(v=>{if(!v.bed)return;const g=grp['Boîte']||(grp['Boîte']={n:0,l:0,c:0});g.n++;g.l+=v.bed.load.length;g.c+=v.bed.cap;});
+  const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : ${g.l}/${g.c}`).join(' · ');
   const hud=`${S.money}|${S.delivered}|${loadTxt}|${S.mode}|${Math.round(Math.abs(V.v)*3.6)}|${hint}`;
   if(hud===lastHud)return;lastHud=hud;
-  $('sMoney').textContent=S.money+' $';$('sTool').textContent=TOOL.name;$('sDel').textContent=S.delivered;$('sLoad').textContent=loadTxt;
+  $('sMoney').textContent=S.money+' $';$('sTool').textContent=TOOL?TOOL.name:'Mains vides';$('sDel').textContent=S.delivered;$('sLoad').textContent=loadTxt;
   $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=Math.round(Math.abs(V.v)*3.6);
   $('hint').textContent=hint;
 }

@@ -44,9 +44,8 @@ function renderShop(){
     const treeT=Math.max(1,Math.ceil(9*t.fell))*t.delay,cutT=t.cut*t.delay;
     d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t)))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">Arbre moyen : ≈ ${secs(treeT)} · Une coupe : ≈ ${secs(cutT)}</p></div>`;
     const b=document.createElement('button');
-    if(TOOL===t){b.textContent='En main';b.disabled=true;}
-    else if(owned.has(t.id)){b.textContent='Prendre';b.onclick=()=>{TOOL=t;updateToolVisual();renderShop();};}
-    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);TOOL=t;updateToolVisual();toast(`${t.name} achetée !`);renderShop();};}
+    if(owned.has(t.id)){b.textContent='À toi';b.disabled=true;}
+    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);setTool(t);toast(`${t.name} : dans ton inventaire et en main !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);
   });
   VEH_SHOP.forEach(t=>{
@@ -56,9 +55,9 @@ function renderShop(){
     const stats=isT?`Capacité : ${TSPECS[t.id].cap} billots · jusqu'à 12 pi`:`Vitesse max ≈ ${Math.round(SPECS[t.id].maxF*3.6)} km/h (VTT : ${Math.round(SPECS.vtt.maxF*3.6)} km/h)`;
     d.innerHTML=imgTag(img)+`<div class="txt"><b>${t.name}</b> — ${t.price} $<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
-    const have=isT?trailers.some(x=>x.kind===t.id):vehicles.some(v=>v.type===t.id);
-    if(have){b.textContent='À toi';b.disabled=true;}
-    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;
+    const have=isT?trailers.filter(x=>x.kind===t.id).length:vehicles.filter(v=>v.type===t.id).length;
+    if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
+    {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;
       const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{pickup:[7,4.5],loader:[-6,5],skid:[-6,11]}[t.id]);
       if(isT)makeTrailerObj(t.id,p.x,p.z,th);else makeVehicle(t.id,p.x,p.z,th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}

@@ -20,7 +20,8 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la remorque chargeuse et sa grue : billots jusqu'à 12 pi.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
-- **Acheter** des outils et de l'équipement au magasin général du village.
+- **Acheter** des outils et de l'équipement au magasin général du village, autant de véhicules et de remorques qu'on veut.
+- **Inventaire** : les outils achetés vont dans la barre d'outils ; on peut aussi garder les mains vides.
 - **Trois vues** : isométrique, 3e personne et 1re personne (bouton 🎥 ou touche V).
 
 ## Contrôles
@@ -29,6 +30,7 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
 |---|---|---|
 | Marcher / conduire | W A S D ou flèches | Joystick (moitié gauche) ; en véhicule : joystick pour tourner, boutons Gaz et Frein |
 | Marcher jusqu'à un point | Clic | Toucher le terrain à droite |
+| Choisir un outil ou les mains vides | 1 à 6, ou clic sur la barre d'outils | Bouton en bas à gauche (fait défiler) |
 | Action (coup, prendre, déposer) | Espace | Bouton orange |
 | Couper ici (sur un billot qu'on peut prendre) | F | 2e bouton orange |
 | Embarquer / débarquer / opérer la grue | E | Bouton vert |
@@ -49,6 +51,7 @@ js/vehicules.js       Modèles et caractéristiques des véhicules et remorques
 js/etat.js            État de la partie, catalogue du magasin, véhicules de départ
 js/controles.js       Clavier, joystick, toucher, boutons, caméras
 js/magasin.js         Magasin général, vignettes, messages
+js/inventaire.js      Inventaire des outils (barre d'outils, mains vides)
 js/actions.js         Bûcher, tronçonner, porter, charger, vendre, atteler
 js/debusqueuse.js     Agripper, traîner, relâcher une tige
 js/grue.js            Grue de la remorque chargeuse

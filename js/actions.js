@@ -32,7 +32,7 @@ function nearestTree(maxD){
   eachNear(P.x,P.z,c=>{if(c.tree&&c.tree.alive){const d=Math.hypot(P.x-c.x,P.z-c.z)-c.r;if(d<bd){bd=d;best=c.tree;}}return false;});
   return best;
 }
-function cutLocked(){return P.cut&&pieces.includes(P.cut.pc)&&Math.hypot(P.x-P.cut.x,P.z-P.cut.z)<1.8;}
+function cutLocked(){return !!TOOL&&P.cut&&pieces.includes(P.cut.pc)&&Math.hypot(P.x-P.cut.x,P.z-P.cut.z)<1.8;}
 function context(){
   if(S.mode==='vtt')return driveContext();
   if(S.mode==='crane')return craneContext();
@@ -52,16 +52,18 @@ function context(){
     if(np){
       const pc=np.pc,[a,b]=cutRange(pc),canCut=b>a,d=clamp(np.d,a,b);
       if(canCut)preview={pc,d,locked:false};
-      const cutAct=canCut?{label:`Couper ici : ${ftin(d)}`,fn:()=>startCut(pc,d),cool:true}:null;
+      const cutAct=canCut&&TOOL?{label:`Couper ici : ${ftin(d)}`,fn:()=>startCut(pc,d),cool:true}:null;
       if(carryable(pc)){act={label:`Prendre (${ftin(pc.len)}, ${pc.len>=SAW_MIN?'sciage':'chauffage'})`,fn:()=>pickUp(pc)};act2=cutAct;}
       else act=cutAct;
+      const noTool=canCut&&!TOOL?' · mains vides : choisis un outil pour couper':'';
       if(carryable(pc))info=`Billot de ${ftin(pc.len)} (${pc.len>=SAW_MIN?'sciage':'bois de chauffage'})`+(canCut?` · recouper ici : ${ftin(d)}`:'');
       else if(canCut)info=`Ruban : ${ftin(d)} → ${kindOf(d)}`+(pc.crown?'':` · reste ${ftin(pc.len-d)}`);
       else if(pc.crown)info='La cime : rien à ramasser ici';
       if(!pc.crown&&pc.len>CARRY_MAX&&!canCut)info='Trop long pour l\'épaule : grue ou débusqueuse';
+      if(!carryable(pc)&&noTool)info+=noTool;
     }
     else if(cont&&cont.load.length){const top=cont.load[cont.load.length-1].userData.c;if(top.len<=CARRY_MAX)act={label:`Prendre un billot (${cont.name})`,fn:()=>takeFrom(cont)};else info=`Billot de ${ftin(top.len)} : trop long pour l'épaule, utilise la grue`;}
-    else{const t=nearestTree(1.3);if(t){const tot=fellTotal(t);act={label:`${toolVerb()} (${Math.round(t.work*tot)}/${tot})`,fn:()=>chop(t),cool:true};}}
+    else{const t=nearestTree(1.3);if(t){if(!TOOL)info='Mains vides : choisis un outil pour bûcher (touches 1 à 6)';else{const tot=fellTotal(t);act={label:`${toolVerb()} (${Math.round(t.work*tot)}/${tot})`,fn:()=>chop(t),cool:true};}}}
   }
   let enter=null,enterVeh=null,enterCrane=null;
   if(!P.carry){
