@@ -33,31 +33,33 @@ function readInput(normalize){
 const joyEl=$('joy'),knob=$('joyKnob'),JR=55;
 const pointers=new Map();let pinch=null,pinchUsed=false;
 canvas.addEventListener('pointerdown',e=>{
-  if(e.pointerType==='touch'&&!joy.active&&e.clientX<innerWidth*0.42){
-    joy.active=true;joy.id=e.pointerId;joy.cx=e.clientX;joy.cy=e.clientY;joy.x=joy.y=0;
-    joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';joyEl.classList.remove('hidden');
+  const q=toView(e.clientX,e.clientY);
+  if(e.pointerType==='touch'&&!joy.active&&q.x<viewW()*0.42){
+    joy.active=true;joy.id=e.pointerId;joy.cx=q.x;joy.cy=q.y;joy.x=joy.y=0;
+    joyEl.style.left=q.x+'px';joyEl.style.top=q.y+'px';joyEl.classList.remove('hidden');
     knob.style.transform='translate(0,0)';P.target=null;
     try{canvas.setPointerCapture(e.pointerId);}catch(_){}
     return;
   }
-  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now()});
+  pointers.set(e.pointerId,{x:q.x,y:q.y,sx:q.x,sy:q.y,t:performance.now()});
   if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:zoom,cd:chaseDist};pinchUsed=true;}
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
 });
 canvas.addEventListener('pointermove',e=>{
+  const q=toView(e.clientX,e.clientY);
   if(joy.active&&e.pointerId===joy.id){
-    let dx=e.clientX-joy.cx,dy=e.clientY-joy.cy;const l=Math.hypot(dx,dy);if(l>JR){dx*=JR/l;dy*=JR/l;}
-    joy.x=dx/JR;joy.y=-dy/JR;knob.style.transform=`translate(${dx}px,${dy}px)`;return;
+    let dx=q.x-joy.cx,dy=q.y-joy.cy;const l=Math.hypot(dx,dy);if(l>JR){dx*=JR/l;dy*=JR/l;}
+    joy.x=dx/JR;joy.y=-dy/JR;knob.style.transform=`translate(${dx}px,${dy}px)`;knob.classList.toggle('run',S.mode==='foot'&&Math.hypot(joy.x,joy.y)>0.95&&!P.carry);return;
   }
   const p=pointers.get(e.pointerId);if(!p)return;
-  if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(e.clientX-p.sx,e.clientY-p.sy)>12){camYawT-=(e.clientX-p.x)*0.008;camYaw=camYawT;if(camMode==='fp')camPitch=clamp(camPitch-(e.clientY-p.y)*0.006,-1.2,0.9);}
-  p.x=e.clientX;p.y=e.clientY;
+  if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(q.x-p.sx,q.y-p.sy)>12){camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);}
+  p.x=q.x;p.y=q.y;
   if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()];const r=pinch.d/(Math.hypot(a.x-b.x,a.y-b.y)||1);if(camMode==='tp')chaseDist=clamp(pinch.cd*r,0.5,2.5);else if(camMode==='iso'){zoom=clamp(pinch.z*r,ZMIN,ZMAX);updateProj();}}
 });
 function endPointer(e){
-  if(joy.active&&e.pointerId===joy.id){joy.active=false;joy.x=joy.y=0;joyEl.classList.add('hidden');return;}
+  if(joy.active&&e.pointerId===joy.id){joy.active=false;joy.x=joy.y=0;knob.classList.remove('run');joyEl.classList.add('hidden');return;}
   const p=pointers.get(e.pointerId);if(!p)return;
-  if(e.type==='pointerup'&&!pinchUsed&&pointers.size===1&&Math.hypot(p.x-p.sx,p.y-p.sy)<12&&performance.now()-p.t<500)tap(e.clientX,e.clientY);
+  if(e.type==='pointerup'&&!pinchUsed&&pointers.size===1&&Math.hypot(p.x-p.sx,p.y-p.sy)<12&&performance.now()-p.t<500)tap(p.x,p.y);
   pointers.delete(e.pointerId);
   if(pointers.size<2)pinch=null;
   if(pointers.size===0)pinchUsed=false;
@@ -70,7 +72,7 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 const ray=new T.Raycaster(),ndc=new T.Vector2();
 function tap(cx,cy){
   if(S.mode!=='foot')return;
-  ndc.set(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);
+  ndc.set(cx/viewW()*2-1,-(cy/viewH())*2+1);
   ray.setFromCamera(ndc,activeCam);
   const hit=ray.intersectObject(terrain)[0];
   if(hit){P.target={x:hit.point.x,z:hit.point.z};marker.position.set(hit.point.x,hit.point.y+0.06,hit.point.z);marker.visible=true;marker.material.opacity=0.8;}

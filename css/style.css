@@ -56,7 +56,7 @@
   .slot img{width:50px;height:38px;object-fit:contain;pointer-events:none}
   .slot.on{border-color:#ffd27a;background:rgba(255,210,122,.2)}
   .slot .k{position:absolute;top:2px;left:5px;font-size:10px;font-weight:700;color:#ffd27a}
-  #toolBtn{position:fixed;left:calc(12px + var(--pad-l));bottom:calc(14px + var(--pad-b));width:64px;height:64px;border-radius:14px;border:2px solid #ffd27a;background:rgba(30,28,22,.75);display:flex;align-items:center;justify-content:center;font-size:26px;color:#f3ead7;padding:0;touch-action:none}
+  #toolBtn{position:fixed;left:calc(12px + var(--pad-l));top:calc(104px + var(--pad-t));width:58px;height:58px;border-radius:14px;border:2px solid #ffd27a;background:rgba(30,28,22,.75);display:flex;align-items:center;justify-content:center;font-size:26px;color:#f3ead7;padding:0;touch-action:none}
   #toolBtn img{width:56px;height:42px;object-fit:contain;pointer-events:none}
   #board table{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px}
   #board td,#board th{padding:7px 6px;border-bottom:1px solid #e0d2b4;text-align:left}
@@ -65,7 +65,8 @@
   .up{color:#2f7d4a}.down{color:#a8382f}.flat{color:#8a7a5a}
   #board p{font-size:12.5px;color:#6b5a3c;margin:8px 0 0}
   .shopSec{margin:14px 0 2px;font-size:13px;font-weight:700;color:#7a4a18;text-transform:uppercase;letter-spacing:.04em}
-  #rotate{display:none;position:fixed;inset:0;z-index:100;background:#2f4a35;color:#f3ead7;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:18px;font-weight:600}
-  #rotate .phone{font-size:64px;animation:tourne 2s ease-in-out infinite}
-  @keyframes tourne{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
-  @media (orientation:portrait){body.pwa #rotate{display:flex}}
+  #app{position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden}
+  body.rot #app{transform-origin:0 0}
+  body.rot{--pad-l:env(safe-area-inset-top,0px);--pad-t:env(safe-area-inset-right,0px);--pad-r:env(safe-area-inset-bottom,0px);--pad-b:env(safe-area-inset-left,0px)}
+  body.touch #hint{top:auto;bottom:calc(14px + var(--pad-b));max-width:40%}
+  #joyKnob.run{background:#ffb02e}

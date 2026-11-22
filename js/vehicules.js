@@ -118,7 +118,7 @@ const SPECS={
        cols:[[0.55,0.68],[-0.55,0.68]],enterR:2.6,seat:[0,0.06,-0.22],hide:false,eye:[0,1.72,-0.2],side:1.4,cam:[7.5,3.0],arrowY:2.7},
   pickup:{name:'Pick-up',build:makePickup,hitch:2.85,wb:3.2,wr:0.42,maxF:16,maxR:4,acc:5.5,mudLoss:0.75,steer:0.6,hl:1.6,hw:0.85,
        cols:[[1.8,1.0],[0.6,1.05],[-0.6,1.05],[-1.8,1.0]],enterR:3.2,seat:[0.45,0.3,0.2],hide:true,eye:[0.45,1.78,0.25],side:1.9,cam:[11,4.2],arrowY:3.6,bedCap:8},
-  skid:{name:'Débusqueuse',build:makeSkidder,hitch:null,wb:2.6,wr:0.65,maxF:8,maxR:3.5,acc:4.5,mudLoss:0.2,steer:0.65,hl:1.5,hw:1.0,
+  skid:{name:'Débusqueuse',build:makeSkidder,hitch:null,wb:2.6,wr:0.65,maxF:8,maxR:3.5,acc:4.5,mudLoss:0.2,steer:0.4,steerRate:2.5,hl:1.5,hw:1.0,
        cols:[[1.7,1.15],[0.4,1.15],[-1.0,1.15],[-2.2,0.9]],enterR:3.3,seat:[0,0.9,-0.35],hide:true,eye:[0,2.25,-0.1],side:2.0,cam:[11,4.6],arrowY:3.9}
 };
 const BED_SLOTS=[[-0.52,0.22],[0,0.22],[0.52,0.22],[-0.52,0.64],[0,0.64],[0.52,0.64],[-0.26,1.06],[0.26,1.06]];

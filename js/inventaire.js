@@ -34,3 +34,4 @@ $('toolBtn').addEventListener('pointerdown',e=>{
   selectSlot((i+1)%sl.length);
 });
 renderHotbar();
+updateToolVisual();

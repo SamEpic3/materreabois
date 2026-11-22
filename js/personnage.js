@@ -26,6 +26,12 @@ function makeChainModel(old){
   box(0.2,0.24,0.38,mat(old?0xb8732e:0xe06a1a),0,0,0.12,chain);box(0.05,0.09,0.6,mat(0x8f969b),0,-0.04,0.6,chain);box(0.06,0.06,0.3,mat(0x222222),0,0.16,0.08,chain);
   return chain;
 }
+function makeShovelModel(){
+  const g=new T.Group(),wood=mat(0xa77d4c),steel=mat(0x7d858a);
+  box(0.045,0.045,1.0,wood,0,0,0.42,g);box(0.14,0.04,0.05,wood,0,0,-0.08,g);
+  const bl=box(0.24,0.03,0.3,steel,0,-0.02,1.02,g);bl.rotation.x=0.25;
+  return g;
+}
 function axeColors(axe,id){axe.userData.head.color.set(id==='hachette'?0x7d6a5c:0xb23a2a);axe.userData.handle.color.set(id==='hachette'?0x6e5236:0xa77d4c);}
 function makePlayer(){
   const g=new T.Group();
@@ -42,14 +48,15 @@ function makePlayer(){
   const axe=makeAxeModel();axe.position.set(0,-0.68,0);armR.add(axe);
   const saw=makeSawModel();saw.position.set(0,-0.68,0);armR.add(saw);
   const chain=makeChainModel();chain.position.set(0,-0.68,0);armR.add(chain);
+  const shovel=makeShovelModel();shovel.position.set(0,-0.68,0);armR.add(shovel);
   const carryLog=makeLog(logGeoZ);carryLog.position.set(0.24,1.72,0.1);carryLog.visible=false;g.add(carryLog);
   shadows(g);addSilhouette(g);
-  return {g,legL,legR,armL,armR,axe,saw,chain,carryLog};
+  return {g,legL,legR,armL,armR,axe,saw,chain,shovel,carryLog};
 }
 const player=makePlayer();scene.add(player.g);markDynamic(player.g);
 function updateToolVisual(){
   const show=S.mode==='foot'&&!P.carry&&!P.pail;
   const k=TOOL?TOOL.kind:null;
-  player.axe.visible=show&&k==='axe';player.saw.visible=show&&k==='saw';player.chain.visible=show&&k==='chainsaw';
+  player.axe.visible=show&&k==='axe';player.saw.visible=show&&k==='saw';player.chain.visible=show&&k==='chainsaw';player.shovel.visible=show&&k==='shovel';
   if(TOOL){player.axe.scale.setScalar(TOOL.id==='hachette'?0.78:1);axeColors(player.axe,TOOL.id);}
 }

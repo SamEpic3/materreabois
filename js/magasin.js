@@ -33,7 +33,7 @@ function findSpawn(cols,th,pref){
 }
 function toolThumbModel(t){
   const g=new T.Group();let m;
-  if(t.kind==='axe'){m=makeAxeModel();axeColors(m,t.id);}else if(t.kind==='saw')m=makeSawModel();else m=makeChainModel(t.id==='scie-usagee');
+  if(t.kind==='axe'){m=makeAxeModel();axeColors(m,t.id);}else if(t.kind==='saw')m=makeSawModel();else if(t.kind==='shovel')m=makeShovelModel();else m=makeChainModel(t.id==='scie-usagee');
   m.rotation.set(-0.5,0.9,0.35);g.add(m);return g;
 }
 function imgTag(src){return src?`<img class="thumb" src="${src}" alt="">`:'';}
@@ -44,8 +44,8 @@ function renderShop(){
   sec('Outils');
   TOOLS.forEach(t=>{
     const d=document.createElement('div');d.className='item';
-    const treeT=Math.max(1,Math.ceil(9*t.fell))*t.delay,cutT=t.cut*t.delay;
-    d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t)))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">Arbre moyen : ≈ ${secs(treeT)} · Une coupe : ≈ ${secs(cutT)}</p></div>`;
+    const stats=t.kind==='shovel'?`Une souche : ≈ ${secs(12*t.delay)}`:`Arbre moyen : ≈ ${secs(Math.max(1,Math.ceil(9*t.fell))*t.delay)} · Une coupe : ≈ ${secs(t.cut*t.delay)}`;
+    d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t)))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
     if(owned.has(t.id)){b.textContent='À toi';b.disabled=true;}
     else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);setTool(t);toast(`${t.name} : dans ton inventaire et en main !`);renderShop();};}

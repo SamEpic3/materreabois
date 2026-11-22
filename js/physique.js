@@ -37,7 +37,7 @@ function updateVehicle(v,dt){
   if(v.v<-maxR)v.v=lerp(v.v,-maxR,1-Math.exp(-3*dt));
   if(!driving&&Math.abs(v.v)<0.3)v.v=0;
   const maxSt=sp.steer*(1-0.45*Math.min(1,Math.abs(v.v)/sp.maxF));
-  v.steer=lerp(v.steer,steerIn*maxSt,1-Math.exp(-8*dt));
+  v.steer=lerp(v.steer,steerIn*maxSt,1-Math.exp(-(sp.steerRate||8)*dt));
   if(v.v!==0){
     const B=WORLD-3;
     const step=vv=>{const nth=v.th+vv*Math.tan(v.steer)/sp.wb*dt;const nx=clamp(v.x+Math.sin(nth)*vv*dt,-B,B),nz=clamp(v.z+Math.cos(nth)*vv*dt,-B,B);

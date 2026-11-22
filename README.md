@@ -8,7 +8,7 @@ Jeu de navigateur coopératif en 3D (vue isométrique) : une terre à bois québ
 
 Ouvrir `index.html` dans un navigateur récent, sur ordinateur ou sur téléphone. Le moteur 3D (Three.js r128) est chargé depuis cdnjs, donc il faut une connexion Internet.
 
-**Comme une app (PWA) :** sur GitHub Pages, ouvrir le jeu dans le navigateur du téléphone, puis « Ajouter à l'écran d'accueil » (Chrome : menu ⋮ › Installer l'application ; Safari : Partager › Sur l'écran d'accueil). L'app s'ouvre en plein écran, à l'horizontale, et fonctionne hors ligne après la première ouverture.
+**Comme une app (PWA) :** sur GitHub Pages, ouvrir le jeu dans le navigateur du téléphone, puis « Ajouter à l'écran d'accueil » (Chrome : menu ⋮ › Installer l'application ; Safari : Partager › Sur l'écran d'accueil). L'app s'ouvre en plein écran, à l'horizontale (sur iPhone, si le téléphone est tenu à la verticale, le jeu se tourne de lui-même : il suffit de tourner le téléphone), et fonctionne hors ligne après la première ouverture.
 
 Le jeu commence avec 35 000 $ pour pouvoir tout tester.
 
@@ -23,6 +23,7 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Suivre les prix** sur l'affiche de la cour à bois : ils changent toutes les 5 minutes.
+- **Essoucher** à la pelle (achetée au magasin) : la souche est arrachée et le terrain dégagé.
 - **Faire les sucres** : entailler les érables, vider les chaudières dans un seau, faire bouillir au coin des sucres (au feu de bois), vendre le sirop au magasin.
 - **Vendre un véhicule ou une remorque** dans le cercle vert près du magasin (de 25 à 50 % du prix neuf).
 - **Acheter** des outils et de l'équipement au magasin général du village, autant de véhicules et de remorques qu'on veut.
@@ -35,7 +36,8 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
 |---|---|---|
 | Marcher / conduire | W A S D ou flèches | Joystick (moitié gauche) ; en véhicule : joystick pour tourner, boutons Gaz et Frein |
 | Marcher jusqu'à un point | Clic | Toucher le terrain à droite |
-| Choisir un outil ou les mains vides | 1 à 6, ou clic sur la barre d'outils | Bouton en bas à gauche (fait défiler) |
+| Choisir un outil ou les mains vides | 1 à 9, ou clic sur la barre d'outils | Bouton sous le panneau en haut à gauche (fait défiler) |
+| Courir | Maj | Joystick poussé jusqu'au bout (le bouton devient orange) |
 | Action (coup, prendre, déposer) | Espace | Bouton orange |
 | Couper ici (sur un billot qu'on peut prendre) | F | 2e bouton orange |
 | Embarquer / débarquer / opérer la grue | E | Bouton vert |

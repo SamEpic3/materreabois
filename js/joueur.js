@@ -13,7 +13,7 @@ function updateFoot(dt){
   }
   if(P.swing>0){dx=dz=0;}
   const amt=Math.min(1,Math.hypot(dx,dz));
-  const run=(keys.ShiftLeft||keys.ShiftRight)&&!P.carry;
+  const run=(keys.ShiftLeft||keys.ShiftRight||(joy.active&&Math.hypot(joy.x,joy.y)>0.95))&&!P.carry;
   const carrySpeed=P.carry?clamp(4.2-2.5*Math.pow(P.carry.len/CARRY_MAX,1.2),1.6,4.0):0;
   const speed=(P.carry?carrySpeed:run?6.5:4.2)*(1-0.4*mudAt(P.x,P.z))*(P.pail?1-0.35*P.pail.L/PAIL_CAP:1);
   if(amt>0.01){
@@ -36,6 +36,7 @@ function updateFoot(dt){
     let r;
     if(TOOL.kind==='axe')r=u<0.3?lerp(0,-2.7,u/0.3):u<0.42?lerp(-2.7,-0.7,(u-0.3)/0.12):lerp(-0.7,0,Math.min(1,(u-0.42)/0.33));
     else if(TOOL.kind==='saw')r=-1.25+Math.sin(u*26)*0.3;
+    else if(TOOL.kind==='shovel')r=u<0.42?lerp(-0.4,-1.5,u/0.42):lerp(-1.5,-0.4,Math.min(1,(u-0.42)/0.33));
     else r=-1.15+Math.sin(u*90)*0.05;
     player.armR.rotation.x=r;player.armL.rotation.x=r;
     if(u>=0.42&&!P.struck){P.struck=true;if(P.onStrike)P.onStrike();}

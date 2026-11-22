@@ -8,6 +8,7 @@ const TOOLS=[
   {id:'sciotte',name:'Sciotte',kind:'saw',delay:1.1,fell:0.85,cut:2,price:300,desc:'Scie à archet. Correcte pour abattre, excellente pour tronçonner.'},
   {id:'scie-usagee',name:'Scie à chaîne usagée',kind:'chainsaw',delay:0.8,fell:0.35,cut:1,price:900,desc:'Elle a du vécu, mais elle part au 3e coup.'},
   {id:'scie-pro',name:'Scie à chaîne pro',kind:'chainsaw',delay:0.55,fell:0.25,cut:1,price:2200,desc:'Puissante et légère. Le rêve de tout bûcheron.'}
+  ,{id:'pelle',name:'Pelle',kind:'shovel',delay:1.2,fell:null,cut:null,price:60,desc:'Pour creuser autour des souches et les arracher : le terrain est ensuite dégagé.'}
 ];
 const VEH_SHOP=[
   {id:'vtt',kind:'veh',name:'VTT',price:3000,desc:'Petit, agile et passe partout dans le bois. Tire la petite remorque.'},
@@ -19,7 +20,7 @@ const VEH_SHOP=[
 const SOON=[];
 const owned=new Set(['hachette']);
 let TOOL=TOOLS[0];
-function toolVerb(){if(!TOOL)return '';return TOOL.kind==='axe'?(TOOL.id==='hachette'?'Coup de hachette':'Coup de hache'):TOOL.kind==='saw'?'Coup de sciotte':'Coup de scie';}
+function toolVerb(){if(!TOOL)return '';if(TOOL.kind==='shovel')return 'Coup de pelle';return TOOL.kind==='axe'?(TOOL.id==='hachette'?'Coup de hachette':'Coup de hache'):TOOL.kind==='saw'?'Coup de sciotte':'Coup de scie';}
 function fellTotal(t){return Math.max(1,Math.ceil(t.base*(TOOL?TOOL.fell:1)));}
 let V=null;
 function containers(){const a=trailers.map(t=>t.c);vehicles.forEach(v=>{if(v.bed)a.push(v.bed);});return a;}

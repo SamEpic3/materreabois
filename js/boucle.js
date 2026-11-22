@@ -50,5 +50,4 @@ function frame(){
   renderer.render(scene,activeCam);
   requestAnimationFrame(frame);
 }
-addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);updateProj();});
 requestAnimationFrame(frame);

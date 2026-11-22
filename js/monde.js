@@ -38,7 +38,7 @@ function H(x,z){
 const canvas=$('c');
 const renderer=new T.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-renderer.setSize(innerWidth,innerHeight);
+renderer.setSize(viewW(),viewH());
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=T.PCFSoftShadowMap;
 const scene=new T.Scene();
@@ -46,9 +46,9 @@ scene.background=new T.Color(0xc9d6dc);
 
 let zoom=isTouch?11:14;const ZMIN=6,ZMAX=32;
 const camera=new T.OrthographicCamera(-1,1,1,-1,1,500);
-const pcam=new T.PerspectiveCamera(60,innerWidth/innerHeight,0.1,400);
+const pcam=new T.PerspectiveCamera(60,viewW()/viewH(),0.1,400);
 let camMode='iso',activeCam=camera,camYaw=0,camYawT=0,chaseDist=1,camPitch=-0.1;
-function updateProj(){const a=innerWidth/innerHeight;camera.left=-zoom*a;camera.right=zoom*a;camera.top=zoom;camera.bottom=-zoom;camera.updateProjectionMatrix();pcam.aspect=a;pcam.updateProjectionMatrix();}
+function updateProj(){const a=viewW()/viewH();camera.left=-zoom*a;camera.right=zoom*a;camera.top=zoom;camera.bottom=-zoom;camera.updateProjectionMatrix();pcam.aspect=a;pcam.updateProjectionMatrix();}
 updateProj();
 
 scene.add(new T.HemisphereLight(0xe4ecf2,0x4a4030,0.75));
@@ -152,8 +152,15 @@ function pushOut(p,r){eachNear(p.x,p.z,c=>{pushCircle(p,r,c.x,c.z,c.r);return fa
   [[-1.6,-1.1],[1.6,-1.1],[-1.6,1.1],[1.6,1.1]].forEach(([a,b])=>addCol(CABIN.x+a,CABIN.z+b,1.55));
 }
 // Cour à bois : anneau au sol
-const yardRing=new T.Mesh(new T.RingGeometry(YARD.r-0.35,YARD.r,40),new T.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:0.55,side:T.DoubleSide}));
-yardRing.rotation.x=-Math.PI/2;yardRing.position.set(YARD.x,CAMP_H+0.05,YARD.z);scene.add(yardRing);
+// Anneau posé au sol qui suit le relief
+function groundRing(cx,cz,r0,r1,seg,color,opacity){
+  const g=new T.RingGeometry(r0,r1,seg,1);g.rotateX(-Math.PI/2);
+  const p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i)+cx,z=p.getZ(i)+cz;p.setXYZ(i,x,H(x,z)+0.1,z);}
+  const m=new T.Mesh(g,new T.MeshBasicMaterial({color,transparent:true,opacity,side:T.DoubleSide,depthWrite:false}));
+  m.renderOrder=5;scene.add(m);return m;
+}
+const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
 const yardStack=new T.Group();yardStack.position.set(YARD.x+5.6,CAMP_H,YARD.z-1);yardStack.rotation.y=0.2;scene.add(yardStack);
 addCol(YARD.x+5.6,YARD.z-1,1.5);addCol(YARD.x+5.6,YARD.z+1.8,1.5);
 
@@ -215,6 +222,7 @@ function makeLog(geo){const m=new T.Mesh(geo,logMats);m.castShadow=true;m.receiv
 
 const piles=[];
 
+const stumpList=[];   // souches qu'on peut arracher à la pelle
 /* ---------- Forêt ---------- */
 const SPECIES={epinette:{n:'Épinette',p:30},sapin:{n:'Sapin',p:25},erable:{n:'Érable',p:45},bouleau:{n:'Bouleau',p:35}};
 const treeList=[];
@@ -289,9 +297,10 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
     const a=rnd()*6.28,d=CAMP.r-1+rnd()*9,x=CAMP.x+Math.cos(a)*d,z=CAMP.z+Math.sin(a)*d;
     if(trailDist(x,z)<3||Math.hypot(x-YARD.x,z-YARD.z)<8||Math.hypot(x-CABIN.x,z-CABIN.z)<5)continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<1.8))continue;
-    addCol(x,z,0.4);stumps.push({x,z});
+    const c=addCol(x,z,0.4);stumps.push({x,z,c});
   }
   const stM=new T.InstancedMesh(stumpG,ph,stumps.length);
   stumps.forEach((s,i)=>put(stM,i,s.x,H(s.x,s.z)-0.05,s.z,1,0.8+rnd()*0.6,1,rnd()*6,0x6b5036));
+  stumps.forEach((s,i)=>stumpList.push({x:s.x,z:s.z,col:s.c,inst:stM,idx:i,size:1,work:0}));
   stM.castShadow=true;stM.receiveShadow=true;scene.add(stM);
 }

@@ -15,6 +15,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
 </head>
 <body>
+<div id="app">
 <canvas id="c"></canvas>
 
 <div id="stats" class="panel">
@@ -60,7 +61,7 @@
     <ul>
       <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou les flèches : marcher, ou conduire (gaz, frein et recul, direction)</li>
       <li>Clic sur le terrain : marcher jusque-là · <kbd>Maj</kbd> : courir</li>
-      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>6</kbd> : choisir un outil ou les mains vides · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
+      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>9</kbd> : choisir un outil ou les mains vides · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
       <li>Grue : <kbd>E</kbd> près de la grue pour l'opérer · <kbd>W</kbd>/<kbd>S</kbd> portée · <kbd>A</kbd>/<kbd>D</kbd> pivot · <kbd>Espace</kbd> prendre ou déposer · <kbd>Q</kbd>/<kbd>R</kbd> tourner le billot</li>
       <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (iso, 3e personne, 1re personne), glisser la souris pour tourner autour</li>
     </ul>
@@ -105,12 +106,9 @@
     <button id="boardClose">Fermer</button>
   </div>
 </div>
-<div id="rotate">
-  <div class="phone">📱</div>
-  <p>Tourne ton téléphone à l'horizontale pour jouer</p>
-</div>
 <div id="err">Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion Internet, puis recharge la page.</div>
 
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/outils.js"></script>
 <script src="js/monde.js"></script>

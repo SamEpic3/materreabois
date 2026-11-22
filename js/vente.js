@@ -3,8 +3,7 @@ const SALE_L=[12,13];               // position dans le repère du village
 const SALE=(()=>{const p=vpos(SALE_L[0],SALE_L[1]);return {x:p.x,z:p.z,r:5};})();
 const BUY_PRICE={vtt:3000,pickup:6500,skid:15000,small:800,loader:4500};
 {
-  const ring=new T.Mesh(new T.RingGeometry(SALE.r-0.3,SALE.r,48),new T.MeshBasicMaterial({color:0x5fe07a,transparent:true,opacity:0.5,side:T.DoubleSide}));
-  ring.rotation.x=-Math.PI/2;ring.position.set(SALE.x,H(SALE.x,SALE.z)+0.06,SALE.z);scene.add(ring);
+  groundRing(SALE.x,SALE.z,SALE.r-0.35,SALE.r,64,0x5fe07a,0.6);
   const g=new T.Group(),wood=mat(0x6e5236),pan=mat(0x2f6b3a);
   box(0.14,2.2,0.14,wood,0,1.1,0,g);box(1.6,0.7,0.08,pan,0,1.95,0,g);
   const sp=vpos(SALE_L[0],SALE_L[1]+SALE.r+0.6);g.position.set(sp.x,H(sp.x,sp.z),sp.z);g.rotation.y=VROT;shadows(g);scene.add(g);addCol(sp.x,sp.z,0.3);

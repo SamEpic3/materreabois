@@ -32,7 +32,7 @@ function nearestTree(maxD){
   eachNear(P.x,P.z,c=>{if(c.tree&&c.tree.alive){const d=Math.hypot(P.x-c.x,P.z-c.z)-c.r;if(d<bd){bd=d;best=c.tree;}}return false;});
   return best;
 }
-function cutLocked(){return !!TOOL&&P.cut&&pieces.includes(P.cut.pc)&&Math.hypot(P.x-P.cut.x,P.z-P.cut.z)<1.8;}
+function cutLocked(){return !!(TOOL&&TOOL.cut)&&P.cut&&pieces.includes(P.cut.pc)&&Math.hypot(P.x-P.cut.x,P.z-P.cut.z)<1.8;}
 function context(){
   if(S.mode==='vtt')return driveContext();
   if(S.mode==='crane')return craneContext();
@@ -47,6 +47,9 @@ function context(){
     else if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
     else if(cont&&cont.load.length<cont.cap)act={label:`Mettre dans la ${cont.name} (${cont.load.length}/${cont.cap})`,fn:()=>putIn(cont)};
     else{act={label:'Déposer le billot',fn:dropLog};full=!!cont;}
+  }else if(TOOL&&TOOL.kind==='shovel'&&nearestStump(1.4)){
+    const st=nearestStump(1.4),tot=stumpHits(st);
+    act={label:`Creuser autour de la souche (${Math.round(st.work*tot)}/${tot})`,fn:()=>dig(st),cool:true};
   }else if(cutLocked()){
     const k=P.cut;preview={pc:k.pc,d:k.d,locked:true};
     act={label:`Tronçonner (${Math.round(k.work*TOOL.cut)}/${TOOL.cut}) à ${ftin(k.d)}`,fn:cutStroke,cool:true};
@@ -56,10 +59,10 @@ function context(){
     if(np){
       const pc=np.pc,[a,b]=cutRange(pc),canCut=b>a,d=clamp(np.d,a,b);
       if(canCut)preview={pc,d,locked:false};
-      const cutAct=canCut&&TOOL?{label:`Couper ici : ${ftin(d)}`,fn:()=>startCut(pc,d),cool:true}:null;
+      const cutAct=canCut&&TOOL&&TOOL.cut?{label:`Couper ici : ${ftin(d)}`,fn:()=>startCut(pc,d),cool:true}:null;
       if(carryable(pc)){act={label:`Prendre (${ftin(pc.len)}, ${pc.len>=SAW_MIN?'sciage':'chauffage'})`,fn:()=>pickUp(pc)};act2=cutAct;}
       else act=cutAct;
-      const noTool=canCut&&!TOOL?' · mains vides : choisis un outil pour couper':'';
+      const noTool=canCut&&!(TOOL&&TOOL.cut)?' · choisis un outil de coupe pour tronçonner':'';
       if(carryable(pc))info=`Billot de ${ftin(pc.len)} (${pc.len>=SAW_MIN?'sciage':'bois de chauffage'})`+(canCut?` · recouper ici : ${ftin(d)}`:'');
       else if(canCut)info=`Ruban : ${ftin(d)} → ${kindOf(d)}`+(pc.crown?'':` · reste ${ftin(pc.len-d)}`);
       else if(pc.crown)info='La cime : rien à ramasser ici';
@@ -70,6 +73,7 @@ function context(){
     else{const t=nearestTree(1.3);if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
   if(!act&&!info)info=boilInfo();
+  if(!act&&!info&&!P.carry&&!P.pail&&nearestStump(1.2))info='Souche : prends une pelle pour l\'arracher';
   let enter=null,enterVeh=null,enterCrane=null;
   if(!P.carry){
     const nv=nearestVehicle(),nc=P.pail?null:nearestCrane();
@@ -119,9 +123,9 @@ function startCut(pc,d){
 }
 function cutStroke(){if(P.cut)swing(P.cut.x,P.cut.z,strikeCut);}
 const chipGeo=new T.BoxGeometry(0.1,0.05,0.14),chipMat=mat(0xe3c28e);
-function spawnChips(x,y,z){
+function spawnChips(x,y,z,mt){
   for(let k=0;k<6;k++){
-    const m=new T.Mesh(chipGeo,chipMat);m.position.set(x,y,z);scene.add(m);
+    const m=new T.Mesh(chipGeo,mt||chipMat);m.position.set(x,y,z);scene.add(m);
     const a=P.rot+Math.PI+(rnd()-0.5)*2.2;
     chips.push({m,vx:Math.sin(a)*(1.5+rnd()*2),vy:2+rnd()*2.5,vz:Math.cos(a)*(1.5+rnd()*2),life:0.8});
   }
@@ -144,6 +148,23 @@ function splitPiece(pc,d){
   addPiece({cx:b.x+fx*(d+r/2+0.02),cz:b.z+fz*(d+r/2+0.02),rot:pc.rot,len:r,ra:rm,rb:pc.rb,sp:pc.sp,crown:pc.crown});
   toast(`Coupé à ${ftin(d)} : ${kindOf(d).replace(' ✔','')}`);
 }
+/* Essouchage à la pelle */
+function nearestStump(maxD){let b=null,bd=maxD;stumpList.forEach(st=>{const d=Math.hypot(P.x-st.x,P.z-st.z);if(d<bd){bd=d;b=st;}});return b;}
+function stumpHits(st){return Math.round(7+st.size*5);}
+const dirtMat=mat(0x5e4630),holeMat=new T.MeshLambertMaterial({color:0x4a3826});
+function dig(st){swing(st.x,st.z,()=>strikeStump(st));}
+function strikeStump(st){
+  if(!stumpList.includes(st))return;
+  st.work+=1/stumpHits(st);spawnChips(st.x,H(st.x,st.z)+0.2,st.z,dirtMat);
+  if(st.work>=0.999)removeStump(st);
+}
+function removeStump(st){
+  removeCol(st.col);
+  if(st.mesh)scene.remove(st.mesh);else{st.inst.setMatrixAt(st.idx,ZERO_M);st.inst.instanceMatrix.needsUpdate=true;}
+  stumpList.splice(stumpList.indexOf(st),1);
+  const patch=new T.Mesh(new T.CircleGeometry(0.75,14),holeMat);patch.rotation.x=-Math.PI/2;patch.position.set(st.x,H(st.x,st.z)+0.04,st.z);patch.receiveShadow=true;scene.add(patch);
+  toast('Souche arrachée ! Le terrain est dégagé');
+}
 function removeCol(c){const a=grid.get(gk(Math.floor(c.x/CELL),Math.floor(c.z/CELL)));if(a){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}}
 function fell(t){
   t.alive=false;removeCol(t.col);
@@ -155,7 +176,8 @@ function fell(t){
   let fx=t.x-P.x,fz=t.z-P.z;const d=Math.hypot(fx,fz)||1;fx/=d;fz/=d;
   falling.push({t,g,fx,fz,axis:new T.Vector3(fz,0,-fx),time:0});
   const st=new T.Mesh(new T.CylinderGeometry(0.26*t.s,0.32*t.s,0.45,7),mat(t.type==='bouleau'?0xd9d4c8:0x6b5036));
-  st.position.set(t.x,t.y+0.2,t.z);shadows(st);scene.add(st);addCol(t.x,t.z,0.3*t.s);
+  st.position.set(t.x,t.y+0.2,t.z);shadows(st);scene.add(st);
+  stumpList.push({x:t.x,z:t.z,col:addCol(t.x,t.z,0.3*t.s),mesh:st,size:t.s,work:0});
   toast('Ça tombe ! 🌲');
 }
 function makeCrown(t,x,z,rot){
