@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Ma terre à bois — prototype</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="stats" class="panel">
+  💰 <b id="sMoney">35000 $</b> &nbsp;·&nbsp; 🪵 Livrés : <b id="sDel">0</b><br>
+  <b id="sLoad">Remorque : 0/6</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span>
+</div>
+<div id="hint" class="panel"></div>
+
+<div id="camBtns">
+  <button class="sbtn" id="rotL" title="Tourner la caméra (Z)">⟲</button>
+  <button class="sbtn" id="rotR" title="Tourner la caméra (C)">⟳</button>
+  <button class="sbtn" id="zIn" title="Zoom avant">＋</button>
+  <button class="sbtn" id="zOut" title="Zoom arrière">－</button>
+  <button class="sbtn" id="btnCam" title="Vue rapprochée (V)">🎥</button>
+  <button class="sbtn" id="btnHelp" title="Aide">?</button>
+</div>
+
+<div id="actions">
+  <button class="abtn hidden" id="btnAct2">Couper ici</button>
+  <button class="abtn hidden" id="btnAct">Charger</button>
+  <button class="abtn hidden" id="btnHitch">Dételer</button>
+  <button class="abtn hidden" id="btnEnter">Embarquer</button>
+  <div id="gripBtns" class="hidden">
+    <button class="pedal" id="gripL">⟲<br>billot</button>
+    <button class="pedal" id="gripR">⟳<br>billot</button>
+  </div>
+  <div id="pedals" class="hidden">
+    <button class="pedal" id="btnBrake">Frein<br>/ recul</button>
+    <button class="pedal" id="btnGas">Gaz</button>
+  </div>
+</div>
+
+<div id="joy" class="hidden"><div id="joyKnob"></div></div>
+<div id="toast"></div>
+
+<div id="help">
+  <div class="card">
+    <h1>Terre à bois 🌲</h1>
+    <p>Prototype n° 1 : bûcher à la hachette, transporter les billots à l'épaule jusqu'à la remorque, puis les rapporter au camp en VTT.</p>
+    <h2>Sur ordinateur</h2>
+    <ul>
+      <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou les flèches : marcher, ou conduire (gaz, frein et recul, direction)</li>
+      <li>Clic sur le terrain : marcher jusque-là · <kbd>Maj</kbd> : courir</li>
+      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
+      <li>Grue : <kbd>E</kbd> près de la grue pour l'opérer · <kbd>W</kbd>/<kbd>S</kbd> portée · <kbd>A</kbd>/<kbd>D</kbd> pivot · <kbd>Espace</kbd> prendre ou déposer · <kbd>Q</kbd>/<kbd>R</kbd> tourner le billot</li>
+      <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (iso, 3e personne, 1re personne), glisser la souris pour tourner autour</li>
+    </ul>
+    <h2>Sur téléphone</h2>
+    <ul>
+      <li>Pouce sur la moitié gauche de l'écran : joystick</li>
+      <li>Toucher le terrain à droite : marcher jusque-là</li>
+      <li>En VTT : joystick gauche-droite pour la direction, boutons Gaz et Frein / recul pour avancer et reculer</li>
+      <li>Pincer pour zoomer · ⟲ ⟳ pour tourner la caméra</li>
+    </ul>
+    <h2>Comment ça marche</h2>
+    <ul>
+      <li><b>Bûcher :</b> approche-toi d'un arbre et donne des coups de hachette (bouton ou <kbd>Espace</kbd>). Il faut reprendre son souffle entre chaque coup.</li>
+      <li><b>Tronçonner :</b> l'arbre tombé est une longue tige. Marche le long et regarde le ruban : il mesure du gros bout jusqu'à toi. Coupe à 8 pi (entre 7 pi 10 po et 8 pi 2 po) pour un billot de sciage. Plus court, c'est du bois de chauffage. La cime disparaît, et le dernier bout se ramasse s'il fait 8 pi ou moins.</li>
+      <li><b>Transporter :</b> un billot de 8 pi ou moins se prend sur l'épaule (plus il est long, plus tu marches lentement). Jusqu'à 12 pi, la grue de la remorque chargeuse peut le prendre. Plus long, il faut la débusqueuse ou le recouper.</li>
+      <li><b>Vendre :</b> rapporte la remorque à la cour à bois du camp, puis sors les billots un par un pour les corder dans le cercle jaune. Un billot d'érable rapporte plus qu'un billot de sapin, et le bois de chauffage se paie au pied.</li>
+      <li><b>Magasin :</b> le village est au bout du chemin, au nord-ouest du camp. Au magasin général, achète de meilleurs outils (hache, sciotte, scie à chaîne) et de l'équipement : pick-up, remorque chargeuse avec grue, débusqueuse.</li>
+      <li><b>Grue :</b> approche-toi de la grue de la remorque chargeuse et appuie sur E. Place la pince au-dessus d'un billot, puis Espace : elle descend le chercher. Pour le déposer dans la remorque, aligne-le avec la remorque (Q/R).</li>
+      <li><b>Débusqueuse :</b> recule la pince arrière jusqu'au bout d'une tige et appuie sur Espace pour l'agripper. Traîne-la jusqu'au chemin, puis Espace pour la relâcher.</li>
+      <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
+    </ul>
+    <button id="btnStart">Commencer</button>
+  </div>
+</div>
+<div id="shop" class="hidden">
+  <div class="card">
+    <h1>🏪 Magasin général</h1>
+    <div class="money" id="shopMoney"></div>
+    <div id="shopList"></div>
+    <button id="shopClose">Sortir du magasin</button>
+  </div>
+</div>
+<div id="err">Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion Internet, puis recharge la page.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/jeu.js"></script>
+</body>
+</html>
