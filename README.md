@@ -40,14 +40,29 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
 ## Structure
 
 ```
-index.html      Page du jeu (interface, aide, magasin)
-css/style.css   Styles de l'interface
-js/jeu.js       Tout le code du jeu (monde, forêt, joueur, véhicules, grue, magasin, caméras)
+index.html            Page du jeu (interface, aide, magasin) et ordre de chargement des scripts
+css/style.css         Styles de l'interface
+js/outils.js          Three.js, raccourcis, maths, hasard
+js/monde.js           Relief, chemins, rendu, terrain, collisions, camp, village, billots, forêt
+js/personnage.js      Silhouettes, outils tenus en main, modèle du bonhomme
+js/vehicules.js       Modèles et caractéristiques des véhicules et remorques
+js/etat.js            État de la partie, catalogue du magasin, véhicules de départ
+js/controles.js       Clavier, joystick, toucher, boutons, caméras
+js/magasin.js         Magasin général, vignettes, messages
+js/actions.js         Bûcher, tronçonner, porter, charger, vendre, atteler
+js/debusqueuse.js     Agripper, traîner, relâcher une tige
+js/grue.js            Grue de la remorque chargeuse
+js/interactions.js    Embarquer, débarquer, opérer la grue, boutons d'action
+js/joueur.js          Déplacement et animations du joueur à pied
+js/physique.js        Physique des véhicules et des remorques
+js/hud.js             Flèche d'objectif et affichage
+js/boucle.js          Boucle de jeu et placement des caméras
 ```
+
+Les scripts sont des fichiers JavaScript classiques chargés dans l'ordre de `index.html` : ils partagent leurs variables globales. Le jeu s'ouvre donc aussi en double-cliquant sur `index.html`, sans serveur. Les fonctions peuvent appeler celles des fichiers suivants, mais le code exécuté au chargement ne doit utiliser que ce qui est déclaré dans les fichiers précédents.
 
 ## Prochaines étapes
 
-- Séparer `js/jeu.js` en modules (monde, joueur, véhicules, magasin, interface).
 - Sauvegarde et serveur pour jouer à deux sur la même terre, avec un journal de la ferme.
 - Essence et usure des outils, aiguisage.
 - Saisons, érablière, champs.

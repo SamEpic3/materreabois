@@ -1,0 +1,113 @@
+/* Contrôles : clavier, joystick, toucher, boutons, caméras */
+/* ---------- Entrées ---------- */
+const keys={};
+const joy={active:false,id:null,cx:0,cy:0,x:0,y:0};
+const pedal={gas:false,brake:false};
+addEventListener('keydown',e=>{
+  if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
+  if($('help').classList.contains('hidden')===false&&e.code!=='Escape')return;
+  keys[e.code]=true;
+  if(e.code==='KeyE'&&!e.repeat)doEnter();
+  if(e.code==='KeyR'&&!e.repeat)doHitch();
+  if(e.code==='KeyF'&&!e.repeat)doAct2();
+  if(e.code==='Space'&&!e.repeat)doAct();
+  if(e.code==='KeyZ')rotateCam(-1);
+  if(e.code==='KeyC')rotateCam(1);
+  if(e.code==='KeyV'&&!e.repeat)toggleCam();
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+});
+addEventListener('keyup',e=>{keys[e.code]=false;});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false;pedal.gas=pedal.brake=false;});
+
+function readInput(normalize){
+  let x=0,y=0;
+  if(keys.KeyA||keys.ArrowLeft)x-=1;if(keys.KeyD||keys.ArrowRight)x+=1;
+  if(keys.KeyW||keys.ArrowUp)y+=1;if(keys.KeyS||keys.ArrowDown)y-=1;
+  if(joy.active){x+=joy.x;y+=joy.y;}
+  if(normalize){const l=Math.hypot(x,y);if(l>1){x/=l;y/=l;}}
+  return {x:clamp(x,-1,1),y:clamp(y,-1,1)};
+}
+
+const joyEl=$('joy'),knob=$('joyKnob'),JR=55;
+const pointers=new Map();let pinch=null,pinchUsed=false;
+canvas.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='touch'&&!joy.active&&e.clientX<innerWidth*0.42){
+    joy.active=true;joy.id=e.pointerId;joy.cx=e.clientX;joy.cy=e.clientY;joy.x=joy.y=0;
+    joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';joyEl.classList.remove('hidden');
+    knob.style.transform='translate(0,0)';P.target=null;
+    try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+    return;
+  }
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now()});
+  if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:zoom,cd:chaseDist};pinchUsed=true;}
+  try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+});
+canvas.addEventListener('pointermove',e=>{
+  if(joy.active&&e.pointerId===joy.id){
+    let dx=e.clientX-joy.cx,dy=e.clientY-joy.cy;const l=Math.hypot(dx,dy);if(l>JR){dx*=JR/l;dy*=JR/l;}
+    joy.x=dx/JR;joy.y=-dy/JR;knob.style.transform=`translate(${dx}px,${dy}px)`;return;
+  }
+  const p=pointers.get(e.pointerId);if(!p)return;
+  if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(e.clientX-p.sx,e.clientY-p.sy)>12){camYawT-=(e.clientX-p.x)*0.008;camYaw=camYawT;if(camMode==='fp')camPitch=clamp(camPitch-(e.clientY-p.y)*0.006,-1.2,0.9);}
+  p.x=e.clientX;p.y=e.clientY;
+  if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()];const r=pinch.d/(Math.hypot(a.x-b.x,a.y-b.y)||1);if(camMode==='tp')chaseDist=clamp(pinch.cd*r,0.5,2.5);else if(camMode==='iso'){zoom=clamp(pinch.z*r,ZMIN,ZMAX);updateProj();}}
+});
+function endPointer(e){
+  if(joy.active&&e.pointerId===joy.id){joy.active=false;joy.x=joy.y=0;joyEl.classList.add('hidden');return;}
+  const p=pointers.get(e.pointerId);if(!p)return;
+  if(e.type==='pointerup'&&!pinchUsed&&pointers.size===1&&Math.hypot(p.x-p.sx,p.y-p.sy)<12&&performance.now()-p.t<500)tap(e.clientX,e.clientY);
+  pointers.delete(e.pointerId);
+  if(pointers.size<2)pinch=null;
+  if(pointers.size===0)pinchUsed=false;
+}
+canvas.addEventListener('pointerup',endPointer);
+canvas.addEventListener('pointercancel',endPointer);
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist*(1+e.deltaY*0.0012),0.5,2.5);return;}zoom=clamp(zoom*(1+e.deltaY*0.0012),ZMIN,ZMAX);updateProj();},{passive:false});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+const ray=new T.Raycaster(),ndc=new T.Vector2();
+function tap(cx,cy){
+  if(S.mode!=='foot')return;
+  ndc.set(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);
+  ray.setFromCamera(ndc,activeCam);
+  const hit=ray.intersectObject(terrain)[0];
+  if(hit){P.target={x:hit.point.x,z:hit.point.z};marker.position.set(hit.point.x,hit.point.y+0.06,hit.point.z);marker.visible=true;marker.material.opacity=0.8;}
+}
+
+function holdBtn(el,prop){
+  const on=e=>{e.preventDefault();pedal[prop]=true;el.classList.add('on');};
+  const off=()=>{pedal[prop]=false;el.classList.remove('on');};
+  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off);
+}
+holdBtn($('btnGas'),'gas');holdBtn($('btnBrake'),'brake');
+const gripK={l:false,r:false};
+[['gripL','l'],['gripR','r']].forEach(([id,k])=>{const el=$(id);const on=e=>{e.preventDefault();gripK[k]=true;el.classList.add('on');};const off=()=>{gripK[k]=false;el.classList.remove('on');};
+  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off);});
+$('btnEnter').addEventListener('pointerdown',e=>{e.preventDefault();doEnter();});
+$('btnHitch').addEventListener('pointerdown',e=>{e.preventDefault();doHitch();});
+$('btnAct2').addEventListener('pointerdown',e=>{e.preventDefault();doAct2();});
+$('btnAct').addEventListener('pointerdown',e=>{e.preventDefault();doAct();});
+
+/* ---------- Caméra ---------- */
+let camAz=Math.PI/4,camAzT=camAz;
+const camT=new T.Vector3(P.x,H(P.x,P.z),P.z);
+function rotateCam(d){if(camMode!=='iso')camYawT+=d*Math.PI/4;else camAzT+=d*Math.PI/2;}
+const FOG=new T.Fog(0xc9d6dc,30,110);
+function toggleCam(){
+  camMode=camMode==='iso'?'tp':camMode==='tp'?'fp':'iso';
+  activeCam=camMode==='iso'?camera:pcam;
+  scene.fog=camMode==='iso'?null:FOG;
+  silMat.visible=camMode==='iso';
+  player.g.visible=camMode!=='fp'&&!(S.mode==='vtt'&&V.spec.hide);
+  pcam.fov=camMode==='fp'?70:60;pcam.updateProjectionMatrix();camPitch=-0.1;
+  camYaw=camYawT=S.mode==='vtt'?V.th:P.rot;
+  toast(camMode==='tp'?'Vue 3e personne (essai)':camMode==='fp'?'Vue 1re personne (essai)':'Vue isométrique');
+}
+$('btnCam').addEventListener('click',toggleCam);
+$('rotL').addEventListener('click',()=>rotateCam(-1));
+$('rotR').addEventListener('click',()=>rotateCam(1));
+$('zIn').addEventListener('click',()=>{if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist/1.25,0.5,2.5);return;}zoom=clamp(zoom/1.25,ZMIN,ZMAX);updateProj();});
+$('zOut').addEventListener('click',()=>{if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist*1.25,0.5,2.5);return;}zoom=clamp(zoom*1.25,ZMIN,ZMAX);updateProj();});
+$('btnHelp').addEventListener('click',()=>$('help').classList.remove('hidden'));
+$('btnStart').addEventListener('click',()=>$('help').classList.add('hidden'));
+const ELEV=0.6155; // 35,26° : vraie isométrique
