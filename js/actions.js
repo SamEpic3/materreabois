@@ -4,7 +4,7 @@ const TRAILER_SLOTS=[[-0.44,0.22],[0,0.22],[0.44,0.22],[-0.22,0.6],[0.22,0.6],[0
 const pieces=[],falling=[],chips=[];
 const FT=0.3048,INCH=0.0254,CARRY_MAX=8*FT+2*INCH,SAW_MIN=7*FT+10*INCH,CRANE_MAX=12*FT+2*INCH;
 function ftin(m){const t=Math.round(m/INCH);return `${Math.floor(t/12)} pi ${t%12} po`;}
-function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*2));}
+function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*FIREWOOD_FT*mkt('chauffage')));}
 function kindOf(len){return len>CRANE_MAX?'trop long : recoupe ou débusqueuse':len>CARRY_MAX?'billot long (grue) ✔':len>=SAW_MIN?'billot de sciage ✔':'bois de chauffage';}
 function pointInYard(x,z){return Math.hypot(x-YARD.x,z-YARD.z)<YARD.r||Math.hypot(x-(YARD.x+5.6),z-(YARD.z+0.4))<3.2;}
 function inYard(){return pointInYard(P.x,P.z);}
@@ -38,9 +38,13 @@ function context(){
   if(S.mode==='crane')return craneContext();
   let act=null,act2=null,full=false,preview=null,info='';
   const cont=nearestContainer();
-  if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
+  const extra=(!P.carry&&!P.pail)?footExtras():null;
+  if(P.pail){const r=pailContext();act=r.act;act2=r.act2;info=r.info||'';}
+  else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
+  else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}
   else if(P.carry){
-    if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
+    if(nearFire())act={label:`Mettre la bûche au feu (+${fuelOf(P.carry)} s)`,fn:addFuel};
+    else if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
     else if(cont&&cont.load.length<cont.cap)act={label:`Mettre dans la ${cont.name} (${cont.load.length}/${cont.cap})`,fn:()=>putIn(cont)};
     else{act={label:'Déposer le billot',fn:dropLog};full=!!cont;}
   }else if(cutLocked()){
@@ -63,11 +67,12 @@ function context(){
       if(!carryable(pc)&&noTool)info+=noTool;
     }
     else if(cont&&cont.load.length){const top=cont.load[cont.load.length-1].userData.c;if(top.len<=CARRY_MAX)act={label:`Prendre un billot (${cont.name})`,fn:()=>takeFrom(cont)};else info=`Billot de ${ftin(top.len)} : trop long pour l'épaule, utilise la grue`;}
-    else{const t=nearestTree(1.3);if(t){if(!TOOL)info='Mains vides : choisis un outil pour bûcher (touches 1 à 6)';else{const tot=fellTotal(t);act={label:`${toolVerb()} (${Math.round(t.work*tot)}/${tot})`,fn:()=>chop(t),cool:true};}}}
+    else{const t=nearestTree(1.3);if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
+  if(!act&&!info)info=boilInfo();
   let enter=null,enterVeh=null,enterCrane=null;
   if(!P.carry){
-    const nv=nearestVehicle(),nc=nearestCrane();
+    const nv=nearestVehicle(),nc=P.pail?null:nearestCrane();
     if(nc&&(!nv||nc.d<Math.hypot(P.x-nv.x,P.z-nv.z))){enter='Opérer la grue';enterCrane=nc.t;}
     else if(nv){enter=`Embarquer (${nv.spec.name})`;enterVeh=nv;}
   }
@@ -228,10 +233,12 @@ function attach(v,t){
   t.th=Math.atan2(dx,dz);t.x=h.x-dx*t.spec.tl;t.z=h.z-dz*t.spec.tl;t.hitch=v;toast(`${t.spec.label} attelée 🔗`);
 }
 function driveContext(){
-  let act=null,info='';
+  let act=null,act2=null,info='';
+  const sale=driveSaleContext();
+  if(sale)return {enter:'Débarquer',act:sale.act||null,act2:sale.act2||null,full:false,info:sale.info||''};
   if(V.type==='skid'){
     if(V.drag)act={label:`Relâcher la tige (${ftin(V.drag.len)})`,fn:()=>skidRelease(V)};
     else{const c=skidCandidate(V);if(c){if(Math.abs(V.v)<1.5)act={label:`Agripper (${ftin(c.pc.len)})`,fn:()=>skidGrab(V,c)};else info='Ralentis pour agripper la tige';}}
   }
-  return {enter:'Débarquer',act,act2:null,full:false,info};
+  return {enter:'Débarquer',act,act2,full:false,info};
 }

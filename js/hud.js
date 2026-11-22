@@ -6,7 +6,9 @@ function updateArrow(){
   if(S.mode==='foot'){
     ox=P.x;oz=P.z;
     if(P.carry){const c=containers().filter(c=>c.load.length<c.cap).map(c=>c.center()).sort((a,b)=>Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z))[0];if(c){tx=c.x;tz=c.z;}else{tx=YARD.x;tz=YARD.z;}}
-    else if(Math.hypot(V.x-P.x,V.z-P.z)>14&&!pieces.some(carryable)){tx=V.x;tz=V.z;}
+    else if(P.pail&&P.pail.kind==='sirop'&&P.pail.L>0.05){tx=STORE_DOOR.x;tz=STORE_DOOR.z;}
+    else if(P.pail&&P.pail.kind==='eau'&&P.pail.L>=PAIL_CAP-0.05){tx=SUGAR.x;tz=SUGAR.z;}
+    else if(V&&Math.hypot(V.x-P.x,V.z-P.z)>14&&!pieces.some(carryable)){tx=V.x;tz=V.z;}
   }else{
     ox=V.x;oz=V.z;
     const tw=towed(V);
@@ -63,10 +65,10 @@ function updateHUD(){
   const grp={};
   trailers.forEach(t=>{const g=grp[t.spec.label]||(grp[t.spec.label]={n:0,l:0,c:0});g.n++;g.l+=t.c.load.length;g.c+=t.c.cap;});
   vehicles.forEach(v=>{if(!v.bed)return;const g=grp['Boîte']||(grp['Boîte']={n:0,l:0,c:0});g.n++;g.l+=v.bed.load.length;g.c+=v.bed.cap;});
-  const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : ${g.l}/${g.c}`).join(' · ');
-  const hud=`${S.money}|${S.delivered}|${loadTxt}|${S.mode}|${Math.round(Math.abs(V.v)*3.6)}|${hint}`;
+  const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : ${g.l}/${g.c}`).join(' · ')||'Aucune remorque';
+  const hud=`${S.money}|${S.delivered}|${loadTxt}|${S.mode}|${V?Math.round(Math.abs(V.v)*3.6):0}|${hint}`;
   if(hud===lastHud)return;lastHud=hud;
   $('sMoney').textContent=S.money+' $';$('sTool').textContent=TOOL?TOOL.name:'Mains vides';$('sDel').textContent=S.delivered;$('sLoad').textContent=loadTxt;
-  $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=Math.round(Math.abs(V.v)*3.6);
+  $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=V?Math.round(Math.abs(V.v)*3.6):0;
   $('hint').textContent=hint;
 }

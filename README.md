@@ -20,6 +20,9 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la remorque chargeuse et sa grue : billots jusqu'à 12 pi.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
+- **Suivre les prix** sur l'affiche de la cour à bois : ils changent toutes les 5 minutes.
+- **Faire les sucres** : entailler les érables, vider les chaudières dans un seau, faire bouillir au coin des sucres (au feu de bois), vendre le sirop au magasin.
+- **Vendre un véhicule ou une remorque** dans le cercle vert près du magasin (de 25 à 50 % du prix neuf).
 - **Acheter** des outils et de l'équipement au magasin général du village, autant de véhicules et de remorques qu'on veut.
 - **Inventaire** : les outils achetés vont dans la barre d'outils ; on peut aussi garder les mains vides.
 - **Trois vues** : isométrique, 3e personne et 1re personne (bouton 🎥 ou touche V).
@@ -56,6 +59,9 @@ js/actions.js         Bûcher, tronçonner, porter, charger, vendre, atteler
 js/debusqueuse.js     Agripper, traîner, relâcher une tige
 js/grue.js            Grue de la remorque chargeuse
 js/interactions.js    Embarquer, débarquer, opérer la grue, boutons d'action
+js/marche.js          Prix du bois et du sirop qui varient, affiche des prix
+js/erabliere.js       Entailles, chaudières, seaux, feu et bouilloire
+js/vente.js           Vente de véhicules et de remorques
 js/joueur.js          Déplacement et animations du joueur à pied
 js/physique.js        Physique des véhicules et des remorques
 js/hud.js             Flèche d'objectif et affichage
@@ -68,4 +74,5 @@ Les scripts sont des fichiers JavaScript classiques chargés dans l'ordre de `in
 
 - Sauvegarde et serveur pour jouer à deux sur la même terre, avec un journal de la ferme.
 - Essence et usure des outils, aiguisage.
-- Saisons, érablière, champs.
+- Saisons (le temps des sucres au printemps), champs.
+- Plantation et essouchage.

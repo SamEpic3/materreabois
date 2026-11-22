@@ -14,6 +14,7 @@ function frame(){
   if(S.mode==='foot')updateFoot(dt);
   updateVTT(dt);
   updateFalling(dt);
+  updateSugar(dt);updateMarket(dt);
   updateArrow();updateHUD();
   let gx,gz;
   if(S.mode==='foot'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{gx=V.x+Math.sin(V.th)*V.v*0.35;gz=V.z+Math.cos(V.th)*V.v*0.35;}

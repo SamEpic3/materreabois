@@ -10,6 +10,8 @@ const TOOLS=[
   {id:'scie-pro',name:'Scie à chaîne pro',kind:'chainsaw',delay:0.55,fell:0.25,cut:1,price:2200,desc:'Puissante et légère. Le rêve de tout bûcheron.'}
 ];
 const VEH_SHOP=[
+  {id:'vtt',kind:'veh',name:'VTT',price:3000,desc:'Petit, agile et passe partout dans le bois. Tire la petite remorque.'},
+  {id:'small',kind:'trailer',name:'Petite remorque',price:800,desc:'Remorque de 6 billots de 8 pi, à charger à la main.'},
   {id:'pickup',kind:'veh',name:'Pick-up 4x4',price:6500,desc:'Rapide sur le chemin, une boîte de 8 billots et un attelage pour les remorques. Moins agile dans le bois et la boue.'},
   {id:'loader',kind:'trailer',name:'Remorque chargeuse',price:4500,desc:'Remorque de 12 pi avec poteaux et grue intégrée : 10 billots, jusqu\'à 12 pi de long. Approche-toi de la grue et appuie sur E.'},
   {id:'skid',kind:'veh',name:'Débusqueuse',price:15000,desc:'Tracteur forestier articulé avec pince arrière : agrippe le bout d\'une tige et traîne-la hors du bois. À l\'aise dans la boue.'}

@@ -1,0 +1,160 @@
+/* Érablière : entailler les érables, chaudières, seaux, feu et bouilloire au coin des sucres */
+const SUGAR={x:-10,z:-7};          // coin des sucres, au camp
+const TAP_CAP=15,SAP_RATE=0.05;     // chaudière de 15 L, ~5 min pour la remplir
+const PAIL_CAP=30;                  // seau de collecte de 30 L
+const SAP_PER_SYRUP=40;             // 40 L d'eau d'érable pour 1 L de sirop
+const BOIL_RATE=0.3;                // L d'eau évaporés par seconde quand le feu est pris
+const PAN_CAP=60;                   // capacité de la bouilloire (eau d'érable)
+const FUEL_MAX=600;
+S.taps=4;                           // ensembles chaudière + chalumeau prêts à installer
+const taps=[];                      // {t,sap,mesh}
+const pails=[];                     // seaux posés au sol {x,z,kind,L,mesh}
+const boil={fuel:0,sap:0,syrup:0};
+const SAP_COL=0xcfe3ea,SYRUP_COL=0xb5651d;
+
+function fmtL(l){return (Math.round(l*10)/10).toString().replace('.',',')+' L';}
+function pailTxt(p){return p.L<0.05?'vide':`${fmtL(p.L)} ${p.kind==='sirop'?'de sirop':'d\'eau d\'érable'}`;}
+
+/* ----- Modèles ----- */
+function makeTapBucket(){
+  const g=new T.Group(),gal=mat(0xb0b6ba);
+  box(0.03,0.03,0.18,mat(0x8f969b),0,0.24,0.09,g);                       // chalumeau
+  const b=new T.Mesh(new T.CylinderGeometry(0.17,0.13,0.32,10),gal);b.position.set(0,0,0.2);g.add(b);
+  const lid=new T.Mesh(new T.ConeGeometry(0.24,0.12,10),gal);lid.position.set(0,0.22,0.22);g.add(lid);
+  shadows(g);return g;
+}
+function makePail(){
+  const g=new T.Group(),gal=mat(0xa9b0b5);
+  const b=new T.Mesh(new T.CylinderGeometry(0.17,0.14,0.32,12),gal);b.position.y=0.16;g.add(b);
+  const h=new T.Mesh(new T.TorusGeometry(0.16,0.012,4,12,Math.PI),mat(0x55595c));h.position.y=0.32;g.add(h);
+  const liq=new T.Mesh(new T.CylinderGeometry(0.155,0.155,0.01,12),new T.MeshBasicMaterial({color:SAP_COL}));liq.position.y=0.05;g.add(liq);
+  g.userData.liq=liq;shadows(g);return g;
+}
+function setPailLook(m,p){
+  const liq=m.userData.liq;liq.visible=p.L>0.05;
+  liq.material.color.set(p.kind==='sirop'?SYRUP_COL:SAP_COL);
+  liq.position.y=0.03+0.27*Math.min(1,p.L/PAIL_CAP);
+}
+
+/* ----- Coin des sucres : foyer, bouilloire, seaux ----- */
+const fireLight=new T.PointLight(0xff9a3c,0,14,2);
+const flames=new T.Group(),panLiquid=new T.Mesh(new T.BoxGeometry(1.42,0.04,0.82),new T.MeshBasicMaterial({color:SAP_COL}));
+{
+  const g=new T.Group(),stone=mat(0x8a8780),metal=mat(0x9aa0a4),dark=mat(0x2a2a2a),wood=mat(0x6e5236);
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2,s=new T.Mesh(new T.DodecahedronGeometry(0.22,0),stone);s.position.set(Math.cos(a)*0.85,0.12,Math.sin(a)*0.85);s.rotation.set(i,i*2,0);g.add(s);}
+  [-0.25,0.25].forEach((x,i)=>{const l=box(0.9,0.16,0.16,wood,0,0.12,x,g);l.rotation.y=i?0.5:-0.5;});
+  [[-0.75,-0.45],[0.75,-0.45],[-0.75,0.45],[0.75,0.45]].forEach(([x,z])=>box(0.06,0.95,0.06,dark,x,0.48,z,g));
+  box(1.6,0.06,1.0,metal,0,0.95,0,g);
+  box(1.6,0.25,0.05,metal,0,1.08,0.5,g);box(1.6,0.25,0.05,metal,0,1.08,-0.5,g);box(0.05,0.25,1.0,metal,0.8,1.08,0,g);box(0.05,0.25,1.0,metal,-0.8,1.08,0,g);
+  panLiquid.position.set(0,1.0,0);g.add(panLiquid);
+  const fm=[0xff7a1a,0xffb02e,0xffd35a];
+  for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(0.16+0.05*(i%2),0.55,6),new T.MeshBasicMaterial({color:fm[i%3]}));c.position.set((i-2)*0.15,0.38,(i%2?0.12:-0.1));flames.add(c);}
+  g.add(flames);fireLight.position.set(0,0.8,0);g.add(fireLight);
+  g.position.set(SUGAR.x,H(SUGAR.x,SUGAR.z),SUGAR.z);shadows(g);scene.add(g);
+  addCol(SUGAR.x,SUGAR.z,1.0);
+  label('Coin des sucres',SUGAR.x,H(SUGAR.x,SUGAR.z)+2.6,SUGAR.z);
+}
+function addGroundPail(x,z,kind,L){
+  const m=makePail(),p={x,z,kind,L,mesh:m};m.position.set(x,H(x,z),z);setPailLook(m,p);scene.add(m);pails.push(p);return p;
+}
+addGroundPail(SUGAR.x+1.7,SUGAR.z+0.6,'eau',0);
+addGroundPail(SUGAR.x+1.9,SUGAR.z+1.2,'eau',0);
+
+/* Seau tenu par le joueur */
+const handPail=makePail();handPail.position.set(0,-0.98,0.05);handPail.visible=false;player.armR.add(handPail);
+function setPail(p){P.pail=p;handPail.visible=!!p;if(p)setPailLook(handPail,p);updateToolVisual();}
+
+/* ----- Proximité ----- */
+function nearFire(){return Math.hypot(P.x-SUGAR.x,P.z-SUGAR.z)<2.4;}
+function nearPan(){return nearFire();}
+function nearStore(){return Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3;}
+function tapOf(t){return taps.find(x=>x.t===t)||null;}
+function nearestTap(){let b=null,bd=1.8;taps.forEach(tp=>{const d=Math.hypot(P.x-tp.t.x,P.z-tp.t.z);if(d<bd){bd=d;b=tp;}});return b;}
+function nearestGroundPail(){let b=null,bd=1.3;pails.forEach(p=>{const d=Math.hypot(P.x-p.x,P.z-p.z);if(d<bd){bd=d;b=p;}});return b;}
+
+/* ----- Entailles ----- */
+function tapTree(t){
+  if(S.taps<=0||tapOf(t))return;
+  S.taps--;
+  let dx=P.x-t.x,dz=P.z-t.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;
+  const m=makeTapBucket();m.position.set(t.x+dx*0.28*t.s,t.y+1.05,t.z+dz*0.28*t.s);m.rotation.y=Math.atan2(dx,dz);scene.add(m);
+  taps.push({t,sap:0,mesh:m});
+  toast(`Érable entaillé 🍁 (il te reste ${S.taps} chaudière${S.taps>1?'s':''})`);
+}
+function untap(tp){scene.remove(tp.mesh);taps.splice(taps.indexOf(tp),1);S.taps++;toast('Chaudière retirée');}
+function treeContext(t){
+  const tp=tapOf(t);
+  if(tp)return {act:{label:'Retirer la chaudière',fn:()=>untap(tp)},info:`Érable entaillé · chaudière : ${fmtL(tp.sap)} / ${TAP_CAP} L`+(TOOL?' · retire la chaudière avant de l\'abattre':'')};
+  const tapAct=(t.type==='erable'&&S.taps>0)?{label:`Entailler l'érable (${S.taps} chaudière${S.taps>1?'s':''})`,fn:()=>tapTree(t)}:null;
+  if(!TOOL)return {act:tapAct,info:tapAct?'':'Mains vides : choisis un outil pour bûcher (touches 1 à 6)'};
+  const tot=fellTotal(t);
+  return {act:{label:`${toolVerb()} (${Math.round(t.work*tot)}/${tot})`,fn:()=>chop(t),cool:true},act2:tapAct};
+}
+
+/* ----- Seau, feu et bouilloire ----- */
+function collectSap(tp){const take=Math.min(tp.sap,PAIL_CAP-P.pail.L);tp.sap-=take;P.pail.L+=take;P.pail.kind='eau';setPail(P.pail);toast(`+${fmtL(take)} d'eau d'érable (seau : ${fmtL(P.pail.L)})`);}
+function pourSap(){const put=Math.min(P.pail.L,PAN_CAP-boil.sap);if(put<=0.01){toast('La bouilloire est pleine');return;}boil.sap+=put;P.pail.L-=put;setPail(P.pail);toast(`Versé ${fmtL(put)} dans la bouilloire`);}
+function takeSyrup(){const take=Math.min(boil.syrup,PAIL_CAP-P.pail.L);boil.syrup-=take;P.pail.L+=take;P.pail.kind='sirop';setPail(P.pail);toast(`+${fmtL(take)} de sirop 🍯`);}
+function sellSyrup(){const v=Math.round(P.pail.L*syrupPrice());S.money+=v;toast(`+${v} $ — ${fmtL(P.pail.L)} de sirop vendu`);P.pail.L=0;setPail(P.pail);}
+function dropPail(){const p=P.pail;addGroundPail(P.x+Math.sin(P.rot)*0.7,P.z+Math.cos(P.rot)*0.7,p.kind,p.L);setPail(null);}
+function pickPail(gp){scene.remove(gp.mesh);pails.splice(pails.indexOf(gp),1);setPail({kind:gp.kind,L:gp.L});}
+function fuelOf(c){return Math.round(c.len/FT*25);}
+function addFuel(){const f=fuelOf(P.carry);boil.fuel=Math.min(FUEL_MAX,boil.fuel+f);setCarry(null);toast(`🔥 Le feu a ${Math.round(boil.fuel)} s de bois`);}
+function boilInfo(){
+  if(!nearPan())return '';
+  const fire=boil.fuel>0?`feu : ${Math.floor(boil.fuel/60)} min ${String(Math.floor(boil.fuel%60)).padStart(2,'0')} s`:'feu éteint (apporte du bois)';
+  return `Bouilloire : ${fmtL(boil.sap)} d'eau · ${fmtL(boil.syrup)} de sirop · ${fire}`;
+}
+function pailContext(){
+  const p=P.pail;let act=null,info=`Seau : ${pailTxt(p)}`;
+  const act2={label:'Déposer le seau',fn:dropPail};
+  if(nearStore()&&p.kind==='sirop'&&p.L>0.05)act={label:`Vendre le sirop (${fmtL(p.L)} → +${Math.round(p.L*syrupPrice())} $)`,fn:sellSyrup};
+  else if(nearPan()){
+    if(p.kind==='eau'&&p.L>0.05)act={label:`Verser l'eau d'érable (${fmtL(p.L)})`,fn:pourSap};
+    else if(boil.syrup>0.05&&p.L<PAIL_CAP-0.05)act={label:`Récolter le sirop (${fmtL(boil.syrup)})`,fn:takeSyrup};
+    info+=' · '+boilInfo();
+  }else{
+    const tp=nearestTap();
+    if(tp){
+      if(p.kind==='sirop'&&p.L>0.05)info='Ce seau contient du sirop : prends un autre seau pour l\'eau d\'érable';
+      else if(p.L>=PAIL_CAP-0.05)info='Seau plein : va le verser dans la bouilloire';
+      else if(tp.sap<0.3)info=`Chaudière presque vide (${fmtL(tp.sap)}) · seau : ${pailTxt(p)}`;
+      else act={label:`Vider la chaudière (${fmtL(tp.sap)}) dans le seau`,fn:()=>collectSap(tp)};
+    }
+  }
+  return {act,act2,info};
+}
+
+/* ----- Effets : fumée et vapeur ----- */
+const puffTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const gr=x.createRadialGradient(32,32,2,32,32,30);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);return new T.CanvasTexture(c);})();
+const puffs=[];let puffT=0;
+function spawnPuff(steam){
+  const m=new T.Sprite(new T.SpriteMaterial({map:puffTex,color:steam?0xffffff:0x6f6a64,transparent:true,opacity:steam?0.55:0.45,depthWrite:false}));
+  m.position.set(SUGAR.x+(Math.random()-0.5)*0.8,H(SUGAR.x,SUGAR.z)+(steam?1.2:0.7),SUGAR.z+(Math.random()-0.5)*0.5);m.scale.setScalar(0.5);
+  scene.add(m);puffs.push({m,life:steam?2.2:3,max:steam?2.2:3,vx:(Math.random()-0.5)*0.3,vz:(Math.random()-0.5)*0.3});
+}
+function updateSugar(dt){
+  taps.forEach(tp=>{tp.sap=Math.min(TAP_CAP,tp.sap+SAP_RATE*dt);});
+  const burning=boil.fuel>0;
+  if(burning){
+    boil.fuel=Math.max(0,boil.fuel-dt);
+    if(boil.sap>0){const ev=Math.min(boil.sap,BOIL_RATE*dt);boil.sap-=ev;boil.syrup+=ev/SAP_PER_SYRUP;}
+  }
+  flames.visible=burning;
+  fireLight.intensity=burning?1.4+Math.sin(S.time*13)*0.25+Math.sin(S.time*7.3)*0.2:0;
+  if(burning)flames.children.forEach((f,i)=>{f.scale.y=0.8+0.35*Math.abs(Math.sin(S.time*(6+i)+i));});
+  const tot=boil.sap+boil.syrup;panLiquid.visible=tot>0.05;
+  if(panLiquid.visible){const r=boil.syrup*SAP_PER_SYRUP/(boil.sap+boil.syrup*SAP_PER_SYRUP);panLiquid.material.color.set(SAP_COL).lerp(new T.Color(SYRUP_COL),r);}
+  puffT-=dt;
+  if(burning&&puffT<=0){spawnPuff(false);if(boil.sap>0)spawnPuff(true);puffT=0.35;}
+  for(let i=puffs.length-1;i>=0;i--){const p=puffs[i];p.life-=dt;p.m.position.y+=dt*0.9;p.m.position.x+=p.vx*dt;p.m.position.z+=p.vz*dt;p.m.scale.setScalar(0.5+(1-p.life/p.max)*1.6);p.m.material.opacity=Math.max(0,p.life/p.max)*0.5;if(p.life<=0){scene.remove(p.m);puffs.splice(i,1);}}
+}
+
+/* Actions à pied propres à ces nouveautés (priorité sur le reste quand on est tout près) */
+function footExtras(){
+  if(nearSign())return {act:{label:'Voir les prix du bois',fn:openBoard}};
+  const gp=nearestGroundPail();
+  if(gp)return {act:{label:`Prendre le seau (${pailTxt(gp)})`,fn:()=>pickPail(gp)}};
+  const s=footSaleContext();if(s)return s;
+  return null;
+}

@@ -73,6 +73,9 @@
       <li><b>Magasin :</b> le village est au bout du chemin, au nord-ouest du camp. Au magasin général, achète de meilleurs outils (hache, sciotte, scie à chaîne) et de l'équipement : pick-up, remorque chargeuse avec grue, débusqueuse.</li>
       <li><b>Grue :</b> approche-toi de la grue de la remorque chargeuse et appuie sur E. Place la pince au-dessus d'un billot, puis Espace : elle descend le chercher. Pour le déposer dans la remorque, aligne-le avec la remorque (Q/R).</li>
       <li><b>Débusqueuse :</b> recule la pince arrière jusqu'au bout d'une tige et appuie sur Espace pour l'agripper. Traîne-la jusqu'au chemin, puis Espace pour la relâcher.</li>
+      <li><b>Prix du bois :</b> l'affiche près de la cour à bois montre les prix en cours. Ils changent toutes les 5 minutes.</li>
+      <li><b>Érablière :</b> entaille un érable (F près d'un érable, ou Espace les mains vides) : la chaudière se remplit toute seule. Prends un seau au coin des sucres, vide les chaudières dedans, verse l'eau dans la bouilloire et mets des bûches au feu. Récolte le sirop dans un seau vide et va le vendre au magasin général. Un seau se dépose n'importe où (F).</li>
+      <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
       <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
     </ul>
     <button id="btnStart">Commencer</button>
@@ -84,6 +87,14 @@
     <div class="money" id="shopMoney"></div>
     <div id="shopList"></div>
     <button id="shopClose">Sortir du magasin</button>
+  </div>
+</div>
+<div id="board" class="hidden">
+  <div class="card">
+    <h1>🪧 Prix du bois</h1>
+    <div class="money" id="boardSub"></div>
+    <div id="boardList"></div>
+    <button id="boardClose">Fermer</button>
   </div>
 </div>
 <div id="err">Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion Internet, puis recharge la page.</div>
@@ -101,6 +112,9 @@
 <script src="js/debusqueuse.js"></script>
 <script src="js/grue.js"></script>
 <script src="js/interactions.js"></script>
+<script src="js/marche.js"></script>
+<script src="js/erabliere.js"></script>
+<script src="js/vente.js"></script>
 <script src="js/joueur.js"></script>
 <script src="js/physique.js"></script>
 <script src="js/hud.js"></script>

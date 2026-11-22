@@ -15,7 +15,7 @@ function updateFoot(dt){
   const amt=Math.min(1,Math.hypot(dx,dz));
   const run=(keys.ShiftLeft||keys.ShiftRight)&&!P.carry;
   const carrySpeed=P.carry?clamp(4.2-2.5*Math.pow(P.carry.len/CARRY_MAX,1.2),1.6,4.0):0;
-  const speed=(P.carry?carrySpeed:run?6.5:4.2)*(1-0.4*mudAt(P.x,P.z));
+  const speed=(P.carry?carrySpeed:run?6.5:4.2)*(1-0.4*mudAt(P.x,P.z))*(P.pail?1-0.35*P.pail.L/PAIL_CAP:1);
   if(amt>0.01){
     const p={x:P.x+dx*speed*dt,z:P.z+dz*speed*dt};
     pushOut(p,0.35);
