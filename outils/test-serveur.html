@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Test du serveur — Ma terre à bois</title>
+<style>body{font:15px system-ui;margin:20px;max-width:700px}li{margin:4px 0}.ok{color:#2f7a3a}.ko{color:#b0302a}</style></head>
+<body><h1>Test du serveur</h1><ol id="r"></ol>
+<script>
+const SRV=new URLSearchParams(location.search).get('serveur')||'wss://materreabois-serveur.onrender.com';
+const HTTP=SRV.replace(/^ws/,'http');const room='essai-'+Date.now().toString(36);
+const L=document.getElementById('r');
+function log(t,ok){const li=document.createElement('li');li.textContent=t;if(ok!==undefined)li.className=ok?'ok':'ko';L.appendChild(li);}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function open(id,name){return new Promise((res,rej)=>{const ws=new WebSocket(SRV);ws.q=[];ws.onmessage=e=>{const m=JSON.parse(e.data);ws.q.push(m);if(ws.on)ws.on(m);};
+  ws.onopen=()=>{ws.send(JSON.stringify({t:'hello',room,id,name}));res(ws);};ws.onerror=()=>rej(new Error('connexion WebSocket impossible'));});}
+async function next(ws,t,ms=10000){const t0=Date.now();while(Date.now()-t0<ms){const i=ws.q.findIndex(m=>m.t===t);if(i>=0)return ws.q.splice(i,1)[0];await wait(100);}throw new Error('pas reçu : '+t);}
+(async()=>{
+  try{
+    let t0=Date.now(),r=await fetch(HTTP,{cache:'no-store'});log('HTTP : '+(await r.text())+' ('+(Date.now()-t0)+' ms)',r.ok);
+    const A=await open('a','Alice');let w=await next(A,'welcome');log('A accueillie, terre neuve : '+(w.snap===null)+', hôte : '+(w.host==='a'),w.snap===null&&w.host==='a');
+    const snap={world:{money:123},players:{a:{name:'Alice'}}};
+    A.send(JSON.stringify({t:'snap',data:snap,applied:0,urgent:true}));
+    A.send(JSON.stringify({t:'op',ops:[{c:'$',v:{money:5}}]}));await next(A,'ack');log('A : changement accepté',true);
+    A.on=m=>{if(m.t==='snapReq')A.send(JSON.stringify({t:'snap',data:{world:{money:128},players:{}},applied:w.seq}));};
+    const B=await open('b','Bob');const wb=await next(B,'welcome');
+    log('B reçoit la terre de A (argent '+(wb.snap&&wb.snap.world.money)+')',wb.snap&&wb.snap.world.money===128);
+    const j=await next(A,'joined');log('A voit arriver '+j.name,j.name==='Bob');
+    B.send(JSON.stringify({t:'op',ops:[{c:'$',v:{money:-7}}]}));const o=await next(A,'op');log('A reçoit le changement de B ('+JSON.stringify(o.ops[0].v)+')',o.ops[0].v.money===-7);
+    B.send(JSON.stringify({t:'pos',p:{x:1,z:2}}));const p=await next(A,'pos');log('Position transmise',p.p.z===2);
+    A.close();const h=await next(B,'host');log('B devient l\'hôte',h.id==='b');
+    B.send(JSON.stringify({t:'snap',data:{world:{money:121},players:{}},applied:o.seq,urgent:true}));B.close();
+    await wait(3000);
+    r=await fetch(HTTP+'/terre/'+room,{cache:'no-store'});const d=await r.json();log('Enregistrée en base : '+JSON.stringify(d),d.base&&d.existe&&d.photo);
+    const C=await open('c','Chloé');const wc=await next(C,'welcome');log('Plus tard, C retrouve la terre (argent '+(wc.snap&&wc.snap.world.money)+')',wc.snap&&wc.snap.world.money===121);C.close();
+    log('TERMINÉ',true);
+  }catch(e){log('Échec : '+e.message,false);}
+})();
+</script></body></html>

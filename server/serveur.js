@@ -80,7 +80,15 @@ function pickHost(r){
 }
 
 /* ----- Connexions ----- */
-const server=http.createServer((req,res)=>{
+const server=http.createServer(async (req,res)=>{
+  // Diagnostic : /terre/<code> dit si la terre est bien enregistrée en base (sans montrer son contenu)
+  const mt=/^\/terre\/([^/?]+)/.exec(req.url||'');
+  if(mt){
+    res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Access-Control-Allow-Origin':'*'});
+    try{const d=await loadRoomData(decodeURIComponent(mt[1]).toLowerCase());res.end(JSON.stringify({base:!!db,existe:!!d,seq:d?d.seq:null,photo:!!(d&&d.snap),taille:d?JSON.stringify(d).length:0}));}
+    catch(e){res.end(JSON.stringify({erreur:e.message}));}
+    return;
+  }
   res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Access-Control-Allow-Origin':'*'});
   res.end('Ma terre à bois : serveur en marche ('+rooms.size+' terre(s) ouverte(s))');
 });
