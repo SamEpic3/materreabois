@@ -227,7 +227,7 @@ const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
 // Billots déjà vendus, cordés derrière la scierie
 const YARD_STACK=vpos(-12,-3.6);
 const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT;scene.add(yardStack);
-[-3,0,3].forEach(o=>{const p=vpos(-12+o,-3.6);addCol(p.x,p.z,1.5);});
+const yardStackCols={};   // collision ajoutée seulement quand une pile a des billots
 
 /* ---------- Billots ---------- */
 const barkM=mat(0x5e4630),endM=mat(0xd9b27c);
