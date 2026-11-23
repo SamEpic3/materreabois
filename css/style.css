@@ -54,6 +54,9 @@
   #journalList .empty{font-size:14px;color:#6b5d44}
   .pname{display:block;font-size:15px;margin:12px 0 4px}
   .pname input{width:100%;margin-top:4px;padding:10px;border-radius:10px;border:1px solid #c9b993;font-size:16px;background:#fffaf0}
+  #netStatus.warn{color:#ffb38a}
+  .netmsg{font-size:13px;color:#7a4a18;min-height:1em;margin:6px 0}
+  .linkbtn{background:none;border:0;color:#2f5a3a;text-decoration:underline;font-size:13px;padding:0;cursor:pointer}
   .projTools{display:flex;gap:8px;margin:0 0 6px}
   .projTools button{flex:1;padding:10px;border:0;border-radius:12px;background:#3f5a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
   .projTools button:disabled{opacity:.45;cursor:default}

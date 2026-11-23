@@ -16,7 +16,7 @@ function placePiece(pc){
   pc.mesh.rotation.order='YXZ';pc.mesh.rotation.set(-Math.asin(clamp((h1-h0)/pc.len,-0.9,0.9)),pc.rot,0);
   pc.mesh.position.set(pc.cx,(h0+h1)/2,pc.cz);pc.mesh.updateMatrixWorld();
 }
-function addPiece(pc){pc.mesh=makePieceMesh(pc);placePiece(pc);scene.add(pc.mesh);pieces.push(pc);return pc;}
+function addPiece(pc){pc.id=pc.id||uid();pc.mesh=makePieceMesh(pc);placePiece(pc);scene.add(pc.mesh);pieces.push(pc);return pc;}
 function removePiece(pc){scene.remove(pc.mesh);pc.mesh.geometry.dispose();pieces.splice(pieces.indexOf(pc),1);}
 function pieceButt(pc){return {x:pc.cx-Math.sin(pc.rot)*pc.len/2,z:pc.cz-Math.cos(pc.rot)*pc.len/2};}
 function projOn(pc){
@@ -186,7 +186,7 @@ function fell(t){
   hideTree(t);
   const g=treeGroupFromParts(t.parts);g.position.set(t.x,t.y,t.z);scene.add(g);
   let fx=t.x-P.x,fz=t.z-P.z;const d=Math.hypot(fx,fz)||1;fx/=d;fz/=d;
-  falling.push({t,g,fx,fz,axis:new T.Vector3(fz,0,-fx),time:0});
+  falling.push({t,g,fx,fz,axis:new T.Vector3(fz,0,-fx),time:0});t.fd=[Math.round(fx*100)/100,Math.round(fz*100)/100];
   makeStump(t);
   toast('Ça tombe ! 🌲');
 }
@@ -199,7 +199,7 @@ function hideTree(t){
 function makeStump(t){
   const st=new T.Mesh(new T.CylinderGeometry(0.26*t.s,0.32*t.s,0.45,7),mat(t.type==='bouleau'?0xd9d4c8:0x6b5036));
   st.position.set(t.x,t.y+0.2,t.z);shadows(st);scene.add(st);
-  const e={x:t.x,z:t.z,col:addCol(t.x,t.z,0.3*t.s),mesh:st,size:t.s,work:0,tree:t};stumpList.push(e);return e;
+  const e={x:t.x,z:t.z,col:addCol(t.x,t.z,0.3*t.s),mesh:st,size:t.s,work:0,tree:t,id:t.planted?(t.id||uid()):null};stumpList.push(e);return e;
 }
 function makeCrown(t,x,z,rot){
   const g=new T.Group();g.rotation.y=rot;
@@ -220,6 +220,7 @@ function updateFalling(dt){
     f.g.quaternion.setFromAxisAngle(f.axis,(Math.PI/2-0.06)*k*k);
     if(k>=1){
       scene.remove(f.g);falling.splice(i,1);
+      if(f.remote)continue;                     // l'autre joueur nous enverra la tige
       const t=f.t,L=(t.type==='bouleau'?0.9:1)*(6+5*(t.s-0.8)),R0=0.13+0.07*t.s,rot=Math.atan2(f.fx,f.fz);
       const bx=t.x+f.fx*0.35,bz=t.z+f.fz*0.35;
       addPiece({cx:bx+f.fx*L/2,cz:bz+f.fz*L/2,rot,len:L,ra:R0,rb:R0*0.5,sp:t.type,crown:false});

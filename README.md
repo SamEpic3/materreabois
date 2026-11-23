@@ -24,7 +24,7 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
 - **Vendre** dans la cour de la scierie, au village. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Fendre le bois** avec la fendeuse à bûches (magasin général, 1800 $) : elle s'attache au VTT ou au pick-up. On lui apporte une bûche de 26 po maximum; le bois fendu se vend 1,8 fois plus cher.
 - **Journal de la terre** (📜 ou J) : qui a fait quoi (ventes, achats, constructions, plantations…), pour voir ce que l'autre a fait pendant ton absence.
-- **Prêt pour le jeu à deux** : la sauvegarde sépare le monde (partagé) de chaque joueur (nom, position, outil). Les autres joueurs apparaissent là où ils se sont arrêtés. Il reste à brancher un serveur à la place du stockage du navigateur (`Stockage` dans js/joueurs.js).
+- **Jouer à plusieurs en même temps** : entre le même « code de la terre » sur l'écran de départ. On se voit bouger en direct, et tout ce qu'on fait (arbres, billots, véhicules, argent, constructions…) apparaît chez l'autre. On peut aussi jouer seul sur la terre commune : le serveur la garde. Sans code, on joue seul sur l'appareil, comme avant.
 - **Suivre les prix** à la porte de la scierie : ils changent toutes les 5 minutes.
 - **Améliorer le camp** à la porte de la cabane (« Projets du camp ») :
   - constructions à placer, autant qu'on veut : feu de camp (avec bûches pour s'asseoir et terre battue autour), abri à bois, bouilloire à sirop, barbecue;
@@ -99,3 +99,13 @@ Les scripts sont des fichiers JavaScript classiques chargés dans l'ordre de `in
 - Serveur pour jouer à deux sur la même terre, avec un journal de la ferme.
 - Essence et usure des outils, aiguisage.
 - Saisons (le temps des sucres au printemps), champs.
+
+## Serveur (jeu à plusieurs)
+
+Le dossier `server/` contient un petit serveur Node (WebSocket) hébergé sur Render :
+
+- il relaie les changements entre les joueurs d'une même terre (le code de la terre sert de clé);
+- le premier joueur arrivé est l'hôte : il fait changer les prix et envoie une photo de la terre toutes les 20 s;
+- la terre est enregistrée dans Postgres (`DATABASE_URL`), ou en mémoire si la variable est absente.
+
+Essai en local : `cd server && npm install && PORT=8090 node serveur.js`, puis ouvrir le jeu avec `?serveur=ws://localhost:8090`.

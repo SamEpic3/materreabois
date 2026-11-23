@@ -97,7 +97,7 @@ function despawnBuild(b){
   delete b._o;
 }
 function addBuild(k,pos,state){
-  const b=Object.assign({k,x:pos.x,z:pos.z,rot:pos.rot||0},KINDS[k].init(),state||{});
+  const b=Object.assign({k,x:pos.x,z:pos.z,rot:pos.rot||0},KINDS[k].init(),state||{});b.id=b.id||uid();
   S.builds.push(b);spawnBuild(b);refreshCampDirt();return b;
 }
 function nearestBuild(k,maxD){

@@ -129,17 +129,17 @@ const TSPECS={
          slots:[[-0.46,0.24],[0,0.24],[0.46,0.24],[-0.46,0.68],[0,0.68],[0.46,0.68],[-0.46,1.12],[0,1.12],[0.46,1.12],[0,1.56]]}
 };
 const vehicles=[],trailers=[];
-function makeVehicle(type,x,z,th){
+function makeVehicle(type,x,z,th,id){
   const spec=SPECS[type],m=spec.build();scene.add(m.g);markDynamic(m.g);
-  const v={type,spec,x,z,th,v:0,steer:0,spin:0,q:new T.Quaternion(),mesh:m,bed:null,drag:null};
+  const v={id:id||uid(),type,spec,x,z,th,v:0,steer:0,spin:0,q:new T.Quaternion(),mesh:m,bed:null,drag:null,driver:null};
   if(spec.bedCap)v.bed={name:'boîte du pick-up',cap:spec.bedCap,load:[],pails:[],pslots:[[-0.4,-0.7],[0.4,-0.7],[-0.4,0],[0.4,0],[-0.4,0.7],[0.4,0.7]],cargo:m.cargo,slots:BED_SLOTS,r:2.4,
     center:()=>({x:v.x-Math.sin(v.th)*1.5,z:v.z-Math.cos(v.th)*1.5}),yaw:()=>v.th};
   ground(x,z,th,spec.hl,spec.hw,v.q);
   vehicles.push(v);return v;
 }
-function makeTrailerObj(kind,x,z,th){
+function makeTrailerObj(kind,x,z,th,id){
   const spec=TSPECS[kind],m=spec.build();scene.add(m.g);markDynamic(m.g);
-  const t={kind,spec,x,z,th,q:new T.Quaternion(),hitch:null,mesh:m};
+  const t={id:id||uid(),kind,spec,x,z,th,q:new T.Quaternion(),hitch:null,mesh:m};
   t.c={name:spec.name,cap:spec.cap,load:[],pails:[],pslots:spec.pslots||null,cargo:m.cargo,slots:spec.slots,r:spec.r,center:()=>({x:t.x,z:t.z}),yaw:()=>t.th};
   if(spec.crane)t.crane={slew:0,reach:3,grip:0,phase:'idle',y:1.9,target:0,held:null,heldMesh:null,onDone:null};
   t.mark=new T.Mesh(new T.RingGeometry(0.55,0.8,28),new T.MeshBasicMaterial({color:0xffc83d,transparent:true,opacity:0.85,side:T.DoubleSide,depthTest:false}));

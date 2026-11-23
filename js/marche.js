@@ -10,6 +10,7 @@ function mkt(k){return S.mkt[k]||1;}
 function syrupPrice(){return Math.round(SYRUP_L*mkt('sirop'));}
 function updateMarket(dt){
   S.mktNext-=dt;
+  if(NET.on&&!NET.host){S.mktNext=Math.max(1,S.mktNext);return;}   // en ligne, c'est l'hôte qui change les prix
   if(S.mktNext>0)return;
   S.mktNext=MKT_PERIOD;
   MKT_KEYS.forEach(k=>{S.mktPrev[k]=S.mkt[k];S.mkt[k]=clamp(S.mkt[k]*(1+(Math.random()-0.5)*0.24),0.7,1.35);});

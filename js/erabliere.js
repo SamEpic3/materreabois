@@ -51,8 +51,8 @@ function createSucres(b,o){
   o.add(g);o.col(b.x,b.z,1.0);
   o.liquid=liquid;o.fl=fl;
 }
-function addGroundPail(x,z,kind,L){
-  const m=makePail(),p={x,z,kind,L,mesh:m};m.position.set(x,H(x,z),z);setPailLook(m,p);scene.add(m);pails.push(p);return p;
+function addGroundPail(x,z,kind,L,id){
+  const m=makePail(),p={id:id||uid(),x,z,kind,L,mesh:m};m.position.set(x,H(x,z),z);setPailLook(m,p);scene.add(m);pails.push(p);return p;
 }
 
 /* Seau tenu par le joueur */

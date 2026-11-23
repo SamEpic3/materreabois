@@ -1,0 +1,9 @@
+{
+  "name": "materreabois-serveur",
+  "version": "1.0.0",
+  "description": "Serveur de Ma terre à bois : relaie les parties à plusieurs et garde les terres",
+  "main": "serveur.js",
+  "scripts": { "start": "node serveur.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "pg": "^8.13.0", "ws": "^8.18.0" }
+}

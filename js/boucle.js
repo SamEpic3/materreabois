@@ -13,7 +13,7 @@ function frame(){
   }
   if(S.mode==='foot')updateFoot(dt);
   updateMapCursor(dt);updatePlacement();updatePick();
-  updateVTT(dt);
+  updateNet(dt);updateVTT(dt);
   updateFalling(dt);updateSplitters(dt);
   updateCamp(dt);tickPlants(dt);
   if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);

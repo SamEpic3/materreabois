@@ -122,5 +122,5 @@ $('rotR').addEventListener('click',()=>rotateCam(1));
 $('zIn').addEventListener('click',()=>{if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist/1.25,0.5,2.5);return;}zoom=clamp(zoom/1.25,ZMIN,ZMAX);updateProj();});
 $('zOut').addEventListener('click',()=>{if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist*1.25,0.5,2.5);return;}zoom=clamp(zoom*1.25,ZMIN,ZMAX);updateProj();});
 $('btnHelp').addEventListener('click',()=>$('help').classList.remove('hidden'));
-$('btnStart').addEventListener('click',()=>$('help').classList.add('hidden'));
+$('btnStart').addEventListener('click',()=>{if(started){$('help').classList.add('hidden');return;}startClicked();});
 const ELEV=0.6155; // 35,26° : vraie isométrique

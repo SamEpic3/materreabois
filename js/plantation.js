@@ -21,7 +21,7 @@ function nextSeedType(){const i=SEED_TYPES.indexOf(S.seedSel);for(let k=1;k<=4;k
 
 /* Un arbre planté : mêmes pièces que la forêt, mais son propre groupe qui grandit */
 function addPlanted(o){
-  const t={x:o.x,z:o.z,y:H(o.x,o.z),type:o.type,s:o.s,rot:o.rot,alive:true,work:o.work||0,base:Math.round(5+o.s*5),
+  const t={id:o.id||uid(),x:o.x,z:o.z,y:H(o.x,o.z),type:o.type,s:o.s,rot:o.rot,alive:true,work:o.work||0,base:Math.round(5+o.s*5),
            planted:true,plantedAt:o.plantedAt,growMs:o.growMs,grow:0};
   t.parts=makeTreeParts(t,Math.random);
   t.group=treeGroupFromParts(t.parts);t.group.position.set(t.x,t.y,t.z);scene.add(t.group);

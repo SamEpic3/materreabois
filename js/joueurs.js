@@ -3,28 +3,30 @@
    et les JOUEURS (position, ce qu'il a dans les mains, son outil). Le journal raconte ce que chacun a fait,
    pour qu'on voie ce que l'autre a accompli pendant notre absence.
    Stockage : pour l'instant dans ce navigateur; plus tard, un serveur pourra le remplacer sans toucher au reste. */
-const ME_KEY='terre-a-bois-joueur';
+const ME_KEY='terre-a-bois-joueur',SAVE_KEY='terre-a-bois-sauvegarde';
 const ME=(()=>{let m=null;try{m=JSON.parse(localStorage.getItem(ME_KEY)||'null');}catch(e){}
   if(!m||!m.id)m={id:'j'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:''};return m;})();
 function saveMe(){try{localStorage.setItem(ME_KEY,JSON.stringify(ME));}catch(e){}}
 function myName(){return ME.name||'Moi';}
 
 /* ----- Stockage (à remplacer par le serveur plus tard) ----- */
+// Chaque terre partagée a sa propre copie dans le navigateur (clé avec le code de la terre).
 const Stockage={
-  charger(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(e){return null;}},
-  sauver(d){try{localStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){}},
-  effacer(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+  key:SAVE_KEY,
+  charger(k){try{return JSON.parse(localStorage.getItem(k||this.key)||'null');}catch(e){return null;}},
+  sauver(d){try{localStorage.setItem(this.key,JSON.stringify(d));}catch(e){}},
+  effacer(k){try{localStorage.removeItem(k||this.key);}catch(e){}}
 };
 
 /* ----- Journal ----- */
 S.journal=[];               // {t, who, k?, n?, m?, txt}
 const JOURNAL_MAX=200,JOURNAL_MERGE=10*60*1000;
-function jlog(txt){S.journal.push({t:Date.now(),who:ME.id,txt});trimJournal();}
+function jlog(txt){S.journal.push({id:uid(),t:Date.now(),who:ME.id,txt});trimJournal();}
 // Regroupe les actions répétées (vendre des billots, planter…) en une seule ligne
 function jcount(k,n,m,fmt){
   const last=S.journal[S.journal.length-1],now=Date.now();
   if(last&&last.k===k&&last.who===ME.id&&now-last.t<JOURNAL_MERGE){last.n+=n;last.m+=m;last.t=now;last.txt=fmt(last.n,last.m);}
-  else S.journal.push({t:now,who:ME.id,k,n,m,txt:fmt(n,m)});
+  else S.journal.push({id:uid(),t:now,who:ME.id,k,n,m,txt:fmt(n,m)});
   trimJournal();
 }
 function trimJournal(){if(S.journal.length>JOURNAL_MAX)S.journal.splice(0,S.journal.length-JOURNAL_MAX);}
@@ -41,7 +43,7 @@ const J={
   move:(what)=>jlog(`a déplacé ${what}`),
   demo:(what,pr)=>jlog(`a démoli ${what} (+${pr} $)`)
 };
-function whoName(id){if(id===ME.id)return myName();const o=S.others[id];return o&&o.name||'Quelqu\'un';}
+function whoName(id){if(id===ME.id)return myName();const n=typeof NET!=='undefined'&&NET.online[id];if(n&&n.name)return n.name;const o=S.others[id];return o&&o.name||'Quelqu\'un';}
 function ago(t){const s=(Date.now()-t)/1000;if(s<60)return 'à l\'instant';const m=Math.round(s/60);if(m<60)return `il y a ${m} min`;const h=Math.round(m/60);if(h<48)return `il y a ${h} h`;return `il y a ${Math.round(h/24)} jours`;}
 function renderJournal(){
   const L=$('journalList');
@@ -59,7 +61,7 @@ const otherFigs=[];
 function showOthers(){
   otherFigs.forEach(f=>{scene.remove(f.g);scene.remove(f.l);const i=labels.indexOf(f.l);if(i>=0)labels.splice(i,1);});otherFigs.length=0;
   for(const id in S.others){
-    const o=S.others[id],p=o.player;if(!p)continue;
+    const o=S.others[id],p=o.player;if(!p||(typeof NET!=='undefined'&&NET.online[id]))continue;
     const f=makePlayer();[f.axe,f.saw,f.chain,f.shovel,f.carryLog].forEach(m=>{if(m)m.visible=false;});
     f.g.position.set(p.x,H(p.x,p.z),p.z);f.g.rotation.y=p.rot||0;scene.add(f.g);
     otherFigs.push({g:f.g,l:label(o.name||'Partenaire',p.x,H(p.x,p.z)+2.6,p.z,12)});

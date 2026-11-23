@@ -20,7 +20,7 @@
 
 <div id="stats" class="panel">
   💰 <b id="sMoney">35000 $</b> &nbsp;·&nbsp; 🪵 Livrés : <b id="sDel">0</b><br>
-  <b id="sLoad">Remorque : 0/6</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span>
+  <b id="sLoad">Remorque : 0/6</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span><span id="netStatus" class="hidden"></span>
 </div>
 <div id="hint" class="panel"></div>
 
@@ -93,6 +93,8 @@
       <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
     </ul>
     <label class="pname">Ton nom : <input id="playerName" maxlength="20" placeholder="ex. Sam" autocomplete="off"></label>
+    <label class="pname">Code de la terre (pour jouer à plusieurs) : <input id="roomCode" maxlength="40" placeholder="laisse vide pour jouer seul" autocomplete="off" autocapitalize="none"></label>
+    <p class="netmsg" id="netMsg"></p>
     <button id="btnStart">Jouer</button>
     <button id="btnReset" class="reset">Nouvelle partie (efface la sauvegarde)</button>
   </div>
@@ -158,6 +160,7 @@
 <script src="js/hud.js"></script>
 <script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>
+<script src="js/reseau.js"></script>
 <script src="js/boucle.js"></script>
 <script src="js/pwa.js"></script>
 </body>

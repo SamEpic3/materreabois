@@ -13,6 +13,7 @@ function doEnter(){
       player.legL.rotation.set(0,0,0);player.legR.rotation.set(0,0,0);player.armL.rotation.set(0,0,0);player.armR.rotation.set(-0.6,0,0);
       updateToolVisual();return;
     }
+    if(c.enterVeh.driver&&c.enterVeh.driver!==ME.id){toast(`${(NET.online[c.enterVeh.driver]||{}).name||'Ton partenaire'} conduit déjà`);return;}
     V=c.enterVeh;
     S.mode='vtt';P.target=null;marker.visible=false;
     V.mesh.g.add(player.g);player.g.position.set(...V.spec.seat);player.g.rotation.set(0,0,0);
