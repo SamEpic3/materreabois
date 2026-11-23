@@ -36,12 +36,14 @@ function cutLocked(){return !!(TOOL&&TOOL.cut)&&P.cut&&pieces.includes(P.cut.pc)
 function context(){
   if(S.mode==='vtt')return driveContext();
   if(S.mode==='crane')return craneContext();
-  let act=null,act2=null,full=false,preview=null,info='';
+  if(S.mode==='sit')return sitContext();
+  let act=null,act2=null,full=false,preview=null,info='',plant=null;
   const cont=nearestContainer();
   const extra=(!P.carry&&!P.pail)?footExtras():null;
   if(P.pail){const r=pailContext();act=r.act;act2=r.act2;info=r.info||'';}
   else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
   else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}
+  else if(P.carry&&carryExtras()){const r=carryExtras();act=r.act||null;info=r.info||'';}
   else if(P.carry){
     if(nearFire())act={label:`Mettre la bûche au feu (+${fuelOf(P.carry)} s)`,fn:addFuel};
     else if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
@@ -72,17 +74,21 @@ function context(){
     }
     else if(cont&&cont.pails.length){const pp=cont.pails[cont.pails.length-1];act={label:`Prendre un seau (${pailTxt(pp)}) dans la ${cont.name}`,fn:()=>takePailFrom(cont)};}
     else if(cont&&cont.load.length){const top=cont.load[cont.load.length-1].userData.c;if(top.len<=CARRY_MAX)act={label:`Prendre un billot (${cont.name})`,fn:()=>takeFrom(cont)};else info=`Billot de ${ftin(top.len)} : trop long pour l'épaule, utilise la grue`;}
+    else if(TOOL&&TOOL.kind==='plant'){plant=plantContext();act=plant.act;act2=plant.act2;info=plant.info;}
     else{const t=nearestTree(1.3);if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
   if(!act&&!info)info=boilInfo();
   if(!act&&!info&&!P.carry&&!P.pail&&nearestStump(1.2))info='Souche : prends une pelle pour l\'arracher';
   let enter=null,enterVeh=null,enterCrane=null;
+  let enterSeat=null;
   if(!P.carry){
-    const nv=nearestVehicle(),nc=P.pail?null:nearestCrane();
-    if(nc&&(!nv||nc.d<Math.hypot(P.x-nv.x,P.z-nv.z))){enter='Opérer la grue';enterCrane=nc.t;}
+    const nv=nearestVehicle(),nc=P.pail?null:nearestCrane(),ns=P.pail?null:nearestSeat();
+    const dv=nv?Math.hypot(P.x-nv.x,P.z-nv.z):1e9;
+    if(ns&&ns.d<dv&&(!nc||ns.d<nc.d)){enter='S\'asseoir';enterSeat=ns.seat;}
+    else if(nc&&nc.d<dv){enter='Opérer la grue';enterCrane=nc.t;}
     else if(nv){enter=`Embarquer (${nv.spec.name})`;enterVeh=nv;}
   }
-  return {enter,enterVeh,enterCrane,act,act2,full,preview,info};
+  return {enter,enterVeh,enterCrane,enterSeat,act,act2,full,preview,info,plant};
 }
 function setCarry(c){
   P.carry=c;player.carryLog.visible=!!c;updateToolVisual();
@@ -102,11 +108,14 @@ function dropLog(){
   setCarry(null);
 }
 let yardCount=0;
-function sellPiece(c){
-  const pr=priceOf(c);
-  const i=yardCount++,stack=Math.floor(i/15)%4,j=i%15,layer=Math.floor(j/5),slot=j%5;
+function addYardLog(c,i){
+  const stack=Math.floor(i/15)%4,j=i%15,layer=Math.floor(j/5),slot=j%5;
   const l=makePieceMesh(c);l.rotation.y=Math.PI/2;l.position.set(stack*2.9-4.3,0.22+layer*0.4,(slot-2)*0.46+(layer%2)*0.1);yardStack.add(l);
   if(yardStack.children.length>60)yardStack.remove(yardStack.children[0]);
+}
+function sellPiece(c){
+  const pr=priceOf(c);
+  addYardLog(c,yardCount++);
   S.money+=pr;S.delivered++;
   toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage (${ftin(c.len)})`);
 }
@@ -160,26 +169,32 @@ function strikeStump(st){
   st.work+=1/stumpHits(st);spawnChips(st.x,H(st.x,st.z)+0.2,st.z,dirtMat);
   if(st.work>=0.999)removeStump(st);
 }
-function removeStump(st){
+function removeStump(st,silent){
   removeCol(st.col);
   if(st.mesh)scene.remove(st.mesh);else{st.inst.setMatrixAt(st.idx,ZERO_M);st.inst.instanceMatrix.needsUpdate=true;}
   stumpList.splice(stumpList.indexOf(st),1);
-  toast('Souche arrachée !');
+  if(st.tree)st.tree.stumpGone=true;else st.gone=true;
+  if(!silent)toast('Souche arrachée !');
 }
 function removeCol(c){const a=grid.get(gk(Math.floor(c.x/CELL),Math.floor(c.z/CELL)));if(a){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}}
 function fell(t){
-  t.alive=false;removeCol(t.col);
-  t.parts.forEach(pp=>TREE_INST[pp.g].setMatrixAt(pp.idx,ZERO_M));
-  Object.values(TREE_INST).forEach(m=>m.instanceMatrix.needsUpdate=true);
-  const g=new T.Group();
-  t.parts.forEach(pp=>{const m=new T.Mesh(TREE_GEO[pp.g],mat(pp.c));m.position.set(pp.dx,pp.dy,pp.dz);m.scale.set(pp.sx,pp.sy,pp.sz);m.rotation.y=pp.rot;g.add(m);});
-  shadows(g);g.position.set(t.x,t.y,t.z);scene.add(g);
+  hideTree(t);
+  const g=treeGroupFromParts(t.parts);g.position.set(t.x,t.y,t.z);scene.add(g);
   let fx=t.x-P.x,fz=t.z-P.z;const d=Math.hypot(fx,fz)||1;fx/=d;fz/=d;
   falling.push({t,g,fx,fz,axis:new T.Vector3(fz,0,-fx),time:0});
+  makeStump(t);
+  toast('Ça tombe ! 🌲');
+}
+// Retire un arbre debout (forêt de départ : instance cachée ; arbre planté : son groupe).
+function hideTree(t){
+  t.alive=false;removeCol(t.col);
+  if(t.group){scene.remove(t.group);const i=planted.indexOf(t);if(i>=0)planted.splice(i,1);}
+  else{t.parts.forEach(pp=>TREE_INST[pp.g].setMatrixAt(pp.idx,ZERO_M));Object.values(TREE_INST).forEach(m=>m.instanceMatrix.needsUpdate=true);}
+}
+function makeStump(t){
   const st=new T.Mesh(new T.CylinderGeometry(0.26*t.s,0.32*t.s,0.45,7),mat(t.type==='bouleau'?0xd9d4c8:0x6b5036));
   st.position.set(t.x,t.y+0.2,t.z);shadows(st);scene.add(st);
-  stumpList.push({x:t.x,z:t.z,col:addCol(t.x,t.z,0.3*t.s),mesh:st,size:t.s,work:0});
-  toast('Ça tombe ! 🌲');
+  const e={x:t.x,z:t.z,col:addCol(t.x,t.z,0.3*t.s),mesh:st,size:t.s,work:0,tree:t};stumpList.push(e);return e;
 }
 function makeCrown(t,x,z,rot){
   const g=new T.Group();g.rotation.y=rot;

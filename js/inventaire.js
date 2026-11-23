@@ -1,6 +1,6 @@
 /* Inventaire des outils : barre d'outils (ordinateur), bouton qui fait défiler les outils (téléphone), mains vides */
 // Case 0 = mains vides, puis les outils achetés dans l'ordre du catalogue.
-function invSlots(){return [null,...TOOLS.filter(t=>owned.has(t.id))];}
+function invSlots(){const a=[null,...TOOLS.filter(t=>owned.has(t.id))];if(seedCount()>0||TOOL===PLANT_TOOL)a.push(PLANT_TOOL);return a;}
 function setTool(t){
   if(P.swing>0)return;
   TOOL=t;P.cut=null;P.cool=0;
@@ -14,6 +14,7 @@ function selectSlot(i){
 }
 function slotIcon(t){
   if(!t)return '✋';
+  if(t.kind==='plant')return '🌱';
   const src=thumb(t.id,()=>toolThumbModel(t));
   return src?`<img src="${src}" alt="">`:'🪓';
 }
@@ -33,5 +34,4 @@ $('toolBtn').addEventListener('pointerdown',e=>{
   const sl=invSlots(),i=sl.indexOf(TOOL);
   selectSlot((i+1)%sl.length);
 });
-renderHotbar();
-updateToolVisual();
+// L'affichage initial de la barre se fait dans sauvegarde.js, une fois tous les fichiers chargés.

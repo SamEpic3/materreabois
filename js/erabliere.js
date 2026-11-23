@@ -76,13 +76,17 @@ function nearestGroundPail(){let b=null,bd=1.3;pails.forEach(p=>{const d=Math.hy
 function tapTree(t){
   if(S.taps<=0||tapOf(t))return;
   S.taps--;
-  let dx=P.x-t.x,dz=P.z-t.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;
-  const m=makeTapBucket();m.position.set(t.x+dx*0.28*t.s,t.y+1.05,t.z+dz*0.28*t.s);m.rotation.y=Math.atan2(dx,dz);scene.add(m);
-  taps.push({t,sap:0,mesh:m});
+  placeTap(t,Math.atan2(P.x-t.x,P.z-t.z),0);
   toast(`Érable entaillé 🍁 (il te reste ${S.taps} chaudière${S.taps>1?'s':''})`);
+}
+function placeTap(t,a,sap){
+  const dx=Math.sin(a),dz=Math.cos(a),m=makeTapBucket();
+  m.position.set(t.x+dx*0.28*t.s,t.y+1.05,t.z+dz*0.28*t.s);m.rotation.y=a;scene.add(m);
+  taps.push({t,sap,mesh:m});
 }
 function untap(tp){scene.remove(tp.mesh);taps.splice(taps.indexOf(tp),1);S.taps++;toast('Chaudière retirée');}
 function treeContext(t){
+  if(t.planted&&t.grow<1)return {info:saplingInfo(t)};
   const tp=tapOf(t);
   if(tp)return {act:{label:'Retirer la chaudière',fn:()=>untap(tp)},info:`Érable entaillé · chaudière : ${fmtL(tp.sap)} / ${TAP_CAP} L`+(TOOL?' · retire la chaudière avant de l\'abattre':'')};
   const tapAct=(t.type==='erable'&&S.taps>0)?{label:`Entailler l'érable (${S.taps} chaudière${S.taps>1?'s':''})`,fn:()=>tapTree(t)}:null;
@@ -141,9 +145,10 @@ function pailContext(){
 /* ----- Effets : fumée et vapeur ----- */
 const puffTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const gr=x.createRadialGradient(32,32,2,32,32,30);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);return new T.CanvasTexture(c);})();
 const puffs=[];let puffT=0;
-function spawnPuff(steam){
+function spawnPuff(steam){spawnPuffAt(SUGAR.x+(Math.random()-0.5)*0.8,H(SUGAR.x,SUGAR.z)+(steam?1.2:0.7),SUGAR.z+(Math.random()-0.5)*0.5,steam);}
+function spawnPuffAt(x,y,z,steam){
   const m=new T.Sprite(new T.SpriteMaterial({map:puffTex,color:steam?0xffffff:0x6f6a64,transparent:true,opacity:steam?0.55:0.45,depthWrite:false}));
-  m.position.set(SUGAR.x+(Math.random()-0.5)*0.8,H(SUGAR.x,SUGAR.z)+(steam?1.2:0.7),SUGAR.z+(Math.random()-0.5)*0.5);m.scale.setScalar(0.5);
+  m.position.set(x,y,z);m.scale.setScalar(0.5);
   scene.add(m);puffs.push({m,life:steam?2.2:3,max:steam?2.2:3,vx:(Math.random()-0.5)*0.3,vz:(Math.random()-0.5)*0.3});
 }
 function updateSugar(dt){
@@ -169,5 +174,5 @@ function footExtras(){
   const gp=nearestGroundPail();
   if(gp)return {act:{label:`Prendre le seau (${pailTxt(gp)})`,fn:()=>pickPail(gp)}};
   const s=footSaleContext();if(s)return s;
-  return null;
+  return campExtras();
 }

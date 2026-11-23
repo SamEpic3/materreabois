@@ -57,6 +57,6 @@ const player=makePlayer();scene.add(player.g);markDynamic(player.g);
 function updateToolVisual(){
   const show=S.mode==='foot'&&!P.carry&&!P.pail;
   const k=TOOL?TOOL.kind:null;
-  player.axe.visible=show&&k==='axe';player.saw.visible=show&&k==='saw';player.chain.visible=show&&k==='chainsaw';player.shovel.visible=show&&k==='shovel';
+  player.axe.visible=show&&k==='axe';player.saw.visible=show&&k==='saw';player.chain.visible=show&&k==='chainsaw';player.shovel.visible=show&&k==='shovel';if(player.plant)player.plant.visible=show&&k==='plant';
   if(TOOL){player.axe.scale.setScalar(TOOL.id==='hachette'?0.78:1);axeColors(player.axe,TOOL.id);}
 }

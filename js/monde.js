@@ -136,10 +136,11 @@ function hits(x,z,r){return eachNear(x,z,c=>{const dx=x-c.x,dz=z-c.z,rr=r+c.r;re
 function pushCircle(p,r,cx,cz,cr){const dx=p.x-cx,dz=p.z-cz,rr=r+cr,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);p.x=cx+dx/d*rr;p.z=cz+dz/d*rr;}}
 function pushOut(p,r){eachNear(p.x,p.z,c=>{pushCircle(p,r,c.x,c.z,c.r);return false;});}
 
+const CABIN_WIN=new T.MeshBasicMaterial({color:0x8fa3ad});   // fenêtres de la cabane (s'allument quand le poêle chauffe)
 /* ---------- Camp : cabane, cour à bois, souches ---------- */
 {
   const g=new T.Group();
-  const plank=mat(0x7a5232),dark=mat(0x4d3220),roof=mat(0x5a2a22),win=new T.MeshBasicMaterial({color:0xf4d27a});
+  const plank=mat(0x7a5232),dark=mat(0x4d3220),roof=mat(0x5a2a22),win=CABIN_WIN;
   box(6,2.6,4.5,plank,0,1.3,0,g);
   const r1=box(6.6,0.18,2.9,roof,0,3.15,1.05,g);r1.rotation.x=0.62;
   const r2=box(6.6,0.18,2.9,roof,0,3.15,-1.05,g);r2.rotation.x=-0.62;
@@ -228,7 +229,7 @@ function makeLog(geo){const m=new T.Mesh(geo,logMats);m.castShadow=true;m.receiv
 
 const piles=[];
 
-const stumpList=[];   // souches qu'on peut arracher à la pelle
+const stumpList=[],campStumps=[];   // souches qu'on peut arracher à la pelle
 /* ---------- Forêt ---------- */
 const SPECIES={epinette:{n:'Épinette',p:30},sapin:{n:'Sapin',p:25},erable:{n:'Érable',p:45},bouleau:{n:'Bouleau',p:35}};
 const treeList=[];
@@ -255,25 +256,29 @@ const TREE_GEO={
   blob:new T.IcosahedronGeometry(1,0)
 };
 const TREE_INST={};
+const MAPLE_COLS=[0xb5452a,0xc9682b,0xd28a2f,0x9c3b25,0xa8532a],BIRCH_COLS=[0xd8b23a,0xc9a83a,0xbfa045];
+// Pièces d'un arbre (tronc, cônes, boules) : sert à la forêt de départ, aux arbres plantés et à l'animation de chute.
+function makeTreeParts(t,rf){
+  const s=t.s,parts=[];
+  const add=(g,dx,dy,dz,sx,sy,sz,rot,c)=>parts.push({g,dx,dy,dz,sx,sy,sz,rot,c});
+  if(t.type==='epinette'||t.type==='sapin'){
+    const sap=t.type==='sapin',w=sap?0.8:1,hh=sap?1.15:1;
+    add('trunk',0,0,0,s,1.3*s,s,t.rot,0x5b4330);
+    add('cone',0,0.9*s,0,1.55*s*w,3.0*s*hh,1.55*s*w,t.rot,sap?0x27412f:0x2f4a2c);
+    add('cone',0,2.7*s*hh,0,1.05*s*w,2.7*s*hh,1.05*s*w,t.rot+0.5,sap?0x2c4a35:0x36553a);
+  }else{
+    const er=t.type==='erable',pal=er?MAPLE_COLS:BIRCH_COLS,top=er?2.8:3.0;
+    if(er)add('trunk',0,0,0,1.1*s,2.8*s,1.1*s,t.rot,0x5b4330);else add('trunk',0,0,0,0.85*s,3.0*s,0.85*s,t.rot,0xe8e4da);
+    add('blob',0,(top+0.9)*s,0,1.8*s,1.5*s,1.8*s,t.rot,pal[Math.floor(rf()*pal.length)]);
+    const a=rf()*6.28;
+    add('blob',Math.cos(a)*0.6*s,(top+1.8)*s,Math.sin(a)*0.6*s,1.2*s,1.1*s,1.2*s,t.rot+1,pal[Math.floor(rf()*pal.length)]);
+  }
+  return parts;
+}
+function treeGroupFromParts(parts){const g=new T.Group();parts.forEach(pp=>{const m=new T.Mesh(TREE_GEO[pp.g],mat(pp.c));m.position.set(pp.dx,pp.dy,pp.dz);m.scale.set(pp.sx,pp.sy,pp.sz);m.rotation.y=pp.rot;g.add(m);});shadows(g);return g;}
 const ZERO_M=new T.Matrix4().makeScale(0,0,0);
 {
-  const maple=[0xb5452a,0xc9682b,0xd28a2f,0x9c3b25,0xa8532a],birch=[0xd8b23a,0xc9a83a,0xbfa045];
-  treeList.forEach(t=>{
-    const s=t.s,parts=[];t.parts=parts;
-    const add=(g,dx,dy,dz,sx,sy,sz,rot,c)=>parts.push({g,dx,dy,dz,sx,sy,sz,rot,c});
-    if(t.type==='epinette'||t.type==='sapin'){
-      const sap=t.type==='sapin',w=sap?0.8:1,hh=sap?1.15:1;
-      add('trunk',0,0,0,s,1.3*s,s,t.rot,0x5b4330);
-      add('cone',0,0.9*s,0,1.55*s*w,3.0*s*hh,1.55*s*w,t.rot,sap?0x27412f:0x2f4a2c);
-      add('cone',0,2.7*s*hh,0,1.05*s*w,2.7*s*hh,1.05*s*w,t.rot+0.5,sap?0x2c4a35:0x36553a);
-    }else{
-      const er=t.type==='erable',pal=er?maple:birch,top=er?2.8:3.0;
-      if(er)add('trunk',0,0,0,1.1*s,2.8*s,1.1*s,t.rot,0x5b4330);else add('trunk',0,0,0,0.85*s,3.0*s,0.85*s,t.rot,0xe8e4da);
-      add('blob',0,(top+0.9)*s,0,1.8*s,1.5*s,1.8*s,t.rot,pal[Math.floor(rnd()*pal.length)]);
-      const a=rnd()*6.28;
-      add('blob',Math.cos(a)*0.6*s,(top+1.8)*s,Math.sin(a)*0.6*s,1.2*s,1.1*s,1.2*s,t.rot+1,pal[Math.floor(rnd()*pal.length)]);
-    }
-  });
+  treeList.forEach(t=>{t.parts=makeTreeParts(t,rnd);});
   const counts={trunk:0,cone:0,blob:0};
   treeList.forEach(t=>t.parts.forEach(pp=>{pp.idx=counts[pp.g]++;}));
   var ph=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,shininess:3});
@@ -307,6 +312,6 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   }
   const stM=new T.InstancedMesh(stumpG,ph,stumps.length);
   stumps.forEach((s,i)=>put(stM,i,s.x,H(s.x,s.z)-0.05,s.z,1,0.8+rnd()*0.6,1,rnd()*6,0x6b5036));
-  stumps.forEach((s,i)=>stumpList.push({x:s.x,z:s.z,col:s.c,inst:stM,idx:i,size:1,work:0}));
+  stumps.forEach((s,i)=>{const e={x:s.x,z:s.z,col:s.c,inst:stM,idx:i,size:1,work:0};stumpList.push(e);campStumps.push(e);});
   stM.castShadow=true;stM.receiveShadow=true;scene.add(stM);
 }

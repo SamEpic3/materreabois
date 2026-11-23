@@ -84,10 +84,14 @@
       <li><b>Débusqueuse :</b> recule la pince arrière jusqu'au bout d'une tige et appuie sur Espace pour l'agripper. Traîne-la jusqu'au chemin, puis Espace pour la relâcher.</li>
       <li><b>Prix du bois :</b> l'affiche près de la cour à bois montre les prix en cours. Ils changent toutes les 5 minutes.</li>
       <li><b>Érablière :</b> entaille un érable (F près d'un érable, ou Espace les mains vides) : la chaudière se remplit toute seule. Prends un seau au coin des sucres, vide les chaudières dedans, verse l'eau dans la bouilloire et mets des bûches au feu. Récolte le sirop dans un seau vide et va le vendre au magasin général. Un seau se dépose n'importe où (F).</li>
+      <li><b>Camp :</b> au tableau « Projets du camp », près de la cabane, construis un feu de camp, un abri à bois, une galerie avec chaises berçantes, un poêle à bois ou une nouvelle pièce. E pour t'asseoir sur une chaise ou une bûche. Le bois de chauffage alimente le feu et le poêle, et se corde dans l'abri.</li>
+      <li><b>Plantation :</b> achète des plants au magasin, prends-les dans la barre d'outils (🌱) et plante-les n'importe où de libre. Ils poussent en 3 à 5 heures, même quand le jeu est fermé.</li>
+      <li><b>Sauvegarde :</b> la partie se sauvegarde toute seule dans ce navigateur.</li>
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
       <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
     </ul>
-    <button id="btnStart">Commencer</button>
+    <button id="btnStart">Jouer</button>
+    <button id="btnReset" class="reset">Nouvelle partie (efface la sauvegarde)</button>
   </div>
 </div>
 <div id="shop" class="hidden">
@@ -104,6 +108,14 @@
     <div class="money" id="boardSub"></div>
     <div id="boardList"></div>
     <button id="boardClose">Fermer</button>
+  </div>
+</div>
+<div id="proj" class="hidden">
+  <div class="card">
+    <h1>🏕️ Projets du camp</h1>
+    <div class="money" id="projMoney"></div>
+    <div id="projList"></div>
+    <button id="projClose">Fermer</button>
   </div>
 </div>
 <div id="err">Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion Internet, puis recharge la page.</div>
@@ -125,9 +137,12 @@
 <script src="js/marche.js"></script>
 <script src="js/erabliere.js"></script>
 <script src="js/vente.js"></script>
+<script src="js/camp.js"></script>
+<script src="js/plantation.js"></script>
 <script src="js/joueur.js"></script>
 <script src="js/physique.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/sauvegarde.js"></script>
 <script src="js/boucle.js"></script>
 <script src="js/pwa.js"></script>
 </body>

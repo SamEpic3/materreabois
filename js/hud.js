@@ -2,7 +2,7 @@
 /* ---------- Flèche ---------- */
 function updateArrow(){
   let ox,oz,tx,tz;
-  if(S.mode==='crane'){arrow.visible=false;return;}
+  if(S.mode==='crane'||S.mode==='sit'){arrow.visible=false;return;}
   if(S.mode==='foot'){
     ox=P.x;oz=P.z;
     if(P.carry){const c=containers().filter(c=>c.load.length<c.cap).map(c=>c.center()).sort((a,b)=>Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z))[0];if(c){tx=c.x;tz=c.z;}else{tx=YARD.x;tz=YARD.z;}}
@@ -35,7 +35,7 @@ function updateHUD(){
   const b2=$('btnAct2');b2.classList.toggle('hidden',!c.act2);
   if(c.act2)b2.textContent=c.act2.label+(isTouch?'':' (F)');
   b2.classList.toggle('cool',!!(c.act2&&P.cool>0));
-  updatePreview(c.preview);
+  updatePreview(c.preview);updatePlantMark(c);
   const hc=hitchCtx(),bh=$('btnHitch');
   bh.classList.toggle('hidden',!hc);
   if(hc)bh.textContent=hc.label+(isTouch?'':' (R)');

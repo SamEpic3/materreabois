@@ -5,6 +5,7 @@ const joy={active:false,id:null,cx:0,cy:0,x:0,y:0};
 const pedal={gas:false,brake:false};
 addEventListener('keydown',e=>{
   if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
+  if(!$('proj').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeProjects();e.preventDefault();return;}
   if(!$('board').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeBoard();e.preventDefault();return;}
   if($('help').classList.contains('hidden')===false&&e.code!=='Escape')return;
   keys[e.code]=true;

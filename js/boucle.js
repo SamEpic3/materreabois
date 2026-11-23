@@ -14,12 +14,13 @@ function frame(){
   if(S.mode==='foot')updateFoot(dt);
   updateVTT(dt);
   updateFalling(dt);
+  updateCamp(dt);tickPlants(dt);
   if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);
   updateSugar(dt);updateMarket(dt);
   updateArrow();updateHUD();
   let gx,gz;
-  if(S.mode==='foot'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{gx=V.x+Math.sin(V.th)*V.v*0.35;gz=V.z+Math.cos(V.th)*V.v*0.35;}
-  if(camMode!=='iso'&&S.mode!=='crane'){gx=S.mode==='foot'?P.x:V.x;gz=S.mode==='foot'?P.z:V.z;}
+  if(S.mode==='foot'||S.mode==='sit'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{gx=V.x+Math.sin(V.th)*V.v*0.35;gz=V.z+Math.cos(V.th)*V.v*0.35;}
+  if(camMode!=='iso'&&S.mode!=='crane'){gx=S.mode==='vtt'?V.x:P.x;gz=S.mode==='vtt'?V.z:P.z;}
   const goal=new T.Vector3(gx,H(gx,gz),gz);
   camT.lerp(goal,1-Math.exp(-(camMode!=='iso'?14:6)*dt));
   if(camMode!=='iso'&&S.mode==='crane'){

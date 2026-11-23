@@ -2,7 +2,7 @@
 
 Jeu de navigateur coopératif en 3D (vue isométrique) : une terre à bois québécoise à exploiter à deux. On bûche, on tronçonne, on transporte et on vend le bois. Plus tard viendront l'érablière et les champs, avec une ferme partagée qui avance même quand on n'est pas connectés.
 
-> Prototype en développement. Pour l'instant, on joue seul et rien n'est sauvegardé.
+> Prototype en développement. Pour l'instant, on joue seul. La partie se sauvegarde automatiquement dans le navigateur (ou l'app), et ce qui pousse ou chauffe continue pendant l'absence.
 
 ## Jouer
 
@@ -23,6 +23,8 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Suivre les prix** sur l'affiche de la cour à bois : ils changent toutes les 5 minutes.
+- **Améliorer le camp** au tableau « Projets du camp » : feu de camp avec bûches pour s'asseoir, abri à bois, galerie avec chaises berçantes, poêle à bois, nouvelle pièce.
+- **Planter** des plants achetés au magasin, n'importe où de libre : ils poussent en 3 à 5 heures réelles.
 - **Essoucher** à la pelle (achetée au magasin) : la souche est arrachée et le terrain dégagé.
 - **Faire les sucres** : entailler les érables, vider les chaudières dans un seau, faire bouillir au coin des sucres (au feu de bois), vendre le sirop au magasin. Les seaux se rangent dans la petite remorque ou la boîte du pick-up (un seul type de chargement à la fois : bois ou seaux).
 - **Vendre un véhicule ou une remorque** dans le cercle vert près du magasin (de 25 à 50 % du prix neuf).
@@ -66,9 +68,12 @@ js/interactions.js    Embarquer, débarquer, opérer la grue, boutons d'action
 js/marche.js          Prix du bois et du sirop qui varient, affiche des prix
 js/erabliere.js       Entailles, chaudières, seaux, feu et bouilloire
 js/vente.js           Vente de véhicules et de remorques
+js/camp.js            Projets du camp, sièges, feu de camp, poêle, abri à bois
+js/plantation.js      Plants, plantation et pousse en temps réel
 js/joueur.js          Déplacement et animations du joueur à pied
 js/physique.js        Physique des véhicules et des remorques
 js/hud.js             Flèche d'objectif et affichage
+js/sauvegarde.js      Sauvegarde locale, reprise et temps écoulé pendant l'absence
 js/boucle.js          Boucle de jeu et placement des caméras
 js/pwa.js             App installable : service worker, vue horizontale forcée
 sw.js                 Service worker (mise en cache pour jouer hors ligne)
@@ -82,7 +87,6 @@ Les scripts sont des fichiers JavaScript classiques chargés dans l'ordre de `in
 
 ## Prochaines étapes
 
-- Sauvegarde et serveur pour jouer à deux sur la même terre, avec un journal de la ferme.
+- Serveur pour jouer à deux sur la même terre, avec un journal de la ferme.
 - Essence et usure des outils, aiguisage.
 - Saisons (le temps des sucres au printemps), champs.
-- Plantation et essouchage.

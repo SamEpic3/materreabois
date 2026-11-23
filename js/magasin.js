@@ -59,6 +59,14 @@ function renderShop(){
     b.onclick=()=>{if(S.money<25)return;S.money-=25;S.taps++;toast('Chaudière achetée');renderShop();};
     d.appendChild(b);L.appendChild(d);
   }
+  sec('Plantation');
+  SEED_TYPES.forEach(k=>{
+    const d=document.createElement('div'),pr=SEED_PRICE[k];d.className='item';
+    d.innerHTML=`<div class="thumb emoji">🌱</div><div class="txt"><b>Plants ${/^[aeéiouy]/.test(seedName(k))?'d\'':'de '}${seedName(k)} (×${SEED_PACK})</b> — ${pr} $<p>À planter n'importe où de libre. Ils poussent en 3 à 5 heures.</p><p class="stats">Tu en as ${S.seeds[k]}</p></div>`;
+    const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<pr;
+    b.onclick=()=>{if(S.money<pr)return;S.money-=pr;S.seeds[k]+=SEED_PACK;S.seedSel=k;renderHotbar();toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
+    d.appendChild(b);L.appendChild(d);
+  });
   sec('Véhicules et remorques');
   VEH_SHOP.forEach(t=>{
     const d=document.createElement('div');d.className='item';
