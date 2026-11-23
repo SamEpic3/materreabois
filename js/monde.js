@@ -207,7 +207,7 @@ let STORE_DOOR;
   box(1.2,2.2,0.08,dark,0,1.1,4.04,c);
   const pc=vpos(12,-5);c.position.set(pc.x,VIL_H,pc.z);c.rotation.y=VROT;shadows(c);scene.add(c);bldCols(12,-5,2.5,4);
   // Maisons
-  [[-12,-3,0x9b3b2c,0x3b3f44],[-10,-10,0x4f6f8f,0x2e2a26]].forEach(([lx,lz,wc,rc])=>{
+  [[-10,-10,0x4f6f8f,0x2e2a26]].forEach(([lx,lz,wc,rc])=>{
     const h=new T.Group();box(5,2.8,4.5,mat(wc),0,1.4,0,h);gableRoof(h,5,4.5,3.15,mat(rc));
     box(1,1.9,0.08,dark,0,0.95,2.27,h);box(1,0.8,0.08,win,1.5,1.5,2.27,h);box(1,0.8,0.08,win,-1.5,1.5,2.27,h);
     const q=vpos(lx,lz);h.position.set(q.x,VIL_H,q.z);h.rotation.y=VROT;shadows(h);scene.add(h);bldCols(lx,lz,2.5,2.25);
@@ -217,18 +217,17 @@ let STORE_DOOR;
   box(7,3.4,4,plank,0,1.7,0,s);gableRoof(s,7,4,3.85,tin);
   box(2.4,2.6,0.08,trim,-1.6,1.3,2.03,s);box(0.9,2,0.08,mat(0x3b2a1e),1.8,1,2.03,s);
   box(3.6,0.7,0.1,sign,0,3.0,2.06,s);[-1.1,0,1.1].forEach(x=>box(0.7,0.42,0.02,paper,x,3.0,2.12,s));
-  const sb=new T.Mesh(new T.CylinderGeometry(0.9,0.9,0.06,24),tin);sb.rotation.x=Math.PI/2;sb.position.set(3.9,1.2,0.6);s.add(sb);
-  const sq=vpos(-9,1.8);s.position.set(sq.x,VIL_H,sq.z);s.rotation.y=VROT;shadows(s);scene.add(s);bldCols(-9,1.8,3.5,2);
+  const sq=vpos(-12,1);s.position.set(sq.x,VIL_H,sq.z);s.rotation.y=VROT;shadows(s);scene.add(s);bldCols(-12,1,3.5,2);
   label('Scierie',sq.x,VIL_H+6.2,sq.z);
   label('Village',VILLAGE.x,VIL_H+10,VILLAGE.z,26);
 }
-const MILL_DOOR=vpos(-7.2,4.1);
-Object.assign(YARD,vpos(-8,9));
+const MILL_DOOR=vpos(-10.2,3.3);
+Object.assign(YARD,vpos(-10.5,8.5));
 const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
-// Billots déjà vendus, cordés à côté de la scierie
-const YARD_STACK=vpos(-15,4.5);
-const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT+Math.PI/2;scene.add(yardStack);
-[-1.4,1.4].forEach(o=>{const p=vpos(-15,4.5+o);addCol(p.x,p.z,1.5);});
+// Billots déjà vendus, cordés derrière la scierie
+const YARD_STACK=vpos(-12,-3.6);
+const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT;scene.add(yardStack);
+[-3,0,3].forEach(o=>{const p=vpos(-12+o,-3.6);addCol(p.x,p.z,1.5);});
 
 /* ---------- Billots ---------- */
 const barkM=mat(0x5e4630),endM=mat(0xd9b27c);
