@@ -31,7 +31,7 @@ function trimJournal(){if(S.journal.length>JOURNAL_MAX)S.journal.splice(0,S.jour
 const pl=(n,a,b)=>n>1?b:a;
 const J={
   wood:(c,pr)=>c.len>=SAW_MIN?jcount('bois',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'billot','billots')} de sciage (+${m} $)`)
-              :jcount(c.split?'fendu':'chauffage',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'bûche','bûches')} de chauffage${c.split?' fendu'+pl(n,'e','es'):''} (+${m} $)`),
+              :(c.split?jcount('fendu',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'morceau','morceaux')} de bois fendu (+${m} $)`):jcount('chauffage',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'bûche','bûches')} de chauffage (+${m} $)`)),
   syrup:(L,pr)=>jcount('sirop',L,pr,(n,m)=>`a vendu ${fmtL(n)} de sirop (+${m} $)`),
   plant:()=>jcount('plant',1,0,n=>`a planté ${n} ${pl(n,'arbre','arbres')}`),
   split:()=>jcount('fendre',1,0,n=>`a fendu ${n} ${pl(n,'bûche','bûches')}`),

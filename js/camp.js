@@ -76,7 +76,7 @@ $('projDemo').addEventListener('click',()=>startPick('demolish'));
 function nearDoor(){return Math.hypot(P.x-CABIN_DOOR.x,P.z-CABIN_DOOR.z)<1.8;}
 function nearStove(){return S.camp.poele&&nearDoor();}
 function fmtFire(f){return f>0?`${Math.floor(f/60)} min ${String(Math.floor(f%60)).padStart(2,'0')} s`:'éteint';}
-function fuelOf(c){return Math.round(c.len/FT*25);}
+function fuelOf(c){return Math.round(c.len/FT*25*(c.split===1?0.5:1));}
 function feed(obj,max,what){const f=fuelOf(P.carry);obj.fuel=Math.min(max,obj.fuel+f);setCarry(null);toast(`🔥 ${what} : ${fmtFire(obj.fuel)}`);}
 // Actions quand on porte une bûche (avant les autres)
 function carryExtras(){
@@ -89,7 +89,7 @@ function carryExtras(){
   if(a){
     if(c.len>SHED_MAXLEN)return {info:`Bûche de ${ftin(c.len)} : l'abri prend des bûches de 3 pi maximum, recoupe-la`};
     if(a.logs.length>=SHED_CAP)return {info:'L\'abri à bois est plein'};
-    return {act:{label:`Corder dans l'abri (${a.logs.length}/${SHED_CAP})`,fn:()=>{a.logs.push(c);setCarry(null);refreshShed(a);}}};
+    return {act:{label:`Corder dans l'abri (${a.logs.length}/${SHED_CAP})`,fn:()=>{const left=[];halvesOf(c).forEach(h=>{if(a.logs.length<SHED_CAP)a.logs.push(h);else left.push(h);});setCarry(left[0]||null);refreshShed(a);}}};
   }
   return null;
 }

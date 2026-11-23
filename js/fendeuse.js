@@ -17,17 +17,23 @@ function mergeGeos(list){
   out.setAttribute('position',new T.Float32BufferAttribute(pos,3));out.setAttribute('normal',new T.Float32BufferAttribute(nor,3));out.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
   groups.forEach(g=>out.addGroup(g.start,g.count,g.m));return out;
 }
+// split : 2 = les deux moitiés tenues ensemble (en main), 1 = une moitié seule
 const splitCache={};
-function splitGeo(len,ra,rb){
-  const r=(ra+rb)/2,key=len.toFixed(3)+'|'+r.toFixed(3);if(splitCache[key])return splitCache[key];
-  const sh=new T.Shape();sh.moveTo(0,0);sh.lineTo(r,0);sh.absarc(0,0,r,0,Math.PI/2,false);sh.lineTo(0,0);
+function halfGeoParts(len,r,gap){
+  const sh=new T.Shape();sh.moveTo(-r,0);sh.absarc(0,0,r,Math.PI,0,true);sh.lineTo(-r,0);
+  const g=new T.ExtrudeGeometry(sh,{depth:len,bevelEnabled:false,curveSegments:6});
+  const ng=g.index?g.toNonIndexed():g;ng.translate(0,gap,-len/2);return ng;
+}
+function splitGeo(len,ra,rb,split){
+  const r=(ra+rb)/2,n=split===2?2:1,key=n+'|'+len.toFixed(3)+'|'+r.toFixed(3);if(splitCache[key])return splitCache[key];
   const parts=[];
-  for(let k=0;k<4;k++){
-    const g=new T.ExtrudeGeometry(sh,{depth:len,bevelEnabled:false,curveSegments:4});
-    const ng=g.index?g.toNonIndexed():g;ng.translate(0.012,0.012,-len/2);ng.rotateZ(k*Math.PI/2);parts.push(ng);
-  }
+  if(n===2){const a=halfGeoParts(len,r,0.015),b=halfGeoParts(len,r,0.015);b.rotateZ(Math.PI);parts.push(a,b);}
+  else{const a=halfGeoParts(len,r,0);a.translate(0,-r*0.42,0);parts.push(a);}   // moitié posée à plat
   return splitCache[key]=mergeGeos(parts);
 }
+function splitFactor(c){return c.split===2?SPLIT_BONUS:c.split?SPLIT_BONUS/2:1;}
+// Les deux moitiés deviennent indépendantes dès qu'on les dépose
+function halvesOf(c){return c.split===2?[Object.assign({},c,{split:1}),Object.assign({},c,{split:1})]:[c];}
 const SPLIT_MATS=[endM,splitSide];
 
 /* ----- Modèle ----- */
@@ -53,7 +59,7 @@ function makeFendeuse(){
   return {g,wheels,cargo,ram};
 }
 TSPECS.fendeuse={name:'fendeuse',label:'Fendeuse',build:makeFendeuse,tl:1.8,cols:[[0.75,0.45],[-0.4,0.5]],hl:1.1,hw:0.5,cap:0,r:2.2,wr:0.28,tilt:0.04,splitter:true,slots:[]};
-VEH_SHOP.push({id:'fendeuse',kind:'trailer',name:'Fendeuse à bûches',price:1800,desc:`Fendeuse à moteur sur roues : attache-la au VTT ou au pick-up. Apporte-lui des bûches de ${Math.round(SPLIT_MAX/INCH)} po maximum : le bois fendu se vend presque deux fois plus cher.`});
+VEH_SHOP.push({id:'fendeuse',kind:'trailer',name:'Fendeuse à bûches',price:1800,desc:`Fendeuse à moteur sur roues : attache-la au VTT ou au pick-up. Apporte-lui des bûches de ${Math.round(SPLIT_MAX/INCH)} po maximum : elle la fend en deux, et les deux moitiés valent presque deux fois plus qu'une bûche ronde.`});
 
 /* ----- Fendre ----- */
 function nearestSplitter(){
@@ -81,13 +87,13 @@ function updateSplitters(dt){
     s.time+=dt;const k=s.time/SPLIT_TIME,ram=t.mesh.ram;
     const push=k<0.7?k/0.7:Math.max(0,1-(k-0.7)/0.3);
     ram.position.z=0.36-push*0.45;s.mesh.position.z=-0.3-Math.min(push,1)*0.25;
-    if(k>=0.7&&!s.done){s.done=true;s.mesh.geometry=splitGeo(s.c.len,s.c.ra,s.c.rb);s.mesh.material=SPLIT_MATS;}
+    if(k>=0.7&&!s.done){s.done=true;s.mesh.geometry=splitGeo(s.c.len,s.c.ra,s.c.rb,2);s.mesh.material=SPLIT_MATS;}
     if(k>=1){
       t.mesh.cargo.remove(s.mesh);t.splitting=null;ram.position.z=0.36;
-      const c=Object.assign({},s.c,{split:true});
+      const c=Object.assign({},s.c,{split:2});
       if(!P.carry&&!P.pail&&Math.hypot(P.x-t.x,P.z-t.z)<3)setCarry(c);
-      else addPiece({cx:t.x+Math.cos(t.th)*0.9,cz:t.z-Math.sin(t.th)*0.9,rot:t.th,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,split:true,crown:false});
-      J.split();toast(`🪓 Bûche fendue : vaut maintenant ${priceOf(c)} $`);
+      else halvesOf(c).forEach((h,i)=>addPiece({cx:t.x+Math.cos(t.th)*(0.9+i*0.35),cz:t.z-Math.sin(t.th)*(0.9+i*0.35),rot:t.th,len:h.len,ra:h.ra,rb:h.rb,sp:h.sp,split:1,crown:false}));
+      J.split();toast(`🪓 Bûche fendue en deux : ${priceOf(c)} $ les deux moitiés`);
     }
   });
 }

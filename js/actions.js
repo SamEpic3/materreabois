@@ -4,12 +4,12 @@ const TRAILER_SLOTS=[[-0.44,0.22],[0,0.22],[0.44,0.22],[-0.22,0.6],[0.22,0.6],[0
 const pieces=[],falling=[],chips=[];
 const FT=0.3048,INCH=0.0254,CARRY_MAX=8*FT+2*INCH,SAW_MIN=7*FT+10*INCH,CRANE_MAX=12*FT+2*INCH;
 function ftin(m){const t=Math.round(m/INCH);return `${Math.floor(t/12)} pi ${t%12} po`;}
-function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*FIREWOOD_FT*mkt('chauffage')*(c.split?SPLIT_BONUS:1)));}
+function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*FIREWOOD_FT*mkt('chauffage')*splitFactor(c)));}
 function kindOf(len){return len>CRANE_MAX?'trop long : recoupe ou débusqueuse':len>CARRY_MAX?'billot long (grue) ✔':len>=SAW_MIN?'billot de sciage ✔':'bois de chauffage';}
 function pointInYard(x,z){return Math.hypot(x-YARD.x,z-YARD.z)<YARD.r;}
 function inYard(){return pointInYard(P.x,P.z);}
 function pieceGeo(len,ra,rb){const g=new T.CylinderGeometry(rb,ra,len,9);g.rotateX(Math.PI/2);return g;}
-function makePieceMesh(c){const m=c.split?new T.Mesh(splitGeo(c.len,c.ra,c.rb),SPLIT_MATS):new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMats);m.castShadow=true;m.receiveShadow=true;return m;}
+function makePieceMesh(c){const m=c.split?new T.Mesh(splitGeo(c.len,c.ra,c.rb,c.split),SPLIT_MATS):new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMats);m.castShadow=true;m.receiveShadow=true;return m;}
 function placePiece(pc){
   const fx=Math.sin(pc.rot),fz=Math.cos(pc.rot),h=pc.len/2;
   const h0=H(pc.cx-fx*h,pc.cz-fz*h)+pc.ra,h1=H(pc.cx+fx*h,pc.cz+fz*h)+pc.rb;
@@ -94,19 +94,21 @@ function context(){
 }
 function setCarry(c){
   P.carry=c;player.carryLog.visible=!!c;updateToolVisual();
-  if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMats;}}
+  if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb,c.split);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMats;}}
 }
-function pickUp(pc){removePiece(pc);setCarry({sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb});P.target=null;}
+function pickUp(pc){removePiece(pc);const c={sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb};if(pc.split)c.split=pc.split;setCarry(c);P.target=null;}
 function nearestVehicle(){let b=null,bd=1e9;for(const v of vehicles){const d=Math.hypot(P.x-v.x,P.z-v.z);if(d<v.spec.enterR&&d<bd){bd=d;b=v;}}return b;}
 function takeFrom(c){const m=c.load.pop();c.cargo.remove(m);setCarry(m.userData.c);}
 function putIn(cont){
-  const i=cont.load.length,c=P.carry,m=makePieceMesh(c),sl=(cont.slots||TRAILER_SLOTS)[i];m.position.set(sl[0],sl[1],0);m.userData.c=c;
-  cont.cargo.add(m);cont.load.push(m);setCarry(null);
+  const hs=halvesOf(P.carry),left=[];
+  hs.forEach(c=>{const i=cont.load.length;if(i>=cont.cap){left.push(c);return;}
+    const m=makePieceMesh(c),sl=(cont.slots||TRAILER_SLOTS)[i];m.position.set(sl[0],sl[1],0);m.userData.c=c;cont.cargo.add(m);cont.load.push(m);});
+  setCarry(left[0]||null);
   toast(`Dans la ${cont.name} (${cont.load.length}/${cont.cap})`);
 }
 function dropLog(){
-  const c=P.carry,r=P.rot+Math.PI/2;
-  addPiece({cx:P.x+Math.sin(P.rot)*0.9,cz:P.z+Math.cos(P.rot)*0.9,rot:r,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,crown:false});
+  const r=P.rot+Math.PI/2;
+  halvesOf(P.carry).forEach((c,i)=>{const d=0.9+i*0.4;addPiece({cx:P.x+Math.sin(P.rot)*d,cz:P.z+Math.cos(P.rot)*d,rot:r,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,split:c.split,crown:false});});
   setCarry(null);
 }
 let yardCount=0;
@@ -122,7 +124,7 @@ function sellPiece(c){
   S.money+=pr;S.delivered++;J.wood(c,pr);
   toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage${c.split?' fendu':''} (${ftin(c.len)})`);
 }
-function sellLog(){const c=P.carry;setCarry(null);sellPiece(c);}
+function sellLog(){const c=P.carry;setCarry(null);halvesOf(c).forEach(sellPiece);}
 function swing(tx,tz,onStrike){
   if(P.cool>0||P.swing>0)return false;
   P.swing=0.0001;P.swingDur=Math.min(0.75,TOOL.delay*0.92);P.struck=false;P.onStrike=onStrike;P.cool=TOOL.delay;P.target=null;marker.visible=false;
