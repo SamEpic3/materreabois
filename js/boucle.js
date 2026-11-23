@@ -14,6 +14,7 @@ function frame(){
   if(S.mode==='foot')updateFoot(dt);
   updateVTT(dt);
   updateFalling(dt);
+  if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);
   updateSugar(dt);updateMarket(dt);
   updateArrow();updateHUD();
   let gx,gz;

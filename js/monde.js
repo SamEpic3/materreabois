@@ -165,7 +165,8 @@ const yardStack=new T.Group();yardStack.position.set(YARD.x+5.6,CAMP_H,YARD.z-1)
 addCol(YARD.x+5.6,YARD.z-1,1.5);addCol(YARD.x+5.6,YARD.z+1.8,1.5);
 
 /* ---------- Étiquettes ---------- */
-function label(text,x,y,z){
+const labels=[];
+function label(text,x,y,z,range){
   const cv=document.createElement('canvas');cv.width=512;cv.height=96;const ctx=cv.getContext('2d');
   ctx.font='bold 52px system-ui,sans-serif';const w=ctx.measureText(text).width+48;
   ctx.fillStyle='rgba(30,28,22,0.75)';const x0=(512-w)/2;
@@ -173,9 +174,14 @@ function label(text,x,y,z){
   ctx.fillStyle='#ffe7b0';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,50);
   const tex=new T.CanvasTexture(cv);
   const s=new T.Sprite(new T.SpriteMaterial({map:tex,depthTest:false,transparent:true}));
-  s.scale.set(6,1.125,1);s.position.set(x,y,z);s.renderOrder=20;scene.add(s);return s;
+  s.scale.set(6,1.125,1);s.position.set(x,y,z);s.renderOrder=20;scene.add(s);
+  s.userData.range=range||10;s.visible=false;labels.push(s);return s;
 }
-label('Camp',CABIN.x,CAMP_H+5.4,CABIN.z);
+// Les étiquettes n'apparaissent que lorsqu'on s'approche (fondu sur 3 m).
+function updateLabels(fx,fz){
+  labels.forEach(s=>{const d=Math.hypot(s.position.x-fx,s.position.z-fz),o=clamp((s.userData.range+3-d)/3,0,1);s.visible=o>0.01;s.material.opacity=o;});
+}
+label('Camp',CABIN.x,CAMP_H+5.4,CABIN.z,14);
 /* ---------- Village ---------- */
 const VROT=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z);
 const VF={x:Math.sin(VROT),z:Math.cos(VROT)},VR={x:Math.cos(VROT),z:-Math.sin(VROT)};
@@ -207,7 +213,7 @@ let STORE_DOOR;
     box(1,1.9,0.08,dark,0,0.95,2.27,h);box(1,0.8,0.08,win,1.5,1.5,2.27,h);box(1,0.8,0.08,win,-1.5,1.5,2.27,h);
     const q=vpos(lx,lz);h.position.set(q.x,VIL_H,q.z);h.rotation.y=VROT;shadows(h);scene.add(h);bldCols(lx,lz,2.5,2.25);
   });
-  label('Village',VILLAGE.x,VIL_H+10,VILLAGE.z);
+  label('Village',VILLAGE.x,VIL_H+10,VILLAGE.z,26);
 }
 label('Cour à bois',YARD.x,CAMP_H+3.2,YARD.z);
 

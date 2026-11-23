@@ -21,7 +21,7 @@ function confirmSale(key,msg,fn){
   pendingSale={key,t:S.time};toast(`${msg} — appuie encore pour confirmer`);
 }
 function sellTrailer(t){
-  if(t.c.load.length){toast('Vide la remorque avant de la vendre');return;}
+  if(t.c.load.length||t.c.pails.length){toast('Vide la remorque avant de la vendre');return;}
   const v=resale(t);
   scene.remove(t.mesh.g);scene.remove(t.mark);trailers.splice(trailers.indexOf(t),1);
   if(P.crTr===t&&S.mode==='crane')S.mode='foot';
@@ -31,7 +31,7 @@ function sellVehicle(v){
   if(v.drag)skidRelease(v);
   const tw=towed(v);if(tw)tw.hitch=null;
   if(S.mode==='vtt'&&V===v){doEnter();if(S.mode==='vtt')return;}
-  if(v.bed&&v.bed.load.length){toast('Vide la boîte avant de vendre le pick-up');return;}
+  if(v.bed&&(v.bed.load.length||v.bed.pails.length)){toast('Vide la boîte avant de vendre le pick-up');return;}
   const val=resale(v);
   scene.remove(v.mesh.g);vehicles.splice(vehicles.indexOf(v),1);
   if(V===v)V=vehicles[vehicles.length-1]||null;
@@ -41,9 +41,9 @@ function driveSaleContext(){
   if(!inSale(V.x,V.z)||Math.abs(V.v)>0.8||V.drag)return null;
   const tw=towed(V);
   const sellV={label:`Vendre le ${V.spec.name} (+${resale(V)} $)`,fn:()=>confirmSale('v'+vehicles.indexOf(V),`Vendre le ${V.spec.name} pour ${resale(V)} $ ?`,()=>sellVehicle(V))};
-  if(V.bed&&V.bed.load.length)return {info:'Vide la boîte avant de vendre le pick-up'};
+  if(V.bed&&(V.bed.load.length||V.bed.pails.length))return {info:'Vide la boîte avant de vendre le pick-up'};
   if(tw&&inSale(tw.x,tw.z)){
-    if(tw.c.load.length)return {act2:sellV,info:'Vide la remorque pour pouvoir la vendre'};
+    if(tw.c.load.length||tw.c.pails.length)return {act2:sellV,info:'Vide la remorque pour pouvoir la vendre'};
     return {act:{label:`Vendre la ${tw.spec.name} (+${resale(tw)} $)`,fn:()=>confirmSale('t'+trailers.indexOf(tw),`Vendre la ${tw.spec.name} pour ${resale(tw)} $ ?`,()=>{tw.hitch=null;sellTrailer(tw);})},act2:sellV};
   }
   return {act:sellV,info:`Prix de revente : ${resale(V)} $ (prix neuf : ${BUY_PRICE[V.type]} $)`};
@@ -53,6 +53,6 @@ function footSaleContext(){
   let b=null,bd=3;
   trailers.forEach(t=>{if(t.hitch||!inSale(t.x,t.z))return;const d=Math.hypot(P.x-t.x,P.z-t.z);if(d<bd){bd=d;b=t;}});
   if(!b)return null;
-  if(b.c.load.length)return {info:'Vide la remorque pour pouvoir la vendre'};
+  if(b.c.load.length||b.c.pails.length)return {info:'Vide la remorque pour pouvoir la vendre'};
   return {act:{label:`Vendre la ${b.spec.name} (+${resale(b)} $)`,fn:()=>confirmSale('t'+trailers.indexOf(b),`Vendre la ${b.spec.name} pour ${resale(b)} $ ?`,()=>sellTrailer(b))}};
 }

@@ -6,9 +6,11 @@ const isTouch=matchMedia('(pointer: coarse)').matches||('ontouchstart' in window
 if(isTouch)document.body.classList.add('touch');
 // Vue horizontale simulée : quand l'app installée est tenue à la verticale, tout le jeu est tourné de 90°.
 let ROT=false;
-function viewW(){return ROT?innerHeight:innerWidth;}
-function viewH(){return ROT?innerWidth:innerHeight;}
-function toView(cx,cy){return ROT?{x:cy,y:innerWidth-cx}:{x:cx,y:cy};}
+function scrW(){return document.documentElement.clientWidth||innerWidth;}
+function scrH(){return document.documentElement.clientHeight||innerHeight;}
+function viewW(){return ROT?scrH():innerWidth;}
+function viewH(){return ROT?scrW():innerHeight;}
+function toView(cx,cy){return ROT?{x:cy,y:scrW()-cx}:{x:cx,y:cy};}
 
 /* ---------- Outils ---------- */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));

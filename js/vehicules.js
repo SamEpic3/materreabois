@@ -123,7 +123,7 @@ const SPECS={
 };
 const BED_SLOTS=[[-0.52,0.22],[0,0.22],[0.52,0.22],[-0.52,0.64],[0,0.64],[0.52,0.64],[-0.26,1.06],[0.26,1.06]];
 const TSPECS={
-  small:{name:'remorque',label:'Remorque',build:makeTrailer,tl:1.9,cols:[[0.55,0.62],[-0.55,0.62]],hl:0.9,hw:0.7,cap:6,r:2.6,wr:0.3,tilt:0.11,
+  small:{pslots:[[-0.3,-0.6],[0.3,-0.6],[-0.3,0],[0.3,0],[-0.3,0.6],[0.3,0.6]],name:'remorque',label:'Remorque',build:makeTrailer,tl:1.9,cols:[[0.55,0.62],[-0.55,0.62]],hl:0.9,hw:0.7,cap:6,r:2.6,wr:0.3,tilt:0.11,
          slots:[[-0.44,0.22],[0,0.22],[0.44,0.22],[-0.22,0.6],[0.22,0.6],[0,0.98]]},
   loader:{name:'remorque chargeuse',label:'Chargeuse',build:makeLoader,tl:3.75,cols:[[1.9,0.85],[0.7,0.85],[-0.5,0.85],[-1.7,0.85]],hl:1.7,hw:0.95,cap:10,r:2.8,wr:0.38,tilt:0.06,crane:true,
          slots:[[-0.46,0.24],[0,0.24],[0.46,0.24],[-0.46,0.68],[0,0.68],[0.46,0.68],[-0.46,1.12],[0,1.12],[0.46,1.12],[0,1.56]]}
@@ -132,7 +132,7 @@ const vehicles=[],trailers=[];
 function makeVehicle(type,x,z,th){
   const spec=SPECS[type],m=spec.build();scene.add(m.g);markDynamic(m.g);
   const v={type,spec,x,z,th,v:0,steer:0,spin:0,q:new T.Quaternion(),mesh:m,bed:null,drag:null};
-  if(spec.bedCap)v.bed={name:'boîte du pick-up',cap:spec.bedCap,load:[],cargo:m.cargo,slots:BED_SLOTS,r:2.4,
+  if(spec.bedCap)v.bed={name:'boîte du pick-up',cap:spec.bedCap,load:[],pails:[],pslots:[[-0.4,-0.7],[0.4,-0.7],[-0.4,0],[0.4,0],[-0.4,0.7],[0.4,0.7]],cargo:m.cargo,slots:BED_SLOTS,r:2.4,
     center:()=>({x:v.x-Math.sin(v.th)*1.5,z:v.z-Math.cos(v.th)*1.5}),yaw:()=>v.th};
   ground(x,z,th,spec.hl,spec.hw,v.q);
   vehicles.push(v);return v;
@@ -140,7 +140,7 @@ function makeVehicle(type,x,z,th){
 function makeTrailerObj(kind,x,z,th){
   const spec=TSPECS[kind],m=spec.build();scene.add(m.g);markDynamic(m.g);
   const t={kind,spec,x,z,th,q:new T.Quaternion(),hitch:null,mesh:m};
-  t.c={name:spec.name,cap:spec.cap,load:[],cargo:m.cargo,slots:spec.slots,r:spec.r,center:()=>({x:t.x,z:t.z}),yaw:()=>t.th};
+  t.c={name:spec.name,cap:spec.cap,load:[],pails:[],pslots:spec.pslots||null,cargo:m.cargo,slots:spec.slots,r:spec.r,center:()=>({x:t.x,z:t.z}),yaw:()=>t.th};
   if(spec.crane)t.crane={slew:0,reach:3,grip:0,phase:'idle',y:1.9,target:0,held:null,heldMesh:null,onDone:null};
   t.mark=new T.Mesh(new T.RingGeometry(0.55,0.8,28),new T.MeshBasicMaterial({color:0xffc83d,transparent:true,opacity:0.85,side:T.DoubleSide,depthTest:false}));
   t.mark.rotation.x=-Math.PI/2;t.mark.renderOrder=15;t.mark.visible=false;scene.add(t.mark);

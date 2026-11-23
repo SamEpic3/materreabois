@@ -7,10 +7,11 @@ if(PWA&&isTouch){
   lock();addEventListener('pointerdown',lock,{once:true});
 }
 function applyLayout(){
-  ROT=PWA&&isTouch&&innerHeight>innerWidth;
+  const vw=document.documentElement.clientWidth||innerWidth,vh=document.documentElement.clientHeight||innerHeight;
+  ROT=PWA&&isTouch&&vh>vw;
   document.body.classList.toggle('rot',ROT);
   const a=$('app');
-  if(ROT){a.style.width=innerHeight+'px';a.style.height=innerWidth+'px';a.style.transform=`translateX(${innerWidth}px) rotate(90deg)`;}
+  if(ROT){a.style.width=vh+'px';a.style.height=vw+'px';a.style.transform=`translateX(${vw}px) rotate(90deg)`;}
   else{a.style.width='';a.style.height='';a.style.transform='';}
   renderer.setSize(viewW(),viewH());updateProj();
 }

@@ -98,6 +98,12 @@ function pourSap(){const put=Math.min(P.pail.L,PAN_CAP-boil.sap);if(put<=0.01){t
 function takeSyrup(){const take=Math.min(boil.syrup,PAIL_CAP-P.pail.L);boil.syrup-=take;P.pail.L+=take;P.pail.kind='sirop';setPail(P.pail);toast(`+${fmtL(take)} de sirop 🍯`);}
 function sellSyrup(){const v=Math.round(P.pail.L*syrupPrice());S.money+=v;toast(`+${v} $ — ${fmtL(P.pail.L)} de sirop vendu`);P.pail.L=0;setPail(P.pail);}
 function dropPail(){const p=P.pail;addGroundPail(P.x+Math.sin(P.rot)*0.7,P.z+Math.cos(P.rot)*0.7,p.kind,p.L);setPail(null);}
+function putPailIn(cont){
+  const p=P.pail,i=cont.pails.length,sl=cont.pslots[i],m=makePail();
+  m.position.set(sl[0],0,sl[1]);setPailLook(m,p);cont.cargo.add(m);cont.pails.push({kind:p.kind,L:p.L,mesh:m});
+  setPail(null);toast(`Seau rangé dans la ${cont.name} (${cont.pails.length}/${cont.pslots.length})`);
+}
+function takePailFrom(cont){const pp=cont.pails.pop();cont.cargo.remove(pp.mesh);setPail({kind:pp.kind,L:pp.L});}
 function pickPail(gp){scene.remove(gp.mesh);pails.splice(pails.indexOf(gp),1);setPail({kind:gp.kind,L:gp.L});}
 function fuelOf(c){return Math.round(c.len/FT*25);}
 function addFuel(){const f=fuelOf(P.carry);boil.fuel=Math.min(FUEL_MAX,boil.fuel+f);setCarry(null);toast(`🔥 Le feu a ${Math.round(boil.fuel)} s de bois`);}
@@ -115,7 +121,13 @@ function pailContext(){
     else if(boil.syrup>0.05&&p.L<PAIL_CAP-0.05)act={label:`Récolter le sirop (${fmtL(boil.syrup)})`,fn:takeSyrup};
     info+=' · '+boilInfo();
   }else{
-    const tp=nearestTap();
+    const cont=nearestContainer();
+    if(cont&&cont.pslots){
+      if(cont.load.length)info=`La ${cont.name} contient du bois : un seul type de chargement à la fois`;
+      else if(cont.pails.length>=cont.pslots.length)info=`La ${cont.name} est pleine de seaux`;
+      else act={label:`Mettre le seau dans la ${cont.name} (${cont.pails.length}/${cont.pslots.length})`,fn:()=>putPailIn(cont)};
+    }
+    const tp=act||info.startsWith('La ')?null:nearestTap();
     if(tp){
       if(p.kind==='sirop'&&p.L>0.05)info='Ce seau contient du sirop : prends un autre seau pour l\'eau d\'érable';
       else if(p.L>=PAIL_CAP-0.05)info='Seau plein : va le verser dans la bouilloire';

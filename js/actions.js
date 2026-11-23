@@ -45,6 +45,7 @@ function context(){
   else if(P.carry){
     if(nearFire())act={label:`Mettre la bûche au feu (+${fuelOf(P.carry)} s)`,fn:addFuel};
     else if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
+    else if(cont&&cont.pails.length)info=`La ${cont.name} contient des seaux : sors-les avant d'y mettre du bois`;
     else if(cont&&cont.load.length<cont.cap)act={label:`Mettre dans la ${cont.name} (${cont.load.length}/${cont.cap})`,fn:()=>putIn(cont)};
     else{act={label:'Déposer le billot',fn:dropLog};full=!!cont;}
   }else if(TOOL&&TOOL.kind==='shovel'&&nearestStump(1.4)){
@@ -69,6 +70,7 @@ function context(){
       if(!pc.crown&&pc.len>CARRY_MAX&&!canCut)info='Trop long pour l\'épaule : grue ou débusqueuse';
       if(!carryable(pc)&&noTool)info+=noTool;
     }
+    else if(cont&&cont.pails.length){const pp=cont.pails[cont.pails.length-1];act={label:`Prendre un seau (${pailTxt(pp)}) dans la ${cont.name}`,fn:()=>takePailFrom(cont)};}
     else if(cont&&cont.load.length){const top=cont.load[cont.load.length-1].userData.c;if(top.len<=CARRY_MAX)act={label:`Prendre un billot (${cont.name})`,fn:()=>takeFrom(cont)};else info=`Billot de ${ftin(top.len)} : trop long pour l'épaule, utilise la grue`;}
     else{const t=nearestTree(1.3);if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
@@ -162,8 +164,7 @@ function removeStump(st){
   removeCol(st.col);
   if(st.mesh)scene.remove(st.mesh);else{st.inst.setMatrixAt(st.idx,ZERO_M);st.inst.instanceMatrix.needsUpdate=true;}
   stumpList.splice(stumpList.indexOf(st),1);
-  const patch=new T.Mesh(new T.CircleGeometry(0.75,14),holeMat);patch.rotation.x=-Math.PI/2;patch.position.set(st.x,H(st.x,st.z)+0.04,st.z);patch.receiveShadow=true;scene.add(patch);
-  toast('Souche arrachée ! Le terrain est dégagé');
+  toast('Souche arrachée !');
 }
 function removeCol(c){const a=grid.get(gk(Math.floor(c.x/CELL),Math.floor(c.z/CELL)));if(a){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}}
 function fell(t){
