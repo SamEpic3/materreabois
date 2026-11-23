@@ -2,7 +2,9 @@
 S.camp={};                       // projets construits : {feu:true, abri:true, ...}
 S.shed=[];                       // bûches cordées dans l'abri
 const campFire={fuel:0},stove={fuel:0};
-const CAMPFIRE_MAX=900,STOVE_MAX=1800,SHED_CAP=30;
+const CAMPFIRE_MAX=900,STOVE_MAX=1800;
+// Abri à bois : deux rangées (2 cordes de 3 pi de profond), 8 bûches de large, 5 rangs de haut
+const SHED_ROWS=2,SHED_COLS=8,SHED_LAYERS=5,SHED_CAP=SHED_ROWS*SHED_COLS*SHED_LAYERS,SHED_MAXLEN=3*FT+INCH;
 const PROJ_BOARD={x:-2.4,z:4.2};
 const CAMPFIRE={x:-3.5,z:-6.5};
 const SHED={x:-13.6,z:-3.2};
@@ -10,7 +12,7 @@ const STOVE_DOOR={x:CABIN.x+1.2,z:CABIN.z+3.3};
 const seats=[];                  // {x,z,rot,y,grp,kind}
 const PROJECTS=[
   {id:'feu',name:'Feu de camp',price:250,icon:'🔥',desc:'Un rond de pierres et trois bûches pour s\'asseoir. On y fait brûler du bois de chauffage.'},
-  {id:'abri',name:'Abri à bois',price:700,icon:'🪵',desc:`Pour corder tes réserves de bois de chauffage (${SHED_CAP} bûches) et les reprendre au besoin.`},
+  {id:'abri',name:'Abri à bois',price:700,icon:'🪵',desc:`Pour corder tes bûches de chauffage de 3 pi maximum, sur deux cordes de profond (${SHED_CAP} bûches).`},
   {id:'galerie',name:'Galerie et chaises berçantes',price:1200,icon:'🪑',desc:'Une grande galerie couverte devant la cabane, avec deux chaises berçantes où s\'asseoir.'},
   {id:'poele',name:'Poêle à bois',price:900,icon:'♨️',desc:'Un poêle dans la cabane : on l\'alimente à la porte, la cheminée fume et les fenêtres s\'allument.'},
   {id:'agrandir',name:'Agrandir la cabane',price:3000,icon:'🏠',desc:'Une nouvelle pièce sur le côté de la cabane, avec une grande fenêtre.'}
@@ -45,30 +47,39 @@ function buildFeu(){
   [0.4,2.5,4.6].forEach(a=>{                       // trois bûches pour s'asseoir
     const bx=CAMPFIRE.x+Math.cos(a)*2.3,bz=CAMPFIRE.z+Math.sin(a)*2.3;
     const b=new T.Group(),log=new T.Mesh(new T.CylinderGeometry(0.22,0.24,1.5,10),[bark,endM,endM]);log.rotation.z=Math.PI/2;log.position.y=0.22;b.add(log);
-    b.position.set(bx,H(bx,bz),bz);b.rotation.y=-a;shadows(b);scene.add(b);
+    b.position.set(bx,H(bx,bz),bz);b.rotation.y=-a+Math.PI/2;shadows(b);scene.add(b);
     addCol(bx,bz,0.35);
     addSeat(bx,bz,Math.atan2(CAMPFIRE.x-bx,CAMPFIRE.z-bz),0.45,null,'banc');
   });
   label('Feu de camp',CAMPFIRE.x,y0+2.3,CAMPFIRE.z);
   camp3d.feu={fl,light};
 }
-const shedFront=()=>{const a=Math.atan2(-SHED.x,-SHED.z);return {x:SHED.x+Math.sin(a)*1.5,z:SHED.z+Math.cos(a)*1.5};};
+const SHED_ROT=Math.atan2(-SHED.x,-SHED.z);          // l'avant de l'abri regarde le camp
+function shedLocal(lx,lz){return {x:SHED.x+Math.cos(SHED_ROT)*lx+Math.sin(SHED_ROT)*lz,z:SHED.z-Math.sin(SHED_ROT)*lx+Math.cos(SHED_ROT)*lz};}
+const shedFront=()=>shedLocal(0,2.1);
 function buildAbri(){
   const g=new T.Group(),wood=mat(0x7a5232),dark=mat(0x4d3220),roof=mat(0x3f4a3a);
-  box(3.2,0.12,1.6,dark,0,0.06,0,g);
-  box(3.2,1.9,0.1,wood,0,0.95,-0.75,g);box(0.1,1.9,1.6,wood,-1.6,0.95,0,g);box(0.1,1.9,1.6,wood,1.6,0.95,0,g);
-  [-1.55,1.55].forEach(x=>box(0.12,2.2,0.12,dark,x,1.1,0.75,g));
-  const r=box(3.6,0.12,2.1,roof,0,2.15,0,g);r.rotation.x=0.18;
-  const stack=new T.Group();stack.position.set(0,0.12,-0.05);g.add(stack);
-  const y0=H(SHED.x,SHED.z);g.position.set(SHED.x,y0,SHED.z);g.rotation.y=Math.atan2(-SHED.x,-SHED.z);shadows(g);scene.add(g);
-  const bk=Math.atan2(-SHED.x,-SHED.z);[-1,0,1].forEach(o=>addCol(SHED.x+Math.cos(bk)*o*1.05-Math.sin(bk)*0.35,SHED.z-Math.sin(bk)*o*1.05-Math.cos(bk)*0.35,0.6));
+  box(3.4,0.12,2.3,dark,0,0.06,0,g);
+  box(3.4,2.0,0.1,wood,0,1.0,-1.15,g);box(0.1,2.0,2.3,wood,-1.7,1.0,0,g);box(0.1,2.0,2.3,wood,1.7,1.0,0,g);
+  [-1.65,1.65].forEach(x=>box(0.12,2.3,0.12,dark,x,1.15,1.1,g));
+  const r=box(3.8,0.12,2.8,roof,0,2.25,0,g);r.rotation.x=0.18;
+  const stack=new T.Group();stack.position.set(0,0.12,0);g.add(stack);
+  const y0=H(SHED.x,SHED.z);g.position.set(SHED.x,y0,SHED.z);g.rotation.y=SHED_ROT;shadows(g);scene.add(g);
+  [-1.1,0,1.1].forEach(lx=>{const p=shedLocal(lx,-0.35);addCol(p.x,p.z,0.75);});
   label('Abri à bois',SHED.x,y0+3,SHED.z);
   camp3d.abri={stack};refreshShed();
 }
+// Bûches rangées le bout vers l'avant : rangée du fond d'abord, puis celle de devant.
 function refreshShed(){
   if(!camp3d.abri)return;
   const st=camp3d.abri.stack;while(st.children.length)st.remove(st.children[0]);
-  S.shed.forEach((c,i)=>{const layer=Math.floor(i/5),slot=i%5;const m=makePieceMesh(c);m.rotation.y=Math.PI/2;m.position.set((layer%2)*0.12-0.06,0.15+layer*0.3,(slot-2)*0.26);st.add(m);});
+  const perRow=SHED_COLS*SHED_LAYERS;
+  S.shed.forEach((c,i)=>{
+    const row=Math.floor(i/perRow),k=i%perRow,layer=Math.floor(k/SHED_COLS),col=k%SHED_COLS;
+    const m=makePieceMesh(c);
+    m.position.set((col-(SHED_COLS-1)/2)*0.4+(layer%2)*0.1,0.2+layer*0.36,row===0?-0.55:0.48);
+    st.add(m);
+  });
 }
 function makeRocker(){
   const g=new T.Group(),w=mat(0x8a5a32),dk=mat(0x5a3a22);
@@ -125,7 +136,7 @@ $('projClose').addEventListener('click',closeProjects);
 
 /* ----- Interactions ----- */
 function nearCampfire(){return S.camp.feu&&Math.hypot(P.x-CAMPFIRE.x,P.z-CAMPFIRE.z)<2.2;}
-function nearShed(){if(!S.camp.abri)return false;const f=shedFront();return Math.hypot(P.x-f.x,P.z-f.z)<1.8;}
+function nearShed(){if(!S.camp.abri)return false;const f=shedFront();return Math.hypot(P.x-f.x,P.z-f.z)<1.9;}
 function nearStove(){return S.camp.poele&&Math.hypot(P.x-STOVE_DOOR.x,P.z-STOVE_DOOR.z)<1.8;}
 function fmtFire(f){return f>0?`${Math.floor(f/60)} min ${String(Math.floor(f%60)).padStart(2,'0')} s`:'éteint';}
 function feedFire(obj,max,what){const f=fuelOf(P.carry);obj.fuel=Math.min(max,obj.fuel+f);setCarry(null);toast(`🔥 ${what} : ${fmtFire(obj.fuel)}`);}
@@ -135,7 +146,7 @@ function carryExtras(){
   if(nearCampfire())return {act:{label:`Mettre la bûche au feu de camp (+${fuelOf(c)} s)`,fn:()=>feedFire(campFire,CAMPFIRE_MAX,'Feu de camp')}};
   if(nearStove())return {act:{label:`Mettre la bûche dans le poêle (+${fuelOf(c)} s)`,fn:()=>feedFire(stove,STOVE_MAX,'Poêle')}};
   if(nearShed()){
-    if(c.len>=SAW_MIN)return {info:'L\'abri est pour le bois de chauffage : garde les billots de sciage pour la vente'};
+    if(c.len>SHED_MAXLEN)return {info:`Bûche de ${ftin(c.len)} : l'abri prend des bûches de 3 pi maximum, recoupe-la`};
     if(S.shed.length>=SHED_CAP)return {info:'L\'abri à bois est plein'};
     return {act:{label:`Corder dans l'abri (${S.shed.length}/${SHED_CAP})`,fn:()=>{S.shed.push(c);setCarry(null);refreshShed();}}};
   }
