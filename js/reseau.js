@@ -353,4 +353,4 @@ function updateNet(dt){
 }
 function netLeaving(){if(!NET.on||!NET.ready)return;if(NET.host)sendSnap(true);sendMe();}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')netLeaving();});
-addEventListener('pagehide',netLeaving);
+addEventListener('pagehide',()=>{netLeaving();if(NET.on&&NET.ws){netSend({t:'bye'});}});

@@ -118,10 +118,12 @@ wss.on('connection',ws=>{
         r.pendingJoin.push({ws,id});send(r.clients.get(r.host),{t:'snapReq'});
         setTimeout(()=>{const i=r.pendingJoin.findIndex(p=>p.ws===ws);if(i>=0){r.pendingJoin.splice(i,1);welcome(r,ws,id);}},8000);
       }else welcome(r,ws,id);
+      console.log(`[${code}] ${id} arrive (${r.clients.size} en ligne)`);
       broadcast(r,{t:'joined',id,name:r.players[id].name},id);
       return;
     }
     if(!r)return;
+    if(m.t==='bye'){leave('au revoir');try{ws.close();}catch(e){}return;}
     if(m.t==='op'&&Array.isArray(m.ops)){
       const e={seq:++r.seq,from:id,ops:m.ops};r.log.push(e);
       if(r.log.length>LOG_MAX)r.log.splice(0,r.log.length-LOG_MAX);
@@ -143,15 +145,17 @@ wss.on('connection',ws=>{
       persist(r,!!m.urgent);
     }
   });
-  ws.on('close',()=>{
+  function leave(why){
     if(!r||r.clients.get(id)!==ws)return;
+    console.log(`[${r.code}] ${id} part (${why})`);
     r.clients.delete(id);broadcast(r,{t:'left',id});
     if(r.host===id)pickHost(r);
     if(!r.clients.size){persist(r,true);}
-  });
+  }
+  ws.on('close',()=>leave('fermeture'));
 });
 // Garde les connexions en vie et détecte celles qui sont mortes
-setInterval(()=>{wss.clients.forEach(ws=>{if(!ws.alive){ws.terminate();return;}ws.alive=false;try{ws.ping();}catch(e){}});},25000);
+setInterval(()=>{wss.clients.forEach(ws=>{if(!ws.alive){ws.terminate();return;}ws.alive=false;try{ws.ping();}catch(e){}});},15000);
 // Libère la mémoire des terres sans joueur
 setInterval(()=>{rooms.forEach((r,code)=>{if(!r.clients.size&&!r.dirty&&!r.timer)rooms.delete(code);});},10*60*1000);
 async function shutdown(){for(const r of rooms.values())await flush(r);process.exit(0);}

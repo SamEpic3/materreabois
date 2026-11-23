@@ -24,11 +24,11 @@ async function next(ws,t,ms=10000){const t0=Date.now();while(Date.now()-t0<ms){c
     const j=await next(A,'joined');log('A voit arriver '+j.name,j.name==='Bob');
     B.send(JSON.stringify({t:'op',ops:[{c:'$',v:{money:-7}}]}));const o=await next(A,'op');log('A reçoit le changement de B ('+JSON.stringify(o.ops[0].v)+')',o.ops[0].v.money===-7);
     B.send(JSON.stringify({t:'pos',p:{x:1,z:2}}));const p=await next(A,'pos');log('Position transmise',p.p.z===2);
-    A.close();const h=await next(B,'host');log('B devient l\'hôte',h.id==='b');
+    A.send(JSON.stringify({t:'bye'}));A.close();const h=await next(B,'host');log('B devient l\'hôte',h.id==='b');
     B.send(JSON.stringify({t:'snap',data:{world:{money:121},players:{}},applied:o.seq,urgent:true}));B.close();
     await wait(3000);
     r=await fetch(HTTP+'/terre/'+room,{cache:'no-store'});const d=await r.json();log('Enregistrée en base : '+JSON.stringify(d),d.base&&d.existe&&d.photo);
-    const C=await open('c','Chloé');const wc=await next(C,'welcome');log('Plus tard, C retrouve la terre (argent '+(wc.snap&&wc.snap.world.money)+')',wc.snap&&wc.snap.world.money===121);C.close();
+    const C=await open('c','Chloé');const wc=await next(C,'welcome');log('Plus tard, C retrouve la terre (argent '+(wc.snap&&wc.snap.world.money)+')',wc.snap&&wc.snap.world.money===121);C.send(JSON.stringify({t:'bye'}));C.close();
     log('TERMINÉ',true);
   }catch(e){log('Échec : '+e.message,false);}
 })();
