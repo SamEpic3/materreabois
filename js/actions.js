@@ -38,6 +38,7 @@ function context(){
   if(S.mode==='crane')return craneContext();
   if(S.mode==='sit')return sitContext();
   if(S.mode==='place')return placeContext();
+  if(S.mode==='pick')return pickContext();
   let act=null,act2=null,full=false,preview=null,info='',plant=null;
   const cont=nearestContainer();
   const extra=(!P.carry&&!P.pail)?footExtras():null;
@@ -46,8 +47,7 @@ function context(){
   else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}
   else if(P.carry&&carryExtras()){const r=carryExtras();act=r.act||null;info=r.info||'';}
   else if(P.carry){
-    if(nearFire())act={label:`Mettre la bûche au feu (+${fuelOf(P.carry)} s)`,fn:addFuel};
-    else if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
+    if(inYard())act={label:`Corder à la cour (+${priceOf(P.carry)} $)`,fn:sellLog};
     else if(cont&&cont.pails.length)info=`La ${cont.name} contient des seaux : sors-les avant d'y mettre du bois`;
     else if(cont&&cont.load.length<cont.cap)act={label:`Mettre dans la ${cont.name} (${cont.load.length}/${cont.cap})`,fn:()=>putIn(cont)};
     else{act={label:'Déposer le billot',fn:dropLog};full=!!cont;}
@@ -78,7 +78,7 @@ function context(){
     else if(TOOL&&TOOL.kind==='plant'){plant=plantContext();act=plant.act;act2=plant.act2;info=plant.info;}
     else{const t=nearestTree(1.3);if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
-  if(!act&&!info)info=boilInfo();
+  if(!act&&!info){const sb=nearestSugar();if(sb)info=boilInfo(sb);}
   if(!act&&!info&&!P.carry&&!P.pail&&nearestStump(1.2))info='Souche : prends une pelle pour l\'arracher';
   let enter=null,enterVeh=null,enterCrane=null;
   let enterSeat=null;
@@ -248,7 +248,7 @@ function tongue(t){return {x:t.x+Math.sin(t.th)*t.spec.tl,z:t.z+Math.cos(t.th)*t
 function vHitch(v){return {x:v.x-Math.sin(v.th)*v.spec.hitch,z:v.z-Math.cos(v.th)*v.spec.hitch};}
 function canAttach(v,t){if(!v||!t||t.hitch||!v.spec.hitch||towed(v))return false;const p=tongue(t),h=vHitch(v);return Math.hypot(p.x-h.x,p.z-h.z)<1.0&&Math.abs(wrapAng(t.th-v.th))<1.1;}
 function hitchCtx(){
-  if(P.carry||S.mode==='crane'||S.mode==='place'||S.mode==='sit')return null;
+  if(P.carry||S.mode!=='foot')return null;
   if(S.mode==='vtt'){
     if(Math.abs(V.v)>=0.8)return null;
     const tw=towed(V);

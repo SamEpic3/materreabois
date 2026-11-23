@@ -10,7 +10,7 @@ addEventListener('keydown',e=>{
   if($('help').classList.contains('hidden')===false&&e.code!=='Escape')return;
   keys[e.code]=true;
   if(e.code==='KeyE'&&!e.repeat)doEnter();
-  if(e.code==='KeyR'&&!e.repeat){if(S.mode==='place')rotatePlace();else doHitch();}
+  if(e.code==='KeyR'&&!e.repeat){if(S.mode==='place')rotatePlace();else if(S.mode==='pick'){}else doHitch();}
   if(e.code==='KeyF'&&!e.repeat)doAct2();
   if(e.code==='Space'&&!e.repeat)doAct();
   if(e.code==='KeyZ')rotateCam(-1);
@@ -35,7 +35,7 @@ const joyEl=$('joy'),knob=$('joyKnob'),JR=55;
 const pointers=new Map();let pinch=null,pinchUsed=false;
 canvas.addEventListener('pointerdown',e=>{
   const q=toView(e.clientX,e.clientY);
-  if(e.pointerType==='touch'&&!joy.active&&q.x<viewW()*0.42){
+  if(e.pointerType==='touch'&&!joy.active&&q.x<viewW()*0.42&&S.mode!=='place'&&S.mode!=='pick'){
     joy.active=true;joy.id=e.pointerId;joy.cx=q.x;joy.cy=q.y;joy.x=joy.y=0;
     joyEl.style.left=q.x+'px';joyEl.style.top=q.y+'px';joyEl.classList.remove('hidden');
     knob.style.transform='translate(0,0)';P.target=null;
@@ -53,6 +53,7 @@ canvas.addEventListener('pointermove',e=>{
     joy.x=dx/JR;joy.y=-dy/JR;knob.style.transform=`translate(${dx}px,${dy}px)`;knob.classList.toggle('run',S.mode==='foot'&&Math.hypot(joy.x,joy.y)>0.95&&!P.carry);return;
   }
   const p=pointers.get(e.pointerId);if(!p)return;
+  if((S.mode==='place'||S.mode==='pick')&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&(p.drag||Math.hypot(q.x-p.sx,q.y-p.sy)>12)){p.drag=true;mapPan(q.x-p.x,q.y-p.y);}
   if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(q.x-p.sx,q.y-p.sy)>12){camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);}
   p.x=q.x;p.y=q.y;
   if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()];const r=pinch.d/(Math.hypot(a.x-b.x,a.y-b.y)||1);if(camMode==='tp')chaseDist=clamp(pinch.cd*r,0.5,2.5);else if(camMode==='iso'){zoom=clamp(pinch.z*r,ZMIN,ZMAX);updateProj();}}
@@ -72,10 +73,11 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 
 const ray=new T.Raycaster(),ndc=new T.Vector2();
 function tap(cx,cy){
-  if(S.mode!=='foot')return;
+  if(S.mode!=='foot'&&S.mode!=='place'&&S.mode!=='pick')return;
   ndc.set(cx/viewW()*2-1,-(cy/viewH())*2+1);
   ray.setFromCamera(ndc,activeCam);
   const hit=ray.intersectObject(terrain)[0];
+  if(S.mode!=='foot'){if(hit)mapTap(hit.point.x,hit.point.z);return;}
   if(hit){P.target={x:hit.point.x,z:hit.point.z};marker.position.set(hit.point.x,hit.point.y+0.06,hit.point.z);marker.visible=true;marker.material.opacity=0.8;}
 }
 
@@ -99,14 +101,18 @@ const camT=new T.Vector3(P.x,H(P.x,P.z),P.z);
 function rotateCam(d){if(camMode!=='iso')camYawT+=d*Math.PI/4;else camAzT+=d*Math.PI/2;}
 const FOG=new T.Fog(0xc9d6dc,30,110);
 function toggleCam(){
-  camMode=camMode==='iso'?'tp':camMode==='tp'?'fp':'iso';
+  if(S.mode==='place'||S.mode==='pick'){toast('Vue isométrique pendant la construction');return;}
+  applyCamMode(camMode==='iso'?'tp':camMode==='tp'?'fp':'iso');
+  toast(camMode==='tp'?'Vue 3e personne (essai)':camMode==='fp'?'Vue 1re personne (essai)':'Vue isométrique');
+}
+function applyCamMode(m){
+  camMode=m;
   activeCam=camMode==='iso'?camera:pcam;
   scene.fog=camMode==='iso'?null:FOG;
   silMat.visible=camMode==='iso';
   player.g.visible=camMode!=='fp'&&!(S.mode==='vtt'&&V.spec.hide);
   pcam.fov=camMode==='fp'?70:60;pcam.updateProjectionMatrix();camPitch=-0.1;
   camYaw=camYawT=S.mode==='vtt'?V.th:P.rot;
-  toast(camMode==='tp'?'Vue 3e personne (essai)':camMode==='fp'?'Vue 1re personne (essai)':'Vue isométrique');
 }
 $('btnCam').addEventListener('click',toggleCam);
 $('rotL').addEventListener('click',()=>rotateCam(-1));

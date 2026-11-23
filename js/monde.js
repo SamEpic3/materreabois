@@ -104,7 +104,7 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP.r+3,CAMP.r-3,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
     const vilF=smoothstep(VILLAGE.r+2,VILLAGE.r-4,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
-    const patch=Math.max(campF,vilF)*(0.38+0.25*Math.sin(x*0.55+1.7)*Math.cos(z*0.47));
+    const patch=vilF*(0.38+0.25*Math.sin(x*0.55+1.7)*Math.cos(z*0.47));
     dirt[i]=Math.max(tr,mud,patch);
     let r=0.88+0.22*n,gg=0.88+0.2*n,b=0.86+0.18*n;
     r*=1+0.06*campF;b*=1-0.08*campF;

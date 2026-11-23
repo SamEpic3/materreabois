@@ -3,7 +3,8 @@ function doEnter(){
   const c=context();if(!c.enter)return;
   if(S.mode==='crane'){S.mode='foot';updateToolVisual();return;}
   if(S.mode==='sit'){standUp();return;}
-  if(S.mode==='place'){endPlace();toast('Construction annulée');return;}
+  if(S.mode==='place'){cancelPlace();return;}
+  if(S.mode==='pick'){closePick();return;}
   if(S.mode==='foot'&&c.enterSeat){sitDown(c.enterSeat);return;}
   if(S.mode==='foot'){
     if(c.enterCrane){

@@ -23,7 +23,10 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Suivre les prix** sur l'affiche de la cour à bois : ils changent toutes les 5 minutes.
-- **Améliorer le camp** à la porte de la cabane (« Projets du camp ») : feu de camp avec bûches pour s'asseoir, abri à bois et bouilloire à sirop (placés librement sur le terrain), galerie avec chaises berçantes, poêle à bois, nouvelle pièce.
+- **Améliorer le camp** à la porte de la cabane (« Projets du camp ») :
+  - constructions à placer, autant qu'on veut : feu de camp (avec bûches pour s'asseoir et terre battue autour), abri à bois, bouilloire à sirop, barbecue;
+  - améliorations de la cabane, une seule fois chacune : galerie avec chaises berçantes, poêle à bois, nouvelle pièce;
+  - **Déplacer** et **Démolir** (remboursé à 50 %) : on touche ou clique la construction. Le placement se fait en vue isométrique : WASD, flèches ou glisser l'écran pour bouger l'aperçu, F ou R pour tourner.
 - **Planter** des plants achetés au magasin, n'importe où de libre : ils poussent en 3 à 5 heures réelles.
 - **Essoucher** à la pelle (achetée au magasin) : la souche est arrachée et le terrain dégagé.
 - **Faire les sucres** : entailler les érables, vider les chaudières dans un seau, faire bouillir dans la bouilloire (à construire et placer, au feu de bois), vendre le sirop au magasin. Les seaux se rangent dans la petite remorque ou la boîte du pick-up (un seul type de chargement à la fois : bois ou seaux).
@@ -68,7 +71,8 @@ js/interactions.js    Embarquer, débarquer, opérer la grue, boutons d'action
 js/marche.js          Prix du bois et du sirop qui varient, affiche des prix
 js/erabliere.js       Entailles, chaudières, seaux, feu et bouilloire
 js/vente.js           Vente de véhicules et de remorques
-js/camp.js            Projets du camp, sièges, feu de camp, poêle, abri à bois
+js/constructions.js   Constructions placées (feu, abri, bouilloire, barbecue) : placer, déplacer, démolir
+js/camp.js            Projets du camp, améliorations de la cabane, sièges, poêle
 js/plantation.js      Plants, plantation et pousse en temps réel
 js/joueur.js          Déplacement et animations du joueur à pied
 js/physique.js        Physique des véhicules et des remorques

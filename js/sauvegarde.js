@@ -26,9 +26,9 @@ function snapshot(){
     trailers:trailers.map(t=>({kind:t.kind,x:r3(t.x),z:r3(t.z),th:r3(t.th),hitch:t.hitch?vehicles.indexOf(t.hitch):-1,resale:t.resale,c:contSnap(t.c)})),
     pails:pails.map(p=>({x:r3(p.x),z:r3(p.z),kind:p.kind,L:p.L})),
     tapsOn:taps.map(tp=>({tree:tp.t.planted?'p'+planted.indexOf(tp.t):treeList.indexOf(tp.t),sap:tp.sap,a:r3(tp.mesh.rotation.y)})),
-    boil:{fuel:boil.fuel,sap:boil.sap,syrup:boil.syrup},
     planted:planted.map(t=>({type:t.type,x:r3(t.x),z:r3(t.z),s:r3(t.s),rot:r3(t.rot),plantedAt:t.plantedAt,growMs:t.growMs,work:t.work})),
-    camp:S.camp,campPos:S.campPos,shed:S.shed.map(cOf),campFire:campFire.fuel,stove:stove.fuel
+    camp:S.camp,stove:stove.fuel,
+    builds:S.builds.map(b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):typeof b[k]==='number'?r3(b[k]):b[k];}return o;})
   };
 }
 function saveGame(){if(saveOff)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));}catch(e){}}
@@ -63,18 +63,27 @@ function loadGame(){
   pails.forEach(p=>scene.remove(p.mesh));pails.length=0;(d.pails||[]).forEach(p=>addGroundPail(p.x,p.z,p.kind,p.L));
   (d.planted||[]).forEach(o=>addPlanted(o));
   (d.tapsOn||[]).forEach(o=>{const t=typeof o.tree==='string'?planted[+o.tree.slice(1)]:(same?treeList[o.tree]:null);if(t&&t.alive&&!tapOf(t))placeTap(t,o.a,o.sap);});
-  if(d.boil)Object.assign(boil,d.boil);
-  Object.keys(d.camp||{}).forEach(id=>{if(d.camp[id]&&BUILD[id])buildProject(id,d.campPos&&d.campPos[id]);});
-  if(!d.campPos&&!S.camp.sucres)buildProject('sucres');   // anciennes sauvegardes : la bouilloire était déjà là
-  S.shed=d.shed||[];refreshShed();campFire.fuel=d.campFire||0;stove.fuel=d.stove||0;
+  Object.keys(d.camp||{}).forEach(id=>{if(d.camp[id]&&BUILD[id])buildUpgrade(id);});
+  stove.fuel=d.stove||0;
+  if(d.builds)d.builds.forEach(o=>{const {k,x,z,rot}=o;if(!KINDS[k])return;const st=Object.assign({},o);delete st.k;delete st.x;delete st.z;delete st.rot;addBuild(k,{x,z,rot},st);});
+  else{   // anciennes sauvegardes : une seule construction de chaque sorte
+    const cp=d.campPos||{},c=d.camp||{},b=d.boil||{};
+    if(c.feu)addBuild('feu',cp.feu||{x:-3.5,z:-6.5,rot:0},{fuel:d.campFire||0});
+    if(c.abri)addBuild('abri',cp.abri||{x:-13.6,z:-3.2,rot:Math.atan2(13.6,3.2)},{logs:d.shed||[]});
+    if(c.sucres||!d.campPos)addBuild('sucres',cp.sucres||{x:-10,z:-7,rot:0},{fuel:b.fuel||0,sap:b.sap||0,syrup:b.syrup||0});
+  }
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
   TOOL=d.tool==='plants'?(seedCount()>0?PLANT_TOOL:null):(TOOLS.find(t=>t.id===d.tool&&owned.has(t.id))||null);
   updateToolVisual();renderHotbar();
   // Ce qui a avancé pendant l'absence (48 h maximum)
   const away=clamp((Date.now()-d.t)/1000,0,48*3600);
   let sap=0;taps.forEach(tp=>{const add=Math.min(TAP_CAP-tp.sap,SAP_RATE*away);tp.sap+=add;sap+=add;});
-  const burn=Math.min(boil.fuel,away),ev=Math.min(boil.sap,BOIL_RATE*burn);boil.sap-=ev;boil.syrup+=ev/SAP_PER_SYRUP;boil.fuel-=burn;
-  campFire.fuel=Math.max(0,campFire.fuel-away);stove.fuel=Math.max(0,stove.fuel-away);
+  let ev=0;
+  S.builds.forEach(b=>{
+    if(b.k==='sucres'){const burn=Math.min(b.fuel,away),e=Math.min(b.sap,BOIL_RATE*burn);b.sap-=e;b.syrup+=e/SAP_PER_SYRUP;b.fuel-=burn;ev+=e;}
+    else if(b.k==='feu')b.fuel=Math.max(0,b.fuel-away);else if(b.k==='bbq')b.lit=0;
+  });
+  stove.fuel=Math.max(0,stove.fuel-away);
   S.mktNext-=away;
   const grown=planted.filter(t=>t.plantedAt+t.growMs<=Date.now()&&t.plantedAt+t.growMs>d.t).length;
   return {away,sap,syrup:ev/SAP_PER_SYRUP,grown};
