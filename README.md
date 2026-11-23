@@ -22,6 +22,7 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la remorque chargeuse et sa grue : billots jusqu'à 12 pi.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** dans la cour de la scierie, au village. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
+- **Fendre le bois** avec la fendeuse à bûches (magasin général, 1800 $) : elle s'attache au VTT ou au pick-up. On lui apporte une bûche de 26 po maximum; le bois fendu se vend 1,8 fois plus cher.
 - **Suivre les prix** à la porte de la scierie : ils changent toutes les 5 minutes.
 - **Améliorer le camp** à la porte de la cabane (« Projets du camp ») :
   - constructions à placer, autant qu'on veut : feu de camp (avec bûches pour s'asseoir et terre battue autour), abri à bois, bouilloire à sirop, barbecue;
@@ -71,6 +72,7 @@ js/interactions.js    Embarquer, débarquer, opérer la grue, boutons d'action
 js/marche.js          Prix du bois et du sirop qui varient, tableau des prix (porte de la scierie)
 js/erabliere.js       Entailles, chaudières, seaux, feu et bouilloire
 js/vente.js           Vente de véhicules et de remorques
+js/fendeuse.js        Fendeuse à bûches (remorque) et bois fendu
 js/constructions.js   Constructions placées (feu, abri, bouilloire, barbecue) : placer, déplacer, démolir
 js/camp.js            Projets du camp, améliorations de la cabane, sièges, poêle
 js/plantation.js      Plants, plantation et pousse en temps réel

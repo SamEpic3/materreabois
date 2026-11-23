@@ -23,7 +23,7 @@ let TOOL=TOOLS[0];
 function toolVerb(){if(!TOOL)return '';if(TOOL.kind==='shovel')return 'Coup de pelle';return TOOL.kind==='axe'?(TOOL.id==='hachette'?'Coup de hachette':'Coup de hache'):TOOL.kind==='saw'?'Coup de sciotte':'Coup de scie';}
 function fellTotal(t){return Math.max(1,Math.ceil(t.base*(TOOL?TOOL.fell:1)));}
 let V=null;
-function containers(){const a=trailers.map(t=>t.c);vehicles.forEach(v=>{if(v.bed)a.push(v.bed);});return a;}
+function containers(){const a=trailers.filter(t=>t.c.cap>0).map(t=>t.c);vehicles.forEach(v=>{if(v.bed)a.push(v.bed);});return a;}
 function nearestContainer(){let b=null,bd=1e9;for(const c of containers()){const p=c.center(),d=Math.hypot(P.x-p.x,P.z-p.z);if(d<c.r&&d<bd){bd=d;b=c;}}return b;}
 function containerAtYard(c){const p=c.center();return Math.hypot(p.x-YARD.x,p.z-YARD.z)<YARD.r+2.5;}
 

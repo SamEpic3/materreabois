@@ -4,12 +4,12 @@ const TRAILER_SLOTS=[[-0.44,0.22],[0,0.22],[0.44,0.22],[-0.22,0.6],[0.22,0.6],[0
 const pieces=[],falling=[],chips=[];
 const FT=0.3048,INCH=0.0254,CARRY_MAX=8*FT+2*INCH,SAW_MIN=7*FT+10*INCH,CRANE_MAX=12*FT+2*INCH;
 function ftin(m){const t=Math.round(m/INCH);return `${Math.floor(t/12)} pi ${t%12} po`;}
-function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*FIREWOOD_FT*mkt('chauffage')));}
+function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*FIREWOOD_FT*mkt('chauffage')*(c.split?SPLIT_BONUS:1)));}
 function kindOf(len){return len>CRANE_MAX?'trop long : recoupe ou débusqueuse':len>CARRY_MAX?'billot long (grue) ✔':len>=SAW_MIN?'billot de sciage ✔':'bois de chauffage';}
 function pointInYard(x,z){return Math.hypot(x-YARD.x,z-YARD.z)<YARD.r;}
 function inYard(){return pointInYard(P.x,P.z);}
 function pieceGeo(len,ra,rb){const g=new T.CylinderGeometry(rb,ra,len,9);g.rotateX(Math.PI/2);return g;}
-function makePieceMesh(c){const m=new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMats);m.castShadow=true;m.receiveShadow=true;return m;}
+function makePieceMesh(c){const m=c.split?new T.Mesh(splitGeo(c.len,c.ra,c.rb),SPLIT_MATS):new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMats);m.castShadow=true;m.receiveShadow=true;return m;}
 function placePiece(pc){
   const fx=Math.sin(pc.rot),fz=Math.cos(pc.rot),h=pc.len/2;
   const h0=H(pc.cx-fx*h,pc.cz-fz*h)+pc.ra,h1=H(pc.cx+fx*h,pc.cz+fz*h)+pc.rb;
@@ -61,13 +61,14 @@ function context(){
   }else{
     const np=nearestPiece();
     if(np){
-      const pc=np.pc,[a,b]=cutRange(pc),canCut=b>a,d=clamp(np.d,a,b);
+      const pc=np.pc,[a,b]=cutRange(pc),canCut=b>a&&!pc.split,d=clamp(np.d,a,b);
       if(canCut)preview={pc,d,locked:false};
       const cutAct=canCut&&TOOL&&TOOL.cut?{label:`Couper ici : ${ftin(d)}`,fn:()=>startCut(pc,d),cool:true}:null;
-      if(carryable(pc)){act={label:`Prendre (${ftin(pc.len)}, ${pc.len>=SAW_MIN?'sciage':'chauffage'})`,fn:()=>pickUp(pc)};act2=cutAct;}
+      if(carryable(pc)){act={label:`Prendre (${ftin(pc.len)}, ${pc.split?'bois fendu':pc.len>=SAW_MIN?'sciage':'chauffage'})`,fn:()=>pickUp(pc)};act2=cutAct;}
       else act=cutAct;
       const noTool=canCut&&!(TOOL&&TOOL.cut)?' · choisis un outil de coupe pour tronçonner':'';
-      if(carryable(pc))info=`Billot de ${ftin(pc.len)} (${pc.len>=SAW_MIN?'sciage':'bois de chauffage'})`+(canCut?` · recouper ici : ${ftin(d)}`:'');
+      if(pc.split)info=`Bois fendu de ${ftin(pc.len)}`;
+      else if(carryable(pc))info=`Billot de ${ftin(pc.len)} (${pc.len>=SAW_MIN?'sciage':'bois de chauffage'})`+(canCut?` · recouper ici : ${ftin(d)}`:'');
       else if(canCut)info=`Ruban : ${ftin(d)} → ${kindOf(d)}`+(pc.crown?'':` · reste ${ftin(pc.len-d)}`);
       else if(pc.crown)info='La cime : rien à ramasser ici';
       if(!pc.crown&&pc.len>CARRY_MAX&&!canCut)info='Trop long pour l\'épaule : grue ou débusqueuse';
@@ -93,7 +94,7 @@ function context(){
 }
 function setCarry(c){
   P.carry=c;player.carryLog.visible=!!c;updateToolVisual();
-  if(c){const g=pieceGeo(c.len,c.ra,c.rb);player.carryLog.traverse(o=>{if(o.isMesh)o.geometry=g;});}
+  if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMats;}}
 }
 function pickUp(pc){removePiece(pc);setCarry({sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb});P.target=null;}
 function nearestVehicle(){let b=null,bd=1e9;for(const v of vehicles){const d=Math.hypot(P.x-v.x,P.z-v.z);if(d<v.spec.enterR&&d<bd){bd=d;b=v;}}return b;}
@@ -119,7 +120,7 @@ function sellPiece(c){
   const pr=priceOf(c);
   addYardLog(c,yardCount++);
   S.money+=pr;S.delivered++;
-  toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage (${ftin(c.len)})`);
+  toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage${c.split?' fendu':''} (${ftin(c.len)})`);
 }
 function sellLog(){const c=P.carry;setCarry(null);sellPiece(c);}
 function swing(tx,tz,onStrike){

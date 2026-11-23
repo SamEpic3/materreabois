@@ -1,7 +1,7 @@
 /* Vente de véhicules et de remorques, près du magasin général */
 const SALE_L=[0,10.5];              // en avant du magasin général (repère du village)
 const SALE=(()=>{const p=vpos(SALE_L[0],SALE_L[1]);return {x:p.x,z:p.z,r:5};})();
-const BUY_PRICE={vtt:3000,pickup:6500,skid:15000,small:800,loader:4500};
+const BUY_PRICE={vtt:3000,pickup:6500,skid:15000,small:800,loader:4500,fendeuse:1800};
 {
   groundRing(SALE.x,SALE.z,SALE.r-0.35,SALE.r,64,0x5fe07a,0.6);
   const g=new T.Group(),wood=mat(0x6e5236),pan=mat(0x2f6b3a);

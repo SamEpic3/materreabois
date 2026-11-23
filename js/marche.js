@@ -30,6 +30,7 @@ function renderBoard(){
   });
   $('boardList').innerHTML=`<table><tr><th>Billot de sciage</th><th class="num">8 pi</th><th class="num">Le pied</th><th></th></tr>${rows}
     <tr><td>Bois de chauffage</td><td></td><td class="num">${(FIREWOOD_FT*mkt('chauffage')).toFixed(2).replace('.',',')} $</td><td>${trend('chauffage')}</td></tr>
+    <tr><td>Bois de chauffage fendu</td><td></td><td class="num">${(FIREWOOD_FT*SPLIT_BONUS*mkt('chauffage')).toFixed(2).replace('.',',')} $</td><td>${trend('chauffage')}</td></tr>
     <tr><td>Sirop d'érable (magasin)</td><td class="num">${syrupPrice()} $ / L</td><td></td><td>${trend('sirop')}</td></tr></table>
     <p>Billot de sciage : 7 pi 10 po et plus, payé au pied (un 12 pi vaut 1,5 fois un 8 pi). Plus court : bois de chauffage.</p>`;
 }

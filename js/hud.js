@@ -65,7 +65,7 @@ function updateHUD(){
     else if(mudAt(V.x,V.z)>0.3)hint='Boue ! Ça avance moins vite…';
   }
   const grp={};
-  trailers.forEach(t=>{const g=grp[t.spec.label]||(grp[t.spec.label]={n:0,l:0,c:0,p:0});g.n++;g.l+=t.c.load.length;g.c+=t.c.cap;g.p+=t.c.pails.length;});
+  trailers.forEach(t=>{if(!t.c.cap)return;const g=grp[t.spec.label]||(grp[t.spec.label]={n:0,l:0,c:0,p:0});g.n++;g.l+=t.c.load.length;g.c+=t.c.cap;g.p+=t.c.pails.length;});
   vehicles.forEach(v=>{if(!v.bed)return;const g=grp['Boîte']||(grp['Boîte']={n:0,l:0,c:0,p:0});g.n++;g.l+=v.bed.load.length;g.c+=v.bed.cap;g.p+=v.bed.pails.length;});
   const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : `+(g.p?`${g.p} seau${g.p>1?'x':''}`:`${g.l}/${g.c}`)).join(' · ')||'Aucune remorque';
   const hud=`${S.money}|${S.delivered}|${loadTxt}|${S.mode}|${V?Math.round(Math.abs(V.v)*3.6):0}|${hint}`;

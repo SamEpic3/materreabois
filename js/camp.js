@@ -81,6 +81,7 @@ function feed(obj,max,what){const f=fuelOf(P.carry);obj.fuel=Math.min(max,obj.fu
 // Actions quand on porte une bûche (avant les autres)
 function carryExtras(){
   const c=P.carry;
+  const sp=splitContext();if(sp)return sp;
   const f=buildNear('feu');if(f)return {act:{label:`Mettre la bûche au feu de camp (+${fuelOf(c)} s)`,fn:()=>feed(f,CAMPFIRE_MAX,'Feu de camp')}};
   const s=buildNear('sucres');if(s)return {act:{label:`Mettre la bûche sous la bouilloire (+${fuelOf(c)} s)`,fn:()=>feed(s,FUEL_MAX,'Bouilloire')}};
   if(nearStove())return {act:{label:`Mettre la bûche dans le poêle (+${fuelOf(c)} s)`,fn:()=>feed(stove,STOVE_MAX,'Poêle')}};
@@ -95,6 +96,7 @@ function carryExtras(){
 // Actions les mains libres, près des constructions
 function campExtras(){
   if(nearDoor())return {act:{label:'Projets du camp',fn:openProjects},info:S.camp.poele?`Poêle à bois : ${fmtFire(stove.fuel)} · apporte une bûche pour le chauffer`:''};
+  const fd=nearestSplitter();if(fd)return {info:fd.splitting?'La fendeuse travaille…':`Fendeuse : apporte une bûche de ${Math.round(SPLIT_MAX/INCH)} po maximum pour la fendre`};
   const a=buildNear('abri');if(a&&a.logs.length)return {act:{label:`Prendre une bûche dans l'abri (${a.logs.length})`,fn:()=>{const c=a.logs.pop();refreshShed(a);setCarry(c);}}};
   const q=buildNear('bbq');
   if(q)return q.lit>0?{info:'Le barbecue est chaud ! Il ne manque que la viande… la chasse s\'en vient 😉'}:{act:{label:'Allumer le barbecue',fn:()=>{q.lit=BBQ_TIME;toast('🍖 Le barbecue chauffe');}}};

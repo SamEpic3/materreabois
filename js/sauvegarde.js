@@ -5,7 +5,7 @@ const SAVE_KEY='terre-a-bois-sauvegarde',SAVE_VER=1;
 const WORLD_SIG=`${treeList.length}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[treeList.length-1].z*1000)}`;
 let saveOff=false;
 const r3=v=>Math.round(v*1000)/1000;
-function cOf(c){return {sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};}
+function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=1;return o;}
 function contSnap(c){return {logs:c.load.map(m=>cOf(m.userData.c)),pails:(c.pails||[]).map(p=>({kind:p.kind,L:p.L}))};}
 function snapshot(){
   const pcs=pieces.map(p=>({cx:r3(p.cx),cz:r3(p.cz),rot:r3(p.rot),...cOf(p)}));
@@ -55,7 +55,7 @@ function loadGame(){
     (d.campStumps||[]).forEach(([i,f,w])=>{const s=campStumps[i];if(!s)return;if(f)removeStump(s,true);else s.work=w;});
   }
   (d.extraStumps||[]).forEach(o=>makeStump({x:o.x,z:o.z,y:H(o.x,o.z),s:o.s,type:o.type,planted:true}));
-  (d.pieces||[]).forEach(p=>addPiece({cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,crown:false}));
+  (d.pieces||[]).forEach(p=>addPiece({cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:!!p.split,crown:false}));
   clearAllVehicles();
   (d.vehicles||[]).forEach(o=>{const v=makeVehicle(o.type,o.x,o.z,o.th);if(o.resale!==undefined)v.resale=o.resale;if(o.bed&&v.bed)fillCont(v.bed,o.bed);});
   (d.trailers||[]).forEach(o=>{const t=makeTrailerObj(o.kind,o.x,o.z,o.th);if(o.resale!==undefined)t.resale=o.resale;if(o.hitch>=0&&vehicles[o.hitch])t.hitch=vehicles[o.hitch];fillCont(t.c,o.c||{});});
