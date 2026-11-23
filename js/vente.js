@@ -25,7 +25,7 @@ function sellTrailer(t){
   const v=resale(t);
   scene.remove(t.mesh.g);scene.remove(t.mark);trailers.splice(trailers.indexOf(t),1);
   if(P.crTr===t&&S.mode==='crane')S.mode='foot';
-  S.money+=v;toast(`${t.spec.label} vendue : +${v} $`);
+  S.money+=v;J.sell('une '+t.spec.name,v);toast(`${t.spec.label} vendue : +${v} $`);
 }
 function sellVehicle(v){
   if(v.drag)skidRelease(v);
@@ -35,7 +35,7 @@ function sellVehicle(v){
   const val=resale(v);
   scene.remove(v.mesh.g);vehicles.splice(vehicles.indexOf(v),1);
   if(V===v)V=vehicles[vehicles.length-1]||null;
-  S.money+=val;toast(`${v.spec.name} vendu : +${val} $`);
+  S.money+=val;J.sell((v.type==='vtt'?'un ':'une ')+v.spec.name.replace('Pick-up','pick-up'),val);toast(`${v.spec.name} vendu : +${val} $`);
 }
 function driveSaleContext(){
   if(!inSale(V.x,V.z)||Math.abs(V.v)>0.8||V.drag)return null;

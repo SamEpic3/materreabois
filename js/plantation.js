@@ -49,7 +49,7 @@ function plantProblem(x,z){
 }
 function plantHere(){
   const p=plantSpot();if(plantProblem(p.x,p.z))return;
-  const type=S.seedSel;S.seeds[type]--;
+  const type=S.seedSel;S.seeds[type]--;J.plant();
   addPlanted({x:p.x,z:p.z,type,s:0.8+Math.random()*0.5,rot:Math.random()*6.28,plantedAt:Date.now(),growMs:GROW_MIN+Math.random()*(GROW_MAX-GROW_MIN)});
   toast(`🌱 ${SPECIES[type].n} planté (il t'en reste ${S.seeds[type]})`);
   if(S.seeds[type]<=0)S.seedSel=nextSeedType();

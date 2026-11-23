@@ -87,7 +87,7 @@ function updateSplitters(dt){
       const c=Object.assign({},s.c,{split:true});
       if(!P.carry&&!P.pail&&Math.hypot(P.x-t.x,P.z-t.z)<3)setCarry(c);
       else addPiece({cx:t.x+Math.cos(t.th)*0.9,cz:t.z-Math.sin(t.th)*0.9,rot:t.th,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,split:true,crown:false});
-      toast(`🪓 Bûche fendue : vaut maintenant ${priceOf(c)} $`);
+      J.split();toast(`🪓 Bûche fendue : vaut maintenant ${priceOf(c)} $`);
     }
   });
 }

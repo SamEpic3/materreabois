@@ -23,6 +23,8 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** dans la cour de la scierie, au village. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Fendre le bois** avec la fendeuse à bûches (magasin général, 1800 $) : elle s'attache au VTT ou au pick-up. On lui apporte une bûche de 26 po maximum; le bois fendu se vend 1,8 fois plus cher.
+- **Journal de la terre** (📜 ou J) : qui a fait quoi (ventes, achats, constructions, plantations…), pour voir ce que l'autre a fait pendant ton absence.
+- **Prêt pour le jeu à deux** : la sauvegarde sépare le monde (partagé) de chaque joueur (nom, position, outil). Les autres joueurs apparaissent là où ils se sont arrêtés. Il reste à brancher un serveur à la place du stockage du navigateur (`Stockage` dans js/joueurs.js).
 - **Suivre les prix** à la porte de la scierie : ils changent toutes les 5 minutes.
 - **Améliorer le camp** à la porte de la cabane (« Projets du camp ») :
   - constructions à placer, autant qu'on veut : feu de camp (avec bûches pour s'asseoir et terre battue autour), abri à bois, bouilloire à sirop, barbecue;
@@ -79,6 +81,7 @@ js/plantation.js      Plants, plantation et pousse en temps réel
 js/joueur.js          Déplacement et animations du joueur à pied
 js/physique.js        Physique des véhicules et des remorques
 js/hud.js             Flèche d'objectif et affichage
+js/joueurs.js         Joueurs, nom, journal, stockage (à remplacer par un serveur)
 js/sauvegarde.js      Sauvegarde locale, reprise et temps écoulé pendant l'absence
 js/boucle.js          Boucle de jeu et placement des caméras
 js/pwa.js             App installable : service worker, vue horizontale forcée

@@ -119,7 +119,7 @@ function addYardLog(c,i){
 function sellPiece(c){
   const pr=priceOf(c);
   addYardLog(c,yardCount++);
-  S.money+=pr;S.delivered++;
+  S.money+=pr;S.delivered++;J.wood(c,pr);
   toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage${c.split?' fendu':''} (${ftin(c.len)})`);
 }
 function sellLog(){const c=P.carry;setCarry(null);sellPiece(c);}

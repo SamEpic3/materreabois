@@ -5,6 +5,7 @@ const joy={active:false,id:null,cx:0,cy:0,x:0,y:0};
 const pedal={gas:false,brake:false};
 addEventListener('keydown',e=>{
   if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
+  if(!$('journal').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space'||e.code==='KeyJ')closeJournal();e.preventDefault();return;}
   if(!$('proj').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeProjects();e.preventDefault();return;}
   if(!$('board').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeBoard();e.preventDefault();return;}
   if($('help').classList.contains('hidden')===false&&e.code!=='Escape')return;
@@ -16,6 +17,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyZ')rotateCam(-1);
   if(e.code==='KeyC')rotateCam(1);
   if(e.code==='KeyV'&&!e.repeat)toggleCam();
+  if(e.code==='KeyJ'&&!e.repeat)openJournal();
   const dg=/^Digit([1-9])$/.exec(e.code);if(dg&&!e.repeat)selectSlot(+dg[1]-1);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });

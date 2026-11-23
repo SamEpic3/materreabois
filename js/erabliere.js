@@ -94,7 +94,7 @@ function treeContext(t){
 function collectSap(tp){const take=Math.min(tp.sap,PAIL_CAP-P.pail.L);tp.sap-=take;P.pail.L+=take;P.pail.kind='eau';setPail(P.pail);toast(`+${fmtL(take)} d'eau d'érable (seau : ${fmtL(P.pail.L)})`);}
 function pourSap(b){const put=Math.min(P.pail.L,PAN_CAP-b.sap);if(put<=0.01){toast('La bouilloire est pleine');return;}b.sap+=put;P.pail.L-=put;setPail(P.pail);toast(`Versé ${fmtL(put)} dans la bouilloire`);}
 function takeSyrup(b){const take=Math.min(b.syrup,PAIL_CAP-P.pail.L);b.syrup-=take;P.pail.L+=take;P.pail.kind='sirop';setPail(P.pail);toast(`+${fmtL(take)} de sirop 🍯`);}
-function sellSyrup(){const v=Math.round(P.pail.L*syrupPrice());S.money+=v;toast(`+${v} $ — ${fmtL(P.pail.L)} de sirop vendu`);P.pail.L=0;setPail(P.pail);}
+function sellSyrup(){const v=Math.round(P.pail.L*syrupPrice());S.money+=v;J.syrup(P.pail.L,v);toast(`+${v} $ — ${fmtL(P.pail.L)} de sirop vendu`);P.pail.L=0;setPail(P.pail);}
 function dropPail(){const p=P.pail;addGroundPail(P.x+Math.sin(P.rot)*0.7,P.z+Math.cos(P.rot)*0.7,p.kind,p.L);setPail(null);}
 function putPailIn(cont){
   const p=P.pail,i=cont.pails.length,sl=cont.pslots[i],m=makePail();

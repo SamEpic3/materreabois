@@ -63,7 +63,7 @@ function renderProjects(){
     row(kd.icon,kd.name,kd.price,kd.desc,n?`Tu en as ${n}`:'','Choisir l\'endroit',S.money<kd.price,()=>{if(S.money>=kd.price)startPlace(k);});});
   sec('Améliorations de la cabane');
   UPGRADES.forEach(u=>{const done=!!S.camp[u.id];
-    row(u.icon,u.name,u.price,u.desc,'',done?'Construit':'Construire',done||S.money<u.price,()=>{if(S.money<u.price||S.camp[u.id])return;S.money-=u.price;buildUpgrade(u.id);toast(`${u.icon} ${u.name} : c'est construit !`);renderProjects();});});
+    row(u.icon,u.name,u.price,u.desc,'',done?'Construit':'Construire',done||S.money<u.price,()=>{if(S.money<u.price||S.camp[u.id])return;S.money-=u.price;buildUpgrade(u.id);J.build(u.name.toLowerCase());toast(`${u.icon} ${u.name} : c'est construit !`);renderProjects();});});
   $('projMove').disabled=$('projDemo').disabled=!S.builds.length;
 }
 function openProjects(){renderProjects();$('proj').classList.remove('hidden');for(const k in keys)keys[k]=false;}

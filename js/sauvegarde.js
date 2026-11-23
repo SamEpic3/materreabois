@@ -1,6 +1,6 @@
 /* Sauvegarde locale : toute la partie est gardée dans ce navigateur, et ce qui avance avec le temps
    (chaudières, bouilloire, feux, arbres plantés) continue pendant l'absence. */
-const SAVE_KEY='terre-a-bois-sauvegarde',SAVE_VER=1;
+const SAVE_KEY='terre-a-bois-sauvegarde',SAVE_VER=2;   // v2 : monde et joueurs séparés (v1 encore lue)
 // Signature de la forêt de départ : si le code du monde change, on ne réapplique pas l'état des arbres.
 const WORLD_SIG=`${treeList.length}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[treeList.length-1].z*1000)}`;
 let saveOff=false;
@@ -8,6 +8,12 @@ const r3=v=>Math.round(v*1000)/1000;
 function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=1;return o;}
 function contSnap(c){return {logs:c.load.map(m=>cOf(m.userData.c)),pails:(c.pails||[]).map(p=>({kind:p.kind,L:p.L}))};}
 function snapshot(){
+  const f=flatSnapshot(),me={name:ME.name,player:f.player,tool:f.tool,seedSel:f.seedSel,t:f.t};
+  delete f.player;delete f.tool;delete f.seedSel;delete f.ver;delete f.sig;
+  return {ver:SAVE_VER,sig:WORLD_SIG,t:me.t,world:f,players:Object.assign({},S.others,{[ME.id]:me}),journal:S.journal};
+}
+// Ancienne forme « tout à plat » : sert aussi à lire les sauvegardes v1
+function flatSnapshot(){
   const pcs=pieces.map(p=>({cx:r3(p.cx),cz:r3(p.cz),rot:r3(p.rot),...cOf(p)}));
   vehicles.forEach(v=>{if(!v.drag)return;const {butt,top}=dragEnds(v),d=v.drag;
     pcs.push({cx:(butt.x+top.x)/2,cz:(butt.z+top.z)/2,rot:Math.atan2(top.x-butt.x,top.z-butt.z),...cOf(d)});});
@@ -31,7 +37,7 @@ function snapshot(){
     builds:S.builds.map(b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):typeof b[k]==='number'?r3(b[k]):b[k];}return o;})
   };
 }
-function saveGame(){if(saveOff)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));}catch(e){}}
+function saveGame(){if(saveOff)return;Stockage.sauver(snapshot());}
 
 function fillCont(cont,o){
   (o.logs||[]).forEach((c,i)=>{const sl=(cont.slots||[])[i];if(!sl)return;const m=makePieceMesh(c);m.position.set(sl[0],sl[1],0);m.userData.c=c;cont.cargo.add(m);cont.load.push(m);});
@@ -42,13 +48,19 @@ function clearAllVehicles(){
   trailers.forEach(t=>{scene.remove(t.mesh.g);scene.remove(t.mark);});trailers.length=0;
 }
 function loadGame(){
-  let d=null;try{d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(e){}
-  if(!d||d.ver!==SAVE_VER)return null;
+  let d=Stockage.charger();
+  if(!d||(d.ver!==1&&d.ver!==2))return null;
+  if(d.ver===2){   // on remet le monde et MON joueur à plat; les autres joueurs sont gardés à part
+    const me=(d.players||{})[ME.id]||null;
+    S.others={};for(const id in d.players||{})if(id!==ME.id)S.others[id]=d.players[id];
+    S.journal=d.journal||[];
+    d=Object.assign({},d.world,{sig:d.sig,t:me?me.t:d.t,player:me?me.player:null,tool:me?me.tool:null,seedSel:me?me.seedSel:null});
+  }
   S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;
   yardCount=d.yardCount||0;for(let i=Math.max(0,yardCount-60);i<yardCount;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},i);
   if(d.mkt){Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.mktPrev||{});S.mktNext=d.mktNext||MKT_PERIOD;}
   owned.clear();(d.owned||['hachette']).forEach(id=>owned.add(id));
-  if(d.seeds)Object.assign(S.seeds,d.seeds);if(d.seedSel)S.seedSel=d.seedSel;
+  if(d.seeds)Object.assign(S.seeds,d.seeds);if(d.seedSel&&S.seeds[d.seedSel]>0)S.seedSel=d.seedSel;
   const same=d.sig===WORLD_SIG;
   if(same){
     (d.trees||[]).forEach(([i,f,x])=>{const t=treeList[i];if(!t)return;if(f){hideTree(t);if(x)t.stumpGone=true;else makeStump(t);}else t.work=x;});
@@ -73,6 +85,7 @@ function loadGame(){
     if(c.sucres||!d.campPos)addBuild('sucres',cp.sucres||{x:-10,z:-7,rot:0},{fuel:b.fuel||0,sap:b.sap||0,syrup:b.syrup||0});
   }
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
+  showOthers();
   TOOL=d.tool==='plants'?(seedCount()>0?PLANT_TOOL:null):(TOOLS.find(t=>t.id===d.tool&&owned.has(t.id))||null);
   updateToolVisual();renderHotbar();
   // Ce qui a avancé pendant l'absence (48 h maximum)
@@ -108,7 +121,7 @@ addEventListener('pagehide',saveGame);
 {
   const b=$('btnReset');let armed=0;
   b.addEventListener('click',()=>{
-    if(Date.now()-armed<4000){saveOff=true;try{localStorage.removeItem(SAVE_KEY);}catch(e){}location.reload();return;}
+    if(Date.now()-armed<4000){saveOff=true;Stockage.effacer();location.reload();return;}
     armed=Date.now();b.textContent='Appuie encore pour tout effacer';setTimeout(()=>{b.textContent='Nouvelle partie (efface la sauvegarde)';},4000);
   });
 }

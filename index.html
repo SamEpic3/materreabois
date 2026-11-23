@@ -30,6 +30,7 @@
   <button class="sbtn" id="zIn" title="Zoom avant">＋</button>
   <button class="sbtn" id="zOut" title="Zoom arrière">－</button>
   <button class="sbtn" id="btnCam" title="Vue rapprochée (V)">🎥</button>
+  <button class="sbtn" id="btnJournal" title="Journal de la terre">📜</button>
   <button class="sbtn" id="btnHelp" title="Aide">?</button>
 </div>
 
@@ -87,9 +88,11 @@
       <li><b>Camp :</b> à la porte de la cabane, « Projets du camp » : feu de camp, abri à bois et bouilloire à sirop (que tu places où tu veux : marche pour choisir l'endroit, F ou R pour tourner, Espace pour construire, E pour annuler), galerie avec chaises berçantes, poêle à bois, nouvelle pièce. E pour t'asseoir sur une chaise ou une bûche. Le bois de chauffage alimente le feu et le poêle, et se corde dans l'abri.</li>
       <li><b>Plantation :</b> achète des plants au magasin, prends-les dans la barre d'outils (🌱) et plante-les n'importe où de libre. Ils poussent en 3 à 5 heures, même quand le jeu est fermé.</li>
       <li><b>Sauvegarde :</b> la partie se sauvegarde toute seule dans ce navigateur.</li>
+      <li><b>Journal (📜 ou <kbd>J</kbd>) :</b> tout ce que chacun fait sur la terre y est noté.</li>
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
       <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
     </ul>
+    <label class="pname">Ton nom : <input id="playerName" maxlength="20" placeholder="ex. Sam" autocomplete="off"></label>
     <button id="btnStart">Jouer</button>
     <button id="btnReset" class="reset">Nouvelle partie (efface la sauvegarde)</button>
   </div>
@@ -108,6 +111,14 @@
     <div class="money" id="boardSub"></div>
     <div id="boardList"></div>
     <button id="boardClose">Fermer</button>
+  </div>
+</div>
+<div id="journal" class="hidden">
+  <div class="card">
+    <h1>📜 Journal de la terre</h1>
+    <div class="money">Ce que chacun a fait sur la terre</div>
+    <div id="journalList"></div>
+    <button id="journalClose">Fermer</button>
   </div>
 </div>
 <div id="proj" class="hidden">
@@ -145,6 +156,7 @@
 <script src="js/joueur.js"></script>
 <script src="js/physique.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>
 <script src="js/boucle.js"></script>
 <script src="js/pwa.js"></script>

@@ -48,7 +48,7 @@ function renderShop(){
     d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t)))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
     if(owned.has(t.id)){b.textContent='À toi';b.disabled=true;}
-    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);setTool(t);toast(`${t.name} : dans ton inventaire et en main !`);renderShop();};}
+    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);setTool(t);J.buy(t.name.toLowerCase(),t.price);toast(`${t.name} : dans ton inventaire et en main !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);
   });
   sec('Érablière');
@@ -56,14 +56,14 @@ function renderShop(){
     const d=document.createElement('div');d.className='item';
     d.innerHTML=imgTag(thumb('chaudiere',()=>{const g=new T.Group();const m=makeTapBucket();g.add(m);return g;}))+`<div class="txt"><b>Chaudière et chalumeau</b> — 25 $<p>Pour entailler un érable : la chaudière se remplit d'eau d'érable toute seule.</p><p class="stats">Tu en as ${S.taps} en réserve · ${taps.length} installée${taps.length>1?'s':''}</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<25;
-    b.onclick=()=>{if(S.money<25)return;S.money-=25;S.taps++;toast('Chaudière achetée');renderShop();};
+    b.onclick=()=>{if(S.money<25)return;S.money-=25;S.taps++;J.buy('une chaudière et un chalumeau',25);toast('Chaudière achetée');renderShop();};
     d.appendChild(b);L.appendChild(d);
   }
   {
     const d=document.createElement('div');d.className='item';
     d.innerHTML=imgTag(thumb('seau',()=>{const g=new T.Group();g.add(makePail());return g;}))+`<div class="txt"><b>Seau de collecte</b> — 15 $<p>Pour vider les chaudières et transporter l'eau d'érable ou le sirop (30 L).</p><p class="stats">Il te sera remis en main, ou posé devant la porte</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<15;
-    b.onclick=()=>{if(S.money<15)return;S.money-=15;
+    b.onclick=()=>{if(S.money<15)return;S.money-=15;J.buy('un seau',15);
       if(!P.pail&&!P.carry)setPail({kind:'eau',L:0});else addGroundPail(STORE_DOOR.x+(Math.random()-0.5)*1.5,STORE_DOOR.z+1.2,'eau',0);
       toast('Seau acheté');renderShop();};
     d.appendChild(b);L.appendChild(d);
@@ -73,7 +73,7 @@ function renderShop(){
     const d=document.createElement('div'),pr=SEED_PRICE[k];d.className='item';
     d.innerHTML=`<div class="thumb emoji">🌱</div><div class="txt"><b>Plants ${/^[aeéiouy]/.test(seedName(k))?'d\'':'de '}${seedName(k)} (×${SEED_PACK})</b> — ${pr} $<p>À planter n'importe où de libre. Ils poussent en 3 à 5 heures.</p><p class="stats">Tu en as ${S.seeds[k]}</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<pr;
-    b.onclick=()=>{if(S.money<pr)return;S.money-=pr;S.seeds[k]+=SEED_PACK;S.seedSel=k;renderHotbar();toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
+    b.onclick=()=>{if(S.money<pr)return;S.money-=pr;S.seeds[k]+=SEED_PACK;J.buy(`${SEED_PACK} plants de ${SPECIES[k].n.toLowerCase()}`,pr);S.seedSel=k;renderHotbar();toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
     d.appendChild(b);L.appendChild(d);
   });
   sec('Véhicules et remorques');
@@ -86,7 +86,7 @@ function renderShop(){
     const b=document.createElement('button');
     const have=isT?trailers.filter(x=>x.kind===t.id).length:vehicles.filter(v=>v.type===t.id).length;
     if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
-    {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;
+    {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;J.buy(t.name.toLowerCase(),t.price);
       const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{vtt:[8,4],small:[8,11],pickup:[11,8],loader:[8,11],skid:[12,13],fendeuse:[8,11]}[t.id]);
       if(isT)makeTrailerObj(t.id,p.x,p.z,th);else makeVehicle(t.id,p.x,p.z,th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}

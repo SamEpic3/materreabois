@@ -179,8 +179,8 @@ function confirmPlace(){
   const pos={x:pl.cx,z:pl.cz,rot:pl.rot},why=placeProblem(pl.k,pos,pl.moving);if(why){toast(why);return;}
   const kd=KINDS[pl.k],m=pl.moving;
   pl.moving=null;closePlace();
-  if(m){Object.assign(m,pos);spawnBuild(m);refreshCampDirt();toast(`${kd.icon} ${kd.name} : déplacé !`);}
-  else{S.money-=kd.price;addBuild(pl.k,pos);toast(`${kd.icon} ${kd.name} : c'est construit !`);}
+  if(m){Object.assign(m,pos);spawnBuild(m);refreshCampDirt();J.move(kdName(m.k));toast(`${kd.icon} ${kd.name} : déplacé !`);}
+  else{S.money-=kd.price;addBuild(pl.k,pos);J.build(kdName(pl.k));toast(`${kd.icon} ${kd.name} : c'est construit !`);}
 }
 function updatePlacement(){
   const pl=P.placing;if(!pl)return;
@@ -213,6 +213,7 @@ function updatePick(){
   pickRing.visible=!!best;
   if(best){const r=footR(best);pickRing.scale.setScalar(r);pickRing.position.set(best.x,H(best.x,best.z)+0.12,best.z);pickRing.material.color.set(pk.action==='demolish'?0xe05a4a:0xffd27a);}
 }
+function kdName(k){const kd=KINDS[k];return (kd.art==='l\''?'un ':kd.art==='la'?'une ':'un ')+kd.name.toLowerCase();}
 function refundOf(b){return Math.round(KINDS[b.k].price*0.5);}
 let pendingDemo=null;
 function demolish(b){
@@ -221,7 +222,7 @@ function demolish(b){
   if(!pendingDemo||pendingDemo.b!==b||S.time-pendingDemo.t>3){pendingDemo={b,t:S.time};toast(`Démolir ${kd.art}${kd.art.endsWith('\'')?'':' '}${kd.name.toLowerCase()} pour ${refundOf(b)} $ ? Appuie encore pour confirmer`);return;}
   pendingDemo=null;
   despawnBuild(b);S.builds.splice(S.builds.indexOf(b),1);refreshCampDirt();
-  S.money+=refundOf(b);toast(`${kd.icon} ${kd.name} démoli : +${refundOf(b)} $`);
+  S.money+=refundOf(b);J.demo(kdName(b.k),refundOf(b));toast(`${kd.icon} ${kd.name} démoli : +${refundOf(b)} $`);
   if(!S.builds.length)closePick();
 }
 function pickContext(){
