@@ -10,7 +10,8 @@ const TRAILS=[
 ];
 const MUD=[{x:22,z:-28,r:4.5},{x:-20,z:-35,r:4},{x:38,z:-25.5,r:3.6},{x:29,z:-42,r:3.2}];
 const PILE_DEF=[{x:18,z:-65},{x:-49,z:-28},{x:60,z:-3}];
-const YARD={x:8,z:6,r:4.5};
+const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (position fixée plus bas)
+const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même forêt pour les sauvegardes
 const CABIN={x:-7,z:2};
 const VILLAGE={x:-50,z:46,r:13};
 const CAP=6;
@@ -161,9 +162,6 @@ function groundRing(cx,cz,r0,r1,seg,color,opacity){
   const m=new T.Mesh(g,new T.MeshBasicMaterial({color,transparent:true,opacity,side:T.DoubleSide,depthWrite:false}));
   m.renderOrder=5;scene.add(m);return m;
 }
-const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
-const yardStack=new T.Group();yardStack.position.set(YARD.x+5.6,CAMP_H,YARD.z-1);yardStack.rotation.y=0.2;scene.add(yardStack);
-addCol(YARD.x+5.6,YARD.z-1,1.5);addCol(YARD.x+5.6,YARD.z+1.8,1.5);
 
 /* ---------- Étiquettes ---------- */
 const labels=[];
@@ -214,9 +212,23 @@ let STORE_DOOR;
     box(1,1.9,0.08,dark,0,0.95,2.27,h);box(1,0.8,0.08,win,1.5,1.5,2.27,h);box(1,0.8,0.08,win,-1.5,1.5,2.27,h);
     const q=vpos(lx,lz);h.position.set(q.x,VIL_H,q.z);h.rotation.y=VROT;shadows(h);scene.add(h);bldCols(lx,lz,2.5,2.25);
   });
+  // Scierie : on y vend le bois dans la cour en avant; les prix sont affichés à la porte
+  const s=new T.Group(),plank=mat(0x8a6440),tin=mat(0x7d8588),trim=mat(0x4d3220),sign=mat(0x2f4a35),paper=new T.MeshBasicMaterial({color:0xf1e6c8});
+  box(7,3.4,4,plank,0,1.7,0,s);gableRoof(s,7,4,3.85,tin);
+  box(2.4,2.6,0.08,trim,-1.6,1.3,2.03,s);box(0.9,2,0.08,mat(0x3b2a1e),1.8,1,2.03,s);
+  box(3.6,0.7,0.1,sign,0,3.0,2.06,s);[-1.1,0,1.1].forEach(x=>box(0.7,0.42,0.02,paper,x,3.0,2.12,s));
+  const sb=new T.Mesh(new T.CylinderGeometry(0.9,0.9,0.06,24),tin);sb.rotation.x=Math.PI/2;sb.position.set(3.9,1.2,0.6);s.add(sb);
+  const sq=vpos(-9,1.8);s.position.set(sq.x,VIL_H,sq.z);s.rotation.y=VROT;shadows(s);scene.add(s);bldCols(-9,1.8,3.5,2);
+  label('Scierie',sq.x,VIL_H+6.2,sq.z);
   label('Village',VILLAGE.x,VIL_H+10,VILLAGE.z,26);
 }
-label('Cour à bois',YARD.x,CAMP_H+3.2,YARD.z);
+const MILL_DOOR=vpos(-7.2,4.1);
+Object.assign(YARD,vpos(-8,9));
+const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
+// Billots déjà vendus, cordés à côté de la scierie
+const YARD_STACK=vpos(-15,4.5);
+const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT+Math.PI/2;scene.add(yardStack);
+[-1.4,1.4].forEach(o=>{const p=vpos(-15,4.5+o);addCol(p.x,p.z,1.5);});
 
 /* ---------- Billots ---------- */
 const barkM=mat(0x5e4630),endM=mat(0xd9b27c);
@@ -239,7 +251,7 @@ for(let k=0;k<5200&&treeList.length<900;k++){
   if(dc<CAMP.r+1.5)continue;
   if(Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+4)continue;
   if(trailDist(x,z)<3.4)continue;
-  if(Math.hypot(x-YARD.x,z-YARD.z)<9)continue;
+  if(Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<9)continue;
   const p=0.1+0.85*smoothstep(CAMP.r+2,CAMP.r+28,dc);
   if(rnd()>p)continue;
   if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2.3))continue;
@@ -306,7 +318,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const stumps=[];
   for(let k=0;k<200&&stumps.length<16;k++){
     const a=rnd()*6.28,d=CAMP.r-1+rnd()*9,x=CAMP.x+Math.cos(a)*d,z=CAMP.z+Math.sin(a)*d;
-    if(trailDist(x,z)<3||Math.hypot(x-YARD.x,z-YARD.z)<8||Math.hypot(x-CABIN.x,z-CABIN.z)<5)continue;
+    if(trailDist(x,z)<3||Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<8||Math.hypot(x-CABIN.x,z-CABIN.z)<5)continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<1.8))continue;
     const c=addCol(x,z,0.4);stumps.push({x,z,c});
   }

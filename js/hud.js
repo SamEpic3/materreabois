@@ -1,6 +1,8 @@
 /* Flèche d'objectif et affichage (HUD) */
 /* ---------- Flèche ---------- */
+const ARROW_ON=false;   // flèche d'objectif : à remettre si on ajoute des missions
 function updateArrow(){
+  if(!ARROW_ON){arrow.visible=false;return;}
   let ox,oz,tx,tz;
   if(S.mode!=='foot'&&S.mode!=='vtt'){arrow.visible=false;return;}
   if(S.mode==='foot'){
@@ -46,7 +48,7 @@ function updateHUD(){
   let hint=c.info||'';
   if(S.mode==='foot'&&!hint){
     if(P.swing>0||(c.act&&c.act.cool&&P.cool>0))hint='Reprends ton souffle…';
-    else if(c.full)hint='C\'est plein : rapporte le chargement à la cour à bois';
+    else if(c.full)hint='C\'est plein : va vendre le chargement à la scierie du village';
     else if(P.carry&&c.act&&c.act.fn===dropLog)hint='Billot sur l\'épaule : va le mettre dans une remorque ou une boîte';
     else if(!P.carry&&!c.act&&!c.enter&&!hc)hint=pieces.some(carryable)?'Va chercher les billots par terre':'Approche-toi d\'un arbre pour le bûcher';
   }
@@ -59,7 +61,7 @@ function updateHUD(){
     else if(V.drag)hint='Traîne la tige jusqu\'au chemin ou à la cour, puis relâche-la (Espace)';
     else if(V.type==='skid'&&!c.act)hint='Recule la pince arrière jusqu\'au bout d\'une tige';
     else if(atYard)hint='Débarque et corde les billots dans le cercle jaune';
-    else if(hasLoad)hint='Direction la cour à bois du camp';
+    else if(hasLoad)hint='Va vendre le bois dans la cour de la scierie, au village';
     else if(mudAt(V.x,V.z)>0.3)hint='Boue ! Ça avance moins vite…';
   }
   const grp={};

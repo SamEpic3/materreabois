@@ -6,7 +6,7 @@ const FT=0.3048,INCH=0.0254,CARRY_MAX=8*FT+2*INCH,SAW_MIN=7*FT+10*INCH,CRANE_MAX
 function ftin(m){const t=Math.round(m/INCH);return `${Math.floor(t/12)} pi ${t%12} po`;}
 function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c.len/(8*FT)):Math.max(1,Math.round(c.len/FT*FIREWOOD_FT*mkt('chauffage')));}
 function kindOf(len){return len>CRANE_MAX?'trop long : recoupe ou débusqueuse':len>CARRY_MAX?'billot long (grue) ✔':len>=SAW_MIN?'billot de sciage ✔':'bois de chauffage';}
-function pointInYard(x,z){return Math.hypot(x-YARD.x,z-YARD.z)<YARD.r||Math.hypot(x-(YARD.x+5.6),z-(YARD.z+0.4))<3.2;}
+function pointInYard(x,z){return Math.hypot(x-YARD.x,z-YARD.z)<YARD.r;}
 function inYard(){return pointInYard(P.x,P.z);}
 function pieceGeo(len,ra,rb){const g=new T.CylinderGeometry(rb,ra,len,9);g.rotateX(Math.PI/2);return g;}
 function makePieceMesh(c){const m=new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMats);m.castShadow=true;m.receiveShadow=true;return m;}

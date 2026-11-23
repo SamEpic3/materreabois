@@ -27,8 +27,8 @@ function makeAbriModel(){
   const g=new T.Group(),wood=mat(0x7a5232),dark=mat(0x4d3220),roof=mat(0x3f4a3a);
   box(3.4,0.12,2.3,dark,0,0.06,0,g);
   box(3.4,2.0,0.1,wood,0,1.0,-1.15,g);box(0.1,2.0,2.3,wood,-1.7,1.0,0,g);box(0.1,2.0,2.3,wood,1.7,1.0,0,g);
-  [-1.65,1.65].forEach(x=>box(0.12,2.3,0.12,dark,x,1.15,1.1,g));
-  const r=box(3.8,0.12,2.8,roof,0,2.25,0,g);r.rotation.x=0.18;
+  [-1.65,1.65].forEach(x=>box(0.12,2.5,0.12,dark,x,1.25,1.1,g));
+  const r=box(3.8,0.12,2.8,roof,0,2.25,0,g);r.rotation.x=-0.18;
   return g;
 }
 function makeBbqModel(){
@@ -51,14 +51,13 @@ function createFeu(b,o){
   const g=makeFeuModel(),fl=flameGroup();g.add(fl);o.add(g);o.fl=fl;
   o.col(b.x,b.z,0.9);
   BENCH_A.forEach(a=>{const p=lw(b,Math.cos(a)*2.3,Math.sin(a)*2.3);o.col(p.x,p.z,0.35);o.seat(p.x,p.z,Math.atan2(b.x-p.x,b.z-p.z),0.45,null,'banc');});
-  o.label('Feu de camp',2.3);
 }
 function createAbri(b,o){
   const g=makeAbriModel(),stack=new T.Group();stack.position.set(0,0.12,0);g.add(stack);o.add(g);o.stack=stack;
   [-1.1,0,1.1].forEach(lx=>{const p=lw(b,lx,-0.35);o.col(p.x,p.z,0.75);});
-  o.label('Abri à bois',3);refreshShed(b);
+  refreshShed(b);
 }
-function createBbq(b,o){const g=makeBbqModel();o.add(g);o.glow=g.userData.glow;o.col(b.x,b.z,0.7);o.label('Barbecue',2.1);}
+function createBbq(b,o){const g=makeBbqModel();o.add(g);o.glow=g.userData.glow;o.col(b.x,b.z,0.7);}
 // Bûches rangées le bout vers l'avant : rangée du fond d'abord, puis celle de devant.
 function refreshShed(b){
   const o=b._o;if(!o)return;

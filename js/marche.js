@@ -1,4 +1,4 @@
-/* Marché : prix du bois et du sirop qui varient, affiche du tableau des prix à la cour à bois */
+/* Marché : prix du bois et du sirop qui varient, tableau des prix à la porte de la scierie */
 const FIREWOOD_FT=2;          // $ par pied de bois de chauffage (prix de base)
 const SYRUP_L=30;             // $ par litre de sirop (prix de base)
 const MKT_PERIOD=300;         // les prix changent toutes les 5 minutes
@@ -17,18 +17,8 @@ function updateMarket(dt){
   if(!$('board').classList.contains('hidden'))renderBoard();
 }
 
-/* Affiche à la cour à bois */
-const SIGN={x:3.6,z:9.2};
-{
-  const g=new T.Group(),wood=mat(0x6e5236),board=mat(0x2f4a35),paper=new T.MeshBasicMaterial({color:0xf1e6c8});
-  box(0.14,2.1,0.14,wood,-0.85,1.05,0,g);box(0.14,2.1,0.14,wood,0.85,1.05,0,g);
-  box(2.0,1.1,0.1,board,0,1.7,0,g);
-  box(0.5,0.6,0.02,paper,-0.55,1.7,0.06,g);box(0.5,0.6,0.02,paper,0,1.7,0.06,g);box(0.5,0.6,0.02,paper,0.55,1.7,0.06,g);
-  g.position.set(SIGN.x,H(SIGN.x,SIGN.z),SIGN.z);g.rotation.y=Math.atan2(YARD.x-SIGN.x,YARD.z-SIGN.z)+Math.PI;
-  shadows(g);scene.add(g);addCol(SIGN.x,SIGN.z,0.5);
-  label('Prix du bois',SIGN.x,H(SIGN.x,SIGN.z)+3.1,SIGN.z);
-}
-function nearSign(){return Math.hypot(P.x-SIGN.x,P.z-SIGN.z)<2.6;}
+/* Prix affichés à la porte de la scierie */
+function nearSign(){return Math.hypot(P.x-MILL_DOOR.x,P.z-MILL_DOOR.z)<2;}
 function trend(k){const a=S.mkt[k],b=S.mktPrev[k];return a>b*1.01?'<span class="up">▲</span>':a<b*0.99?'<span class="down">▼</span>':'<span class="flat">■</span>';}
 function renderBoard(){
   const m=Math.floor(S.mktNext/60),sec=Math.floor(S.mktNext%60);

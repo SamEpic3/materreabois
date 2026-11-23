@@ -21,8 +21,8 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - En VTT ou en pick-up avec une remorque, ou dans la boîte du pick-up.
   - Avec la remorque chargeuse et sa grue : billots jusqu'à 12 pi.
   - Avec la débusqueuse, qui traîne les longues tiges.
-- **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
-- **Suivre les prix** sur l'affiche de la cour à bois : ils changent toutes les 5 minutes.
+- **Vendre** dans la cour de la scierie, au village. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
+- **Suivre les prix** à la porte de la scierie : ils changent toutes les 5 minutes.
 - **Améliorer le camp** à la porte de la cabane (« Projets du camp ») :
   - constructions à placer, autant qu'on veut : feu de camp (avec bûches pour s'asseoir et terre battue autour), abri à bois, bouilloire à sirop, barbecue;
   - améliorations de la cabane, une seule fois chacune : galerie avec chaises berçantes, poêle à bois, nouvelle pièce;
@@ -68,7 +68,7 @@ js/actions.js         Bûcher, tronçonner, porter, charger, vendre, atteler
 js/debusqueuse.js     Agripper, traîner, relâcher une tige
 js/grue.js            Grue de la remorque chargeuse
 js/interactions.js    Embarquer, débarquer, opérer la grue, boutons d'action
-js/marche.js          Prix du bois et du sirop qui varient, affiche des prix
+js/marche.js          Prix du bois et du sirop qui varient, tableau des prix (porte de la scierie)
 js/erabliere.js       Entailles, chaudières, seaux, feu et bouilloire
 js/vente.js           Vente de véhicules et de remorques
 js/constructions.js   Constructions placées (feu, abri, bouilloire, barbecue) : placer, déplacer, démolir

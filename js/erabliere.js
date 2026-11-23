@@ -48,7 +48,7 @@ function createSucres(b,o){
   const g=makeSucresModel();
   const liquid=new T.Mesh(new T.BoxGeometry(1.42,0.04,0.82),new T.MeshBasicMaterial({color:SAP_COL}));liquid.position.set(0,1.0,0);liquid.visible=false;g.add(liquid);
   const fl=flameGroup();g.add(fl);
-  o.add(g);o.col(b.x,b.z,1.0);o.label('Bouilloire',2.6);
+  o.add(g);o.col(b.x,b.z,1.0);
   o.liquid=liquid;o.fl=fl;
 }
 function addGroundPail(x,z,kind,L){
@@ -162,7 +162,7 @@ function updateSugar(dt){
 
 /* Actions à pied propres à ces nouveautés (priorité sur le reste quand on est tout près) */
 function footExtras(){
-  if(nearSign())return {act:{label:'Voir les prix du bois',fn:openBoard}};
+  if(nearSign())return {act:{label:'Voir les prix du bois (scierie)',fn:openBoard}};
   const gp=nearestGroundPail();
   if(gp)return {act:{label:`Prendre le seau (${pailTxt(gp)})`,fn:()=>pickPail(gp)}};
   const s=footSaleContext();if(s)return s;

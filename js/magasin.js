@@ -24,9 +24,9 @@ function findSpawn(cols,th,pref){
   const fx=Math.sin(th),fz=Math.cos(th),others=bodyCircles(null);
   const free=(x,z)=>{const list=cols.map(([o,r])=>[x+fx*o,z+fz*o,r+0.4]);
     if(circlesHit(list,others))return false;
-    if(list.some(c=>inSale(c[0],c[1])))return false;
+    if(list.some(c=>inSale(c[0],c[1])||Math.hypot(c[0]-YARD.x,c[1]-YARD.z)<YARD.r+c[2]))return false;
     return list.every(c=>Math.hypot(c[0]-P.x,c[1]-P.z)>c[2]+0.6);};
-  const cand=[pref,[7,4.5],[-6,5],[-6,11],[7,11],[0,9],[-14,8],[14,8],[0,15],[-12,15],[12,15],[7,18],[-7,18]];
+  const cand=[pref,[7,4.5],[4,9],[7,11],[0,9],[14,8],[0,15],[3,13],[-4,15],[12,15],[7,18],[-7,18]];
   for(const [lx,lz] of cand){const p=vpos(lx,lz);if(free(p.x,p.z))return p;}
   for(let r=4;r<30;r+=2)for(let a=0;a<Math.PI*2;a+=0.4){const x=VILLAGE.x+Math.cos(a)*r,z=VILLAGE.z+Math.sin(a)*r;if(free(x,z))return {x,z};}
   return vpos(pref[0],pref[1]);
@@ -87,7 +87,7 @@ function renderShop(){
     const have=isT?trailers.filter(x=>x.kind===t.id).length:vehicles.filter(v=>v.type===t.id).length;
     if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
     {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;
-      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{vtt:[0,9],small:[-6,5],pickup:[7,4.5],loader:[-6,5],skid:[-6,11]}[t.id]);
+      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{vtt:[0,9],small:[4,8],pickup:[7,4.5],loader:[4,8],skid:[6,11]}[t.id]);
       if(isT)makeTrailerObj(t.id,p.x,p.z,th);else makeVehicle(t.id,p.x,p.z,th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);
