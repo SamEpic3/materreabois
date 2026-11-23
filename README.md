@@ -23,10 +23,10 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** à la cour à bois du camp. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Suivre les prix** sur l'affiche de la cour à bois : ils changent toutes les 5 minutes.
-- **Améliorer le camp** au tableau « Projets du camp » : feu de camp avec bûches pour s'asseoir, abri à bois, galerie avec chaises berçantes, poêle à bois, nouvelle pièce.
+- **Améliorer le camp** à la porte de la cabane (« Projets du camp ») : feu de camp avec bûches pour s'asseoir, abri à bois et bouilloire à sirop (placés librement sur le terrain), galerie avec chaises berçantes, poêle à bois, nouvelle pièce.
 - **Planter** des plants achetés au magasin, n'importe où de libre : ils poussent en 3 à 5 heures réelles.
 - **Essoucher** à la pelle (achetée au magasin) : la souche est arrachée et le terrain dégagé.
-- **Faire les sucres** : entailler les érables, vider les chaudières dans un seau, faire bouillir au coin des sucres (au feu de bois), vendre le sirop au magasin. Les seaux se rangent dans la petite remorque ou la boîte du pick-up (un seul type de chargement à la fois : bois ou seaux).
+- **Faire les sucres** : entailler les érables, vider les chaudières dans un seau, faire bouillir dans la bouilloire (à construire et placer, au feu de bois), vendre le sirop au magasin. Les seaux se rangent dans la petite remorque ou la boîte du pick-up (un seul type de chargement à la fois : bois ou seaux).
 - **Vendre un véhicule ou une remorque** dans le cercle vert près du magasin (de 25 à 50 % du prix neuf).
 - **Acheter** des outils et de l'équipement au magasin général du village, autant de véhicules et de remorques qu'on veut.
 - **Inventaire** : les outils achetés vont dans la barre d'outils ; on peut aussi garder les mains vides.

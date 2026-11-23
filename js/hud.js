@@ -2,12 +2,12 @@
 /* ---------- Flèche ---------- */
 function updateArrow(){
   let ox,oz,tx,tz;
-  if(S.mode==='crane'||S.mode==='sit'){arrow.visible=false;return;}
+  if(S.mode==='crane'||S.mode==='sit'||S.mode==='place'){arrow.visible=false;return;}
   if(S.mode==='foot'){
     ox=P.x;oz=P.z;
     if(P.carry){const c=containers().filter(c=>c.load.length<c.cap).map(c=>c.center()).sort((a,b)=>Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z))[0];if(c){tx=c.x;tz=c.z;}else{tx=YARD.x;tz=YARD.z;}}
     else if(P.pail&&P.pail.kind==='sirop'&&P.pail.L>0.05){tx=STORE_DOOR.x;tz=STORE_DOOR.z;}
-    else if(P.pail&&P.pail.kind==='eau'&&P.pail.L>=PAIL_CAP-0.05){tx=SUGAR.x;tz=SUGAR.z;}
+    else if(P.pail&&P.pail.kind==='eau'&&P.pail.L>=PAIL_CAP-0.05&&S.camp.sucres){tx=SUGAR.x;tz=SUGAR.z;}
     else if(V&&Math.hypot(V.x-P.x,V.z-P.z)>14&&!pieces.some(carryable)){tx=V.x;tz=V.z;}
   }else{
     ox=V.x;oz=V.z;

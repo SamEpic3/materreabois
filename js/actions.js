@@ -37,6 +37,7 @@ function context(){
   if(S.mode==='vtt')return driveContext();
   if(S.mode==='crane')return craneContext();
   if(S.mode==='sit')return sitContext();
+  if(S.mode==='place')return placeContext();
   let act=null,act2=null,full=false,preview=null,info='',plant=null;
   const cont=nearestContainer();
   const extra=(!P.carry&&!P.pail)?footExtras():null;
@@ -247,7 +248,7 @@ function tongue(t){return {x:t.x+Math.sin(t.th)*t.spec.tl,z:t.z+Math.cos(t.th)*t
 function vHitch(v){return {x:v.x-Math.sin(v.th)*v.spec.hitch,z:v.z-Math.cos(v.th)*v.spec.hitch};}
 function canAttach(v,t){if(!v||!t||t.hitch||!v.spec.hitch||towed(v))return false;const p=tongue(t),h=vHitch(v);return Math.hypot(p.x-h.x,p.z-h.z)<1.0&&Math.abs(wrapAng(t.th-v.th))<1.1;}
 function hitchCtx(){
-  if(P.carry||S.mode==='crane')return null;
+  if(P.carry||S.mode==='crane'||S.mode==='place'||S.mode==='sit')return null;
   if(S.mode==='vtt'){
     if(Math.abs(V.v)>=0.8)return null;
     const tw=towed(V);

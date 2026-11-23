@@ -59,6 +59,15 @@ function renderShop(){
     b.onclick=()=>{if(S.money<25)return;S.money-=25;S.taps++;toast('Chaudière achetée');renderShop();};
     d.appendChild(b);L.appendChild(d);
   }
+  {
+    const d=document.createElement('div');d.className='item';
+    d.innerHTML=imgTag(thumb('seau',()=>{const g=new T.Group();g.add(makePail());return g;}))+`<div class="txt"><b>Seau de collecte</b> — 15 $<p>Pour vider les chaudières et transporter l'eau d'érable ou le sirop (30 L).</p><p class="stats">Il te sera remis en main, ou posé devant la porte</p></div>`;
+    const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<15;
+    b.onclick=()=>{if(S.money<15)return;S.money-=15;
+      if(!P.pail&&!P.carry)setPail({kind:'eau',L:0});else addGroundPail(STORE_DOOR.x+(Math.random()-0.5)*1.5,STORE_DOOR.z+1.2,'eau',0);
+      toast('Seau acheté');renderShop();};
+    d.appendChild(b);L.appendChild(d);
+  }
   sec('Plantation');
   SEED_TYPES.forEach(k=>{
     const d=document.createElement('div'),pr=SEED_PRICE[k];d.className='item';

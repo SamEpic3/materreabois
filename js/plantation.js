@@ -41,7 +41,7 @@ function plantProblem(x,z){
   if(trailDist(x,z)<3)return 'Pas sur un chemin';
   if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP.r)return 'Pas dans le camp';
   if(Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)return 'Pas au village';
-  if(Math.hypot(x-YARD.x,z-YARD.z)<YARD.r+2||Math.hypot(x-SUGAR.x,z-SUGAR.z)<3||inSale(x,z))return 'Pas ici';
+  if(Math.hypot(x-YARD.x,z-YARD.z)<YARD.r+2||(S.camp.sucres&&Math.hypot(x-SUGAR.x,z-SUGAR.z)<3)||inSale(x,z))return 'Pas ici';
   if(stumpList.some(st=>Math.hypot(x-st.x,z-st.z)<1.5))return 'Trop près d\'une souche : essouche d\'abord';
   if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<(c.tree?2.0:c.r+0.6)))return 'Trop près d\'un arbre ou d\'un obstacle';
   if(mudAt(x,z)>0.3)return 'Trop boueux';

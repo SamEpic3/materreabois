@@ -1,5 +1,5 @@
-/* Érablière : entailler les érables, chaudières, seaux, feu et bouilloire au coin des sucres */
-const SUGAR={x:-10,z:-7};          // coin des sucres, au camp
+/* Érablière : entailler les érables, chaudières, seaux, feu et bouilloire à sirop */
+const SUGAR={x:-10,z:-7,rot:0};    // bouilloire à sirop (position choisie à la construction)
 const TAP_CAP=15,SAP_RATE=0.05;     // chaudière de 15 L, ~5 min pour la remplir
 const PAIL_CAP=30;                  // seau de collecte de 30 L
 const SAP_PER_SYRUP=40;             // 40 L d'eau d'érable pour 1 L de sirop
@@ -36,36 +36,40 @@ function setPailLook(m,p){
   liq.position.y=0.03+0.27*Math.min(1,p.L/PAIL_CAP);
 }
 
-/* ----- Coin des sucres : foyer, bouilloire, seaux ----- */
+/* ----- Bouilloire à sirop (achetée à la porte de la cabane et placée librement) ----- */
 const fireLight=new T.PointLight(0xff9a3c,0,14,2);
 const flames=new T.Group(),panLiquid=new T.Mesh(new T.BoxGeometry(1.42,0.04,0.82),new T.MeshBasicMaterial({color:SAP_COL}));
-{
+function makeSucresModel(full){
   const g=new T.Group(),stone=mat(0x8a8780),metal=mat(0x9aa0a4),dark=mat(0x2a2a2a),wood=mat(0x6e5236);
   for(let i=0;i<10;i++){const a=i/10*Math.PI*2,s=new T.Mesh(new T.DodecahedronGeometry(0.22,0),stone);s.position.set(Math.cos(a)*0.85,0.12,Math.sin(a)*0.85);s.rotation.set(i,i*2,0);g.add(s);}
   [-0.25,0.25].forEach((x,i)=>{const l=box(0.9,0.16,0.16,wood,0,0.12,x,g);l.rotation.y=i?0.5:-0.5;});
   [[-0.75,-0.45],[0.75,-0.45],[-0.75,0.45],[0.75,0.45]].forEach(([x,z])=>box(0.06,0.95,0.06,dark,x,0.48,z,g));
   box(1.6,0.06,1.0,metal,0,0.95,0,g);
   box(1.6,0.25,0.05,metal,0,1.08,0.5,g);box(1.6,0.25,0.05,metal,0,1.08,-0.5,g);box(0.05,0.25,1.0,metal,0.8,1.08,0,g);box(0.05,0.25,1.0,metal,-0.8,1.08,0,g);
-  panLiquid.position.set(0,1.0,0);g.add(panLiquid);
-  const fm=[0xff7a1a,0xffb02e,0xffd35a];
-  for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(0.16+0.05*(i%2),0.55,6),new T.MeshBasicMaterial({color:fm[i%3]}));c.position.set((i-2)*0.15,0.38,(i%2?0.12:-0.1));flames.add(c);}
-  g.add(flames);fireLight.position.set(0,0.8,0);g.add(fireLight);
-  g.position.set(SUGAR.x,H(SUGAR.x,SUGAR.z),SUGAR.z);shadows(g);scene.add(g);
-  addCol(SUGAR.x,SUGAR.z,1.0);
-  label('Coin des sucres',SUGAR.x,H(SUGAR.x,SUGAR.z)+2.6,SUGAR.z);
+  if(full){
+    panLiquid.position.set(0,1.0,0);g.add(panLiquid);
+    const fm=[0xff7a1a,0xffb02e,0xffd35a];
+    for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(0.16+0.05*(i%2),0.55,6),new T.MeshBasicMaterial({color:fm[i%3]}));c.position.set((i-2)*0.15,0.38,(i%2?0.12:-0.1));flames.add(c);}
+    g.add(flames);fireLight.position.set(0,0.8,0);g.add(fireLight);
+  }
+  return g;
+}
+function buildSucres(pos){
+  Object.assign(SUGAR,pos);
+  const g=makeSucresModel(true);g.position.set(pos.x,H(pos.x,pos.z),pos.z);g.rotation.y=pos.rot||0;shadows(g);scene.add(g);
+  addCol(pos.x,pos.z,1.0);
+  label('Bouilloire',pos.x,H(pos.x,pos.z)+2.6,pos.z);
 }
 function addGroundPail(x,z,kind,L){
   const m=makePail(),p={x,z,kind,L,mesh:m};m.position.set(x,H(x,z),z);setPailLook(m,p);scene.add(m);pails.push(p);return p;
 }
-addGroundPail(SUGAR.x+1.7,SUGAR.z+0.6,'eau',0);
-addGroundPail(SUGAR.x+1.9,SUGAR.z+1.2,'eau',0);
 
 /* Seau tenu par le joueur */
 const handPail=makePail();handPail.position.set(0,-0.98,0.05);handPail.visible=false;player.armR.add(handPail);
 function setPail(p){P.pail=p;handPail.visible=!!p;if(p)setPailLook(handPail,p);updateToolVisual();}
 
 /* ----- Proximité ----- */
-function nearFire(){return Math.hypot(P.x-SUGAR.x,P.z-SUGAR.z)<2.4;}
+function nearFire(){return !!S.camp.sucres&&Math.hypot(P.x-SUGAR.x,P.z-SUGAR.z)<2.4;}
 function nearPan(){return nearFire();}
 function nearStore(){return Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3;}
 function tapOf(t){return taps.find(x=>x.t===t)||null;}

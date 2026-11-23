@@ -28,7 +28,7 @@ function snapshot(){
     tapsOn:taps.map(tp=>({tree:tp.t.planted?'p'+planted.indexOf(tp.t):treeList.indexOf(tp.t),sap:tp.sap,a:r3(tp.mesh.rotation.y)})),
     boil:{fuel:boil.fuel,sap:boil.sap,syrup:boil.syrup},
     planted:planted.map(t=>({type:t.type,x:r3(t.x),z:r3(t.z),s:r3(t.s),rot:r3(t.rot),plantedAt:t.plantedAt,growMs:t.growMs,work:t.work})),
-    camp:S.camp,shed:S.shed.map(cOf),campFire:campFire.fuel,stove:stove.fuel
+    camp:S.camp,campPos:S.campPos,shed:S.shed.map(cOf),campFire:campFire.fuel,stove:stove.fuel
   };
 }
 function saveGame(){if(saveOff)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));}catch(e){}}
@@ -64,7 +64,8 @@ function loadGame(){
   (d.planted||[]).forEach(o=>addPlanted(o));
   (d.tapsOn||[]).forEach(o=>{const t=typeof o.tree==='string'?planted[+o.tree.slice(1)]:(same?treeList[o.tree]:null);if(t&&t.alive&&!tapOf(t))placeTap(t,o.a,o.sap);});
   if(d.boil)Object.assign(boil,d.boil);
-  Object.keys(d.camp||{}).forEach(id=>{if(d.camp[id]&&BUILD[id])buildProject(id);});
+  Object.keys(d.camp||{}).forEach(id=>{if(d.camp[id]&&BUILD[id])buildProject(id,d.campPos&&d.campPos[id]);});
+  if(!d.campPos&&!S.camp.sucres)buildProject('sucres');   // anciennes sauvegardes : la bouilloire était déjà là
   S.shed=d.shed||[];refreshShed();campFire.fuel=d.campFire||0;stove.fuel=d.stove||0;
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
   TOOL=d.tool==='plants'?(seedCount()>0?PLANT_TOOL:null):(TOOLS.find(t=>t.id===d.tool&&owned.has(t.id))||null);

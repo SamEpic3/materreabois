@@ -10,7 +10,7 @@ addEventListener('keydown',e=>{
   if($('help').classList.contains('hidden')===false&&e.code!=='Escape')return;
   keys[e.code]=true;
   if(e.code==='KeyE'&&!e.repeat)doEnter();
-  if(e.code==='KeyR'&&!e.repeat)doHitch();
+  if(e.code==='KeyR'&&!e.repeat){if(S.mode==='place')rotatePlace();else doHitch();}
   if(e.code==='KeyF'&&!e.repeat)doAct2();
   if(e.code==='Space'&&!e.repeat)doAct();
   if(e.code==='KeyZ')rotateCam(-1);
