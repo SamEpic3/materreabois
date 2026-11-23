@@ -15,9 +15,16 @@ let db=null;
 async function initDb(){
   if(!process.env.DATABASE_URL){console.log('Pas de DATABASE_URL : terres gardées en mémoire seulement');return;}
   const {Pool}=require('pg');
-  db=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.PGSSL==='0'?false:{rejectUnauthorized:false}});
-  await db.query('CREATE TABLE IF NOT EXISTS terres (code TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())');
-  console.log('Base de données prête');
+  // Connexion interne Render : sans SSL; adresse externe : avec SSL. On essaie les deux.
+  for(const ssl of process.env.PGSSL==='1'?[{rejectUnauthorized:false},false]:[false,{rejectUnauthorized:false}]){
+    const pool=new Pool({connectionString:process.env.DATABASE_URL,ssl,max:3});
+    try{
+      await pool.query('CREATE TABLE IF NOT EXISTS terres (code TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())');
+      db=pool;pool.on('error',e=>console.error('Base de données :',e.message));
+      console.log('Base de données prête'+(ssl?' (SSL)':''));return;
+    }catch(e){console.error('Connexion à la base impossible'+(ssl?' (SSL)':'')+' :',e.message);try{await pool.end();}catch(_){}}
+  }
+  console.error('On continue sans base : les terres ne survivront pas à un redémarrage');
 }
 const memStore=new Map();
 async function loadRoomData(code){

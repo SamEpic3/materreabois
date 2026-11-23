@@ -1,0 +1,24 @@
+# Infrastructure Render du jeu « Ma terre à bois »
+services:
+  - type: web
+    name: materreabois-serveur
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node serveur.js
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: materreabois-base
+          property: connectionString
+databases:
+  - name: materreabois-base
+    plan: free
+    region: ohio
+    databaseName: materreabois_base
+    user: materreabois_base_user
+    postgresMajorVersion: "16"
