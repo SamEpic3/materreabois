@@ -144,11 +144,12 @@ const BODY_GEO=(()=>{
   const ears=mergeGeos([new T.SphereGeometry(0.045,8,6).scale(0.5,1,1).translate(0.185,1.83,0),new T.SphereGeometry(0.045,8,6).scale(0.5,1,1).translate(-0.185,1.83,0)]);
   const nose=new T.BoxGeometry(0.07,0.09,0.07).translate(0,1.81,0.18);
   const beard=roundBox(0.36,0.17,0.12,0.05).translate(0,1.7,0.13);
-  const brows=mergeGeos([new T.BoxGeometry(0.09,0.025,0.02).translate(0.09,1.92,0.17),new T.BoxGeometry(0.09,0.025,0.02).translate(-0.09,1.92,0.17)]);
-  const eyes=mergeGeos([new T.SphereGeometry(0.028,8,6).translate(0.09,1.865,0.168),new T.SphereGeometry(0.028,8,6).translate(-0.09,1.865,0.168)]);
-  const tuque=mergeGeos([new T.SphereGeometry(0.215,14,8,0,Math.PI*2,0,Math.PI/2).scale(1,0.95,0.98).translate(0,1.97,0)]);
-  const brim=new T.CylinderGeometry(0.222,0.222,0.09,14).scale(1,1,0.98).translate(0,1.975,0);
-  const pom=new T.SphereGeometry(0.07,10,8).translate(0,2.2,0);
+  const brows=mergeGeos([new T.BoxGeometry(0.09,0.025,0.02).translate(0.09,1.89,0.17),new T.BoxGeometry(0.09,0.025,0.02).translate(-0.09,1.89,0.17)]);
+  const eyes=mergeGeos([new T.SphereGeometry(0.028,8,6).translate(0.09,1.85,0.168),new T.SphereGeometry(0.028,8,6).translate(-0.09,1.85,0.168)]);
+  // Tuque qui épouse la tête carrée : bonnet arrondi, dessus un peu bombé, rebord replié, pompon
+  const tuque=mergeGeos([roundBox(0.39,0.19,0.37,0.08).translate(0,2.0,0),roundBox(0.3,0.07,0.28,0.03).translate(0,2.1,0)]);
+  const brim=roundBox(0.405,0.085,0.385,0.035).translate(0,1.94,0);
+  const pom=new T.SphereGeometry(0.075,10,8).translate(0,2.19,0);
   return {torso,belt,hips,thigh,shin,boot,shoulder,upper,fore,hand,head,neck,ears,nose,beard,brows,eyes,tuque,brim,pom};
 })();
 function makePlayer(){
