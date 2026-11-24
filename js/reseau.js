@@ -385,12 +385,12 @@ function renderChat(){
 function addChat(m,quiet){
   m.shown=quiet?0:Date.now();CHAT.list.push(m);if(CHAT.list.length>50)CHAT.list.shift();
   renderChat();
-  if(!quiet&&m.from!==ME.id){
-    const a=NET.avatars[m.from];
-    if(a){const txt=m.txt.length>40?m.txt.slice(0,38)+'…':m.txt;
-      if(a.bubble){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);}
-      a.bubble=label('💬 '+txt,a.x,H(a.x,a.z)+3.3,a.z,40);a.bubbleT=6;}
-  }
+  if(quiet)return;
+  // Bulle au-dessus de la tête de celui qui parle (les autres, et soi-même)
+  const a=m.from===ME.id?CHAT.self:NET.avatars[m.from];
+  if(a){const txt=m.txt.length>40?m.txt.slice(0,38)+'…':m.txt;
+    if(a.bubble){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);}
+    const p=bubblePos(a);a.bubble=label('💬 '+txt,p.x,p.y,p.z,40);a.bubbleT=6;}
 }
 function openChat(){
   if(!NET.on||!NET.ready)return;
@@ -413,8 +413,13 @@ $('chatInput').addEventListener('keydown',e=>{
 });
 $('chatInput').addEventListener('keyup',e=>e.stopPropagation());
 setInterval(()=>{if(!CHAT.open&&CHAT.list.length)renderChat();},1000);
+CHAT.self={self:true,bubble:null,bubbleT:0};
+function bubblePos(a){
+  if(a.self){const inV=S.mode==='vtt'&&V,x=inV?V.x:P.x,z=inV?V.z:P.z;return {x,y:H(x,z)+(inV?3.6:3.3),z};}
+  return {x:a.x,y:H(a.x,a.z)+(a.inVeh?3.6:3.3),z:a.z};
+}
 function updateBubbles(dt){
-  for(const id in NET.avatars){const a=NET.avatars[id];if(!a.bubble)continue;
-    a.bubbleT-=dt;a.bubble.position.set(a.x,H(a.x,a.z)+3.3,a.z);
+  for(const a of [CHAT.self,...Object.values(NET.avatars)]){if(!a.bubble)continue;
+    a.bubbleT-=dt;const p=bubblePos(a);a.bubble.position.set(p.x,p.y,p.z);
     if(a.bubbleT<=0){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);a.bubble=null;}}
 }
