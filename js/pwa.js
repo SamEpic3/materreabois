@@ -17,8 +17,10 @@ function applyLayout(){
   const a=$('app');
   if(ROT){
     // Tout l'écran du téléphone (iOS ne compte pas toujours le bas de l'écran dans clientHeight)
-    const cs=getComputedStyle(probe),safeTop=parseFloat(cs.paddingTop)||0;
-    vh=Math.max(vh,innerHeight,probe.getBoundingClientRect().height-safeTop,screen.height||0);
+    // iOS ajoute un flou un peu plus bas que la barre d'état : on garde une petite marge noire en plus
+    const cs=getComputedStyle(probe),safeTop=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingTop)>0?14:0);
+    const full=Math.max(vh,innerHeight,probe.getBoundingClientRect().height-(parseFloat(cs.paddingTop)||0));
+    vh=screen.height?Math.min(full,Math.max(screen.width,screen.height)):full;   // jamais plus grand que l'écran
     vw=Math.max(vw,Math.min(screen.width||vw,screen.height||vw));
     // On laisse une bande noire unie sous la barre d'état (au lieu du jeu flouté par iOS)
     const H=vh-safeTop;
