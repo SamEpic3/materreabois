@@ -47,7 +47,9 @@ function frame(){
     let cx=camT.x-camFwd.x*dist,cz=camT.z-camFwd.z*dist;
     const cy=Math.max(camT.y+ht,H(cx,cz)+1.2);
     pcam.position.set(cx,cy,cz);
-    pcam.lookAt(camT.x+camFwd.x*2,camT.y+(car?1.2:1.5),camT.z+camFwd.z*2);
+    // Vue basse : on regarde un peu devant; plus la caméra monte, plus elle vise le joueur lui-même (pivot autour de lui)
+    const ahead=2*(1-smoothstep(0.35,1.0,ang));
+    pcam.lookAt(camT.x+camFwd.x*ahead,camT.y+(car?1.2:1.5),camT.z+camFwd.z*ahead);
   }else{
     const D=120;
     camera.position.set(camT.x+Math.sin(camAz)*Math.cos(ELEV)*D,camT.y+Math.sin(ELEV)*D,camT.z+Math.cos(camAz)*Math.cos(ELEV)*D);
