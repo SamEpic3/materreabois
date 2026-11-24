@@ -83,5 +83,5 @@ function updateCrane(t,dt){
   const drop=Math.max(0.05,CR_TOP-cr.y);
   m.link.scale.y=drop;m.link.position.set(0,1.95-drop/2,cr.reach);
   m.grapple.position.set(0,1.95-drop,cr.reach);m.grapple.rotation.y=cr.grip;
-  const cl=cr.held?0.12:0.42;m.clawL.rotation.z=-cl;m.clawR.rotation.z=cl;
+  const cl=cr.held?-0.06:0.45;m.clawL.rotation.z=cl;m.clawR.rotation.z=-cl;   // griffes pivotant en haut : ouvertes vers l'extérieur
 }

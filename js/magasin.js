@@ -5,16 +5,18 @@ function openShop(){renderShop();$('shop').classList.remove('hidden');for(const 
 function closeShop(){$('shop').classList.add('hidden');}
 $('shopClose').addEventListener('click',closeShop);
 let thumbR=null;const thumbCache={};
-function thumb(id,build){
+function thumb(id,build,side){   // side : outils vus de profil, en entier
   if(thumbCache[id]!==undefined)return thumbCache[id];
   try{
     if(!thumbR){thumbR=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});thumbR.setPixelRatio(1);thumbR.setSize(184,134);}
     const sc=new T.Scene();sc.add(new T.HemisphereLight(0xffffff,0x6b5a40,0.95));const dl=new T.DirectionalLight(0xffffff,0.75);dl.position.set(3,5,4);sc.add(dl);
+    const bk=new T.DirectionalLight(0xfff0d8,0.35);bk.position.set(-4,2,-3);sc.add(bk);
     const o=build();sc.add(o);o.updateMatrixWorld(true);
     const b3=new T.Box3().setFromObject(o),c=b3.getCenter(new T.Vector3()),sz=b3.getSize(new T.Vector3());
     const r=Math.max(sz.x,sz.y,sz.z)||1;
     const cam=new T.PerspectiveCamera(30,184/134,0.01,200);
-    cam.position.set(c.x+r*1.35,c.y+r*0.9,c.z+r*1.55);cam.lookAt(c);
+    if(side)cam.position.set(c.x+r*0.12,c.y+r*0.2,c.z+r*2.05);else cam.position.set(c.x+r*1.35,c.y+r*0.9,c.z+r*1.55);
+    cam.lookAt(c);
     const sv=silMat.visible;silMat.visible=false;thumbR.render(sc,cam);silMat.visible=sv;
     thumbCache[id]=thumbR.domElement.toDataURL('image/png');
   }catch(e){thumbCache[id]='';}
@@ -34,7 +36,9 @@ function findSpawn(cols,th,pref){
 function toolThumbModel(t){
   const g=new T.Group();let m;
   if(t.kind==='axe'){m=makeAxeModel();axeColors(m,t.id);}else if(t.kind==='saw')m=makeSawModel();else if(t.kind==='shovel')m=makeShovelModel();else m=makeChainModel(t.id==='scie-usagee');
-  m.rotation.set(-0.5,0.9,0.35);g.add(m);return g;
+  // De profil : le manche en diagonale, la tête ou la lame en haut à droite
+  const w=new T.Group();w.add(m);if(t.kind==='shovel')m.rotation.z=1.25;   // la palette de face
+  w.rotation.set(0,Math.PI/2,0);g.add(w);g.rotation.z=t.kind==='chainsaw'?0.25:0.6;return g;
 }
 function imgTag(src){return src?`<img class="thumb" src="${src}" alt="">`:'';}
 function renderShop(){
@@ -45,7 +49,7 @@ function renderShop(){
   TOOLS.forEach(t=>{
     const d=document.createElement('div');d.className='item';
     const stats=t.kind==='shovel'?`Une souche : ≈ ${secs(12*t.delay)}`:`Arbre moyen : ≈ ${secs(Math.max(1,Math.ceil(9*t.fell))*t.delay)} · Une coupe : ≈ ${secs(t.cut*t.delay)}`;
-    d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t)))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
+    d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t),true))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
     if(owned.has(t.id)){b.textContent='À toi';b.disabled=true;}
     else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);setTool(t);J.buy(t.name.toLowerCase(),t.price);toast(`${t.name} : dans ton inventaire et en main !`);renderShop();};}

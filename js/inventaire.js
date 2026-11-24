@@ -15,7 +15,7 @@ function selectSlot(i){
 function slotIcon(t){
   if(!t)return '✋';
   if(t.kind==='plant')return '🌱';
-  const src=thumb(t.id,()=>toolThumbModel(t));
+  const src=thumb(t.id,()=>toolThumbModel(t),true);
   return src?`<img src="${src}" alt="">`:'🪓';
 }
 function renderHotbar(){
