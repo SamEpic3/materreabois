@@ -14,8 +14,9 @@ function serverUrl(){
 const rd=(v,k)=>Math.round(v*k)/k;
 // Chaque onglet a son numéro. Si le même joueur ouvre la terre dans deux onglets, le 2e devient un autre joueur.
 const TAB_ID=(()=>{try{let t=sessionStorage.getItem('terre-a-bois-onglet');if(!t){t=Math.random().toString(36).slice(2,8);sessionStorage.setItem('terre-a-bois-onglet',t);}return t;}catch(e){return Math.random().toString(36).slice(2,8);}})();
-function useTabIdentity(){ME.id=ME.id.replace(/~.*$/,'')+'~'+TAB_ID;ME.name=(ME.name||'Moi').replace(/ \(2\)$/,'')+' (2)';ME.tabAlt=true;}
-try{if(sessionStorage.getItem('terre-a-bois-alt')==='1')useTabIdentity();}catch(e){}
+// Onglet en double : toujours la même identité de rechange (Sam (2), Sam (3)…), pour ne pas créer un nouveau joueur à chaque fois
+function useTabIdentity(n){n=n||2;ME.id=ME.id.replace(/~.*$/,'')+'~'+n;ME.name=(ME.name||'Moi').replace(/ \(\d+\)$/,'')+' ('+n+')';ME.tabAlt=n;}
+try{const n=+sessionStorage.getItem('terre-a-bois-alt');if(n>1)useTabIdentity(n);}catch(e){}
 
 /* ---------- Collections synchronisées ---------- */
 const treeRef=t=>t.planted?'p'+t.id:'t'+treeList.indexOf(t);
@@ -322,8 +323,8 @@ function onMessage(m){
   }else if(m.t==='snapReq'){
     sendSnap();
   }else if(m.t==='dup'){
-    try{sessionStorage.setItem('terre-a-bois-alt','1');}catch(e){}
-    {const o=NET.ws;NET.ws=null;try{o.close();}catch(e){}}useTabIdentity();$('playerName').value=ME.name;toast('Déjà ouvert dans un autre onglet : cet onglet joue comme « '+ME.name+' »');
+    const n=(ME.tabAlt||1)+1;try{sessionStorage.setItem('terre-a-bois-alt',String(n));}catch(e){}
+    {const o=NET.ws;NET.ws=null;try{o.close();}catch(e){}}useTabIdentity(n);$('playerName').value=ME.name;toast('Déjà ouvert dans un autre onglet : cet onglet joue comme « '+ME.name+' »');
     setTimeout(()=>connect(false),300);
   }else if(m.t==='error'){netFail(m.msg||'Erreur du serveur');}
 }
@@ -439,7 +440,7 @@ function renderPlayers(){
   else{
     h+='<div class="pl">🟢 '+esc(myName())+' <small>(toi'+(NET.host?', hôte':'')+')</small></div>';
     for(const id in NET.online)if(id!==ME.id)h+='<div class="pl">🟢 '+esc(NET.online[id].name||'Partenaire')+(NET.hostId===id?' <small>(hôte)</small>':'')+'</div>';
-    for(const id in S.others)if(!NET.online[id]&&id!==ME.id){const o=S.others[id];h+='<div class="pl">⚪ '+esc(o.name||'Partenaire')+(o.t?' <small>vu '+ago(o.t)+'</small>':' <small>hors ligne</small>')+'</div>';}
+    for(const id in S.others)if(!NET.online[id]&&id!==ME.id&&!id.includes('~')&&S.others[id].name){const o=S.others[id];h+='<div class="pl">⚪ '+esc(o.name||'Partenaire')+(o.t?' <small>vu '+ago(o.t)+'</small>':' <small>hors ligne</small>')+'</div>';}
     h+='<div class="pl"><small>Terre « '+esc(NET.room)+' »</small></div>';
   }
   $('players').innerHTML=h;

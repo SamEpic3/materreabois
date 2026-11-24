@@ -6,7 +6,7 @@
 const ME_KEY='terre-a-bois-joueur',SAVE_KEY='terre-a-bois-sauvegarde';
 const ME=(()=>{let m=null;try{m=JSON.parse(localStorage.getItem(ME_KEY)||'null');}catch(e){}
   if(!m||!m.id)m={id:'j'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:''};return m;})();
-function saveMe(){const m=Object.assign({},ME);if(m.tabAlt){m.id=m.id.replace(/~.*$/,'');m.name=m.name.replace(/ \(2\)$/,'');delete m.tabAlt;}try{localStorage.setItem(ME_KEY,JSON.stringify(m));}catch(e){}}
+function saveMe(){const m=Object.assign({},ME);if(m.tabAlt){m.id=m.id.replace(/~.*$/,'');m.name=m.name.replace(/ \(\d+\)$/,'');delete m.tabAlt;}try{localStorage.setItem(ME_KEY,JSON.stringify(m));}catch(e){}}
 function myName(){return ME.name||'Moi';}
 
 /* ----- Stockage (à remplacer par le serveur plus tard) ----- */
@@ -57,11 +57,12 @@ $('journalClose').addEventListener('click',closeJournal);
 
 /* ----- Les autres joueurs : on voit leur bonhomme là où ils se sont arrêtés ----- */
 S.others={};                // id → {name, player:{x,z,rot,...}, tool, seedSel, t}
+const SHOW_OFFLINE=false;   // montrer le bonhomme des joueurs déconnectés là où ils se sont arrêtés (désactivé)
 const otherFigs=[];
 function showOthers(){
   otherFigs.forEach(f=>{scene.remove(f.g);scene.remove(f.l);const i=labels.indexOf(f.l);if(i>=0)labels.splice(i,1);});otherFigs.length=0;
   for(const id in S.others){
-    const o=S.others[id],p=o.player;if(!p||(typeof NET!=='undefined'&&NET.online[id]))continue;
+    const o=S.others[id],p=o.player;if(!p||!SHOW_OFFLINE||(typeof NET!=='undefined'&&NET.online[id]))continue;
     const f=makePlayer();[f.axe,f.saw,f.chain,f.shovel,f.carryLog].forEach(m=>{if(m)m.visible=false;});
     f.g.position.set(p.x,H(p.x,p.z),p.z);f.g.rotation.y=p.rot||0;scene.add(f.g);
     otherFigs.push({g:f.g,l:label(o.name||'Partenaire',p.x,H(p.x,p.z)+2.6,p.z,12)});
