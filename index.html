@@ -30,6 +30,7 @@
   <button class="sbtn" id="zIn" title="Zoom avant">＋</button>
   <button class="sbtn" id="zOut" title="Zoom arrière">－</button>
   <button class="sbtn" id="btnCam" title="Vue rapprochée (V)">🎥</button>
+  <button class="sbtn hidden" id="btnChat" title="Clavarder (Entrée ou T)">💬</button>
   <button class="sbtn" id="btnJournal" title="Journal de la terre">📜</button>
   <button class="sbtn" id="btnHelp" title="Aide">?</button>
 </div>
@@ -53,6 +54,8 @@
 <button id="toolBtn" class="hidden" title="Changer d'outil"></button>
 <div id="joy" class="hidden"><div id="joyKnob"></div></div>
 <div id="toast"></div>
+<div id="chatLog" class="hidden"></div>
+<div id="chatBox" class="hidden"><input id="chatInput" maxlength="200" placeholder="Écris un message…" autocomplete="off" enterkeyhint="send"><button id="chatSend">Envoyer</button></div>
 
 <div id="help">
   <div class="card">
@@ -89,6 +92,7 @@
       <li><b>Plantation :</b> achète des plants au magasin, prends-les dans la barre d'outils (🌱) et plante-les n'importe où de libre. Ils poussent en 3 à 5 heures, même quand le jeu est fermé.</li>
       <li><b>Sauvegarde :</b> la partie se sauvegarde toute seule dans ce navigateur.</li>
       <li><b>Journal (📜 ou <kbd>J</kbd>) :</b> tout ce que chacun fait sur la terre y est noté.</li>
+      <li><b>Clavardage (💬, <kbd>Entrée</kbd> ou <kbd>T</kbd>) :</b> en partie à plusieurs, écris à ton partenaire. Son message apparaît aussi au-dessus de sa tête.</li>
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
       <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
     </ul>

@@ -4,6 +4,8 @@ const keys={};
 const joy={active:false,id:null,cx:0,cy:0,x:0,y:0};
 const pedal={gas:false,brake:false};
 addEventListener('keydown',e=>{
+  if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;   // on écrit (nom, code, clavardage)
+  if((e.code==='Enter'||e.code==='KeyT')&&!e.repeat&&typeof NET!=='undefined'&&NET.on&&NET.ready&&$('help').classList.contains('hidden')&&!CHAT.open){e.preventDefault();openChat();return;}
   if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
   if(!$('journal').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space'||e.code==='KeyJ')closeJournal();e.preventDefault();return;}
   if(!$('proj').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeProjects();e.preventDefault();return;}

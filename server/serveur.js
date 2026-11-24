@@ -43,10 +43,10 @@ const rooms=new Map();
 async function getRoom(code){
   let r=rooms.get(code);
   if(r){if(r.loading)await r.loading;return r;}
-  r={code,snap:null,log:[],seq:0,players:{},clients:new Map(),host:null,dirty:false,timer:null,pendingJoin:[]};
+  r={code,snap:null,log:[],seq:0,players:{},chat:[],clients:new Map(),host:null,dirty:false,timer:null,pendingJoin:[]};
   rooms.set(code,r);
   r.loading=(async()=>{
-    try{const d=await loadRoomData(code);if(d){r.snap=d.snap||null;r.log=d.log||[];r.seq=d.seq||0;r.players=d.players||{};}}
+    try{const d=await loadRoomData(code);if(d){r.snap=d.snap||null;r.log=d.log||[];r.seq=d.seq||0;r.players=d.players||{};r.chat=d.chat||[];}}
     catch(e){console.error('Lecture impossible',code,e.message);}
   })();
   await r.loading;r.loading=null;return r;
@@ -58,7 +58,7 @@ function persist(r,now){
 }
 async function flush(r){
   if(!r.dirty||!r.snap)return;r.dirty=false;
-  try{await storeRoomData(r.code,{snap:r.snap,log:r.log,seq:r.seq,players:r.players});}
+  try{await storeRoomData(r.code,{snap:r.snap,log:r.log,seq:r.seq,players:r.players,chat:r.chat});}
   catch(e){r.dirty=true;console.error('Écriture impossible',r.code,e.message);}
 }
 
@@ -71,7 +71,7 @@ function opsAfterSnap(r){
   return r.log.filter(e=>e.seq>s.applied&&!(e.from===s.by&&e.seq<=s.rseq));
 }
 function welcome(r,ws,id){
-  send(ws,{t:'welcome',snap:r.snap?r.snap.data:null,ops:opsAfterSnap(r),seq:r.seq,host:r.host,you:id,online:online(r),players:r.players});
+  send(ws,{t:'welcome',snap:r.snap?r.snap.data:null,ops:opsAfterSnap(r),seq:r.seq,host:r.host,you:id,online:online(r),players:r.players,chat:r.chat});
 }
 function pickHost(r){
   const prev=r.host;
@@ -130,6 +130,12 @@ wss.on('connection',ws=>{
       broadcast(r,{t:'op',seq:e.seq,from:id,ops:m.ops},id);
       send(ws,{t:'ack',seq:e.seq});
       persist(r);
+    }else if(m.t==='chat'){
+      // Clavardage : on garde les 50 derniers messages de la terre
+      const txt=String(m.txt||'').replace(/\s+/g,' ').trim().slice(0,200);if(!txt)return;
+      const e={t:Date.now(),from:id,name:(r.players[id]||{}).name||'',txt};
+      r.chat.push(e);if(r.chat.length>50)r.chat.splice(0,r.chat.length-50);
+      broadcast(r,{t:'chat',m:e});persist(r);
     }else if(m.t==='pos'){
       broadcast(r,{t:'pos',from:id,p:m.p},id);
     }else if(m.t==='me'){

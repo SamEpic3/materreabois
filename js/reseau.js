@@ -283,7 +283,8 @@ function onMessage(m){
     for(const id in NET.online)delete S.others[id];showOthers();
     // on ne montre pas en double les joueurs en ligne (leur avatar suit leur vraie position)
     resetBase();applyOps([].concat(...(m.ops||[]).map(e=>e.ops)));
-    NET.ready=true;
+    NET.ready=true;$('btnChat').classList.remove('hidden');
+    CHAT.list=[];(m.chat||[]).forEach(c=>addChat(c,true));
     if(fresh)sendSnap(true);
     sendMe();refreshNetStatus();
     toast(fresh?`🌲 Nouvelle terre « ${NET.room} » créée`:`🌲 Bienvenue sur la terre « ${NET.room} »`);
@@ -299,6 +300,7 @@ function onMessage(m){
     if(NET.ready)applyOps(m.ops);NET.lastSeq=Math.max(NET.lastSeq,m.seq);
   }else if(m.t==='ack'){NET.lastSeq=Math.max(NET.lastSeq,m.seq);
   }else if(m.t==='pos'){if(NET.ready)onPos(m.from,m.p);
+  }else if(m.t==='chat'){if(NET.ready)addChat(m.m);
   }else if(m.t==='joined'){
     NET.online[m.id]={name:m.name};delete S.others[m.id];showOthers();
     const a=NET.avatars[m.id];if(a){/* nom à jour */}
@@ -343,7 +345,7 @@ function updateNet(dt){
   if(!NET.on||!NET.ready)return;
   // Qui conduit quoi
   vehicles.forEach(v=>{if(S.mode==='vtt'&&V===v)v.driver=ME.id;else if(v.driver===ME.id)v.driver=null;});
-  updateAvatars(dt);
+  updateAvatars(dt);updateBubbles(dt);
   const up=NET.ws&&NET.ws.readyState===1;if(!up)return;
   NET.sendT-=dt;NET.posT-=dt;NET.snapT-=dt;NET.meT-=dt;
   if(NET.sendT<=0){NET.sendT=0.15;const ops=collectOps();if(ops.length)netSend({t:'op',ops});}
@@ -354,3 +356,49 @@ function updateNet(dt){
 function netLeaving(){if(!NET.on||!NET.ready)return;if(NET.host)sendSnap(true);sendMe();}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')netLeaving();});
 addEventListener('pagehide',()=>{netLeaving();if(NET.on&&NET.ws){netSend({t:'bye'});}});
+
+/* ---------- Clavardage ---------- */
+const CHAT={list:[],open:false};
+function chatName(m){return m.from===ME.id?myName():(m.name||(NET.online[m.from]||{}).name||'Partenaire');}
+function renderChat(){
+  const L=$('chatLog'),now=Date.now();
+  const show=CHAT.open?CHAT.list.slice(-15):CHAT.list.filter(m=>now-m.shown<12000).slice(-5);
+  L.innerHTML=show.map(m=>`<div class="cm${m.from===ME.id?' me':''}"><b>${chatName(m).replace(/</g,'&lt;')}</b> ${m.txt.replace(/</g,'&lt;')}</div>`).join('');
+  L.classList.toggle('hidden',!show.length);
+}
+function addChat(m,quiet){
+  m.shown=quiet?0:Date.now();CHAT.list.push(m);if(CHAT.list.length>50)CHAT.list.shift();
+  renderChat();
+  if(!quiet&&m.from!==ME.id){
+    const a=NET.avatars[m.from];
+    if(a){const txt=m.txt.length>40?m.txt.slice(0,38)+'…':m.txt;
+      if(a.bubble){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);}
+      a.bubble=label('💬 '+txt,a.x,H(a.x,a.z)+3.3,a.z,40);a.bubbleT=6;}
+  }
+}
+function openChat(){
+  if(!NET.on||!NET.ready)return;
+  CHAT.open=true;$('chatBox').classList.remove('hidden');renderChat();
+  for(const k in keys)keys[k]=false;
+  setTimeout(()=>$('chatInput').focus(),0);
+}
+function closeChat(){CHAT.open=false;$('chatBox').classList.add('hidden');$('chatInput').blur();renderChat();}
+function sendChat(){
+  const inp=$('chatInput'),txt=inp.value.trim();
+  if(txt)netSend({t:'chat',txt});
+  inp.value='';closeChat();
+}
+$('btnChat').addEventListener('click',()=>CHAT.open?closeChat():openChat());
+$('chatSend').addEventListener('click',sendChat);
+$('chatInput').addEventListener('keydown',e=>{
+  e.stopPropagation();
+  if(e.key==='Enter'){e.preventDefault();sendChat();}
+  else if(e.key==='Escape'){e.preventDefault();closeChat();}
+});
+$('chatInput').addEventListener('keyup',e=>e.stopPropagation());
+setInterval(()=>{if(!CHAT.open&&CHAT.list.length)renderChat();},1000);
+function updateBubbles(dt){
+  for(const id in NET.avatars){const a=NET.avatars[id];if(!a.bubble)continue;
+    a.bubbleT-=dt;a.bubble.position.set(a.x,H(a.x,a.z)+3.3,a.z);
+    if(a.bubbleT<=0){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);a.bubble=null;}}
+}

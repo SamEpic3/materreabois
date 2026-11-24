@@ -23,6 +23,7 @@ Le jeu commence avec 35 000 $ pour pouvoir tout tester.
   - Avec la débusqueuse, qui traîne les longues tiges.
 - **Vendre** dans la cour de la scierie, au village. Le prix dépend de l'essence (érable, bouleau, épinette, sapin) et de la longueur.
 - **Fendre le bois** avec la fendeuse à bûches (magasin général, 1800 $) : elle s'attache au VTT ou au pick-up. On lui apporte une bûche de 26 po maximum; le bois fendu se vend 1,8 fois plus cher.
+- **Clavardage** (💬, Entrée ou T) en partie à plusieurs : les messages s'affichent en haut à droite et au-dessus de la tête de l'autre joueur.
 - **Journal de la terre** (📜 ou J) : qui a fait quoi (ventes, achats, constructions, plantations…), pour voir ce que l'autre a fait pendant ton absence.
 - **Jouer à plusieurs en même temps** : entre le même « code de la terre » sur l'écran de départ. On se voit bouger en direct, et tout ce qu'on fait (arbres, billots, véhicules, argent, constructions…) apparaît chez l'autre. On peut aussi jouer seul sur la terre commune : le serveur la garde. Sans code, on joue seul sur l'appareil, comme avant.
 - **Suivre les prix** à la porte de la scierie : ils changent toutes les 5 minutes.

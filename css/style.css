@@ -57,6 +57,12 @@
   #netStatus.warn{color:#ffb38a}
   .netmsg{font-size:13px;color:#7a4a18;min-height:1em;margin:6px 0}
   .linkbtn{background:none;border:0;color:#2f5a3a;text-decoration:underline;font-size:13px;padding:0;cursor:pointer}
+  #chatLog{position:fixed;right:calc(10px + var(--pad-r));top:calc(62px + var(--pad-t));width:min(38vw,320px);display:flex;flex-direction:column;gap:4px;pointer-events:none}
+  #chatLog .cm{background:rgba(30,28,22,.78);color:#f3ead6;font-size:13px;line-height:1.35;padding:5px 9px;border-radius:10px;word-wrap:break-word}
+  #chatLog .cm b{color:#ffd27a}#chatLog .cm.me b{color:#9fe0a8}
+  #chatBox{position:fixed;left:50%;top:calc(56px + var(--pad-t));transform:translateX(-50%);display:flex;gap:6px;width:min(90vw,460px);padding:6px;background:rgba(30,28,22,.85);border-radius:14px;z-index:30}
+  #chatBox input{flex:1;min-width:0;padding:9px 10px;border-radius:10px;border:0;font-size:16px;background:#fffaf0}
+  #chatBox button{padding:0 14px;border:0;border-radius:10px;background:#3f7a45;color:#fff;font-weight:600;font-size:15px}
   .projTools{display:flex;gap:8px;margin:0 0 6px}
   .projTools button{flex:1;padding:10px;border:0;border-radius:12px;background:#3f5a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
   .projTools button:disabled{opacity:.45;cursor:default}
