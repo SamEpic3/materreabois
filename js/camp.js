@@ -15,19 +15,33 @@ const camp3d={};
 function makeRocker(){
   const g=new T.Group(),w=mat(0x8a5a32),dk=mat(0x5a3a22);
   const rock=new T.Group();g.add(rock);
-  box(0.55,0.06,0.5,w,0,0.42,0,rock);
-  const back=box(0.55,0.7,0.06,w,0,0.8,-0.24,rock);back.rotation.x=-0.15;
-  [-0.25,0.25].forEach(x=>{box(0.05,0.42,0.05,dk,x,0.21,0.18,rock);box(0.05,0.42,0.05,dk,x,0.21,-0.18,rock);box(0.05,0.05,0.5,dk,x,0.62,0,rock);
-    const rk=box(0.04,0.05,0.9,dk,x,0.03,0,rock);});
+  const parts=[new T.BoxGeometry(0.52,0.05,0.48).translate(0,0.42,0.02)];
+  // Dossier : deux montants, traverses, barreaux
+  [-0.24,0.24].forEach(x=>parts.push(new T.BoxGeometry(0.05,1.0,0.05).rotateX(-0.15).translate(x,0.86,-0.27)));
+  [0.62,1.24].forEach(y=>parts.push(new T.BoxGeometry(0.5,0.07,0.04).rotateX(-0.15).translate(0,y,-0.24-(y-0.62)*0.15)));
+  [-0.12,0,0.12].forEach(x=>parts.push(new T.BoxGeometry(0.035,0.6,0.025).rotateX(-0.15).translate(x,0.93,-0.28)));
+  // Pattes et accoudoirs
+  [-0.25,0.25].forEach(x=>{parts.push(new T.BoxGeometry(0.045,0.4,0.045).translate(x,0.24,0.18),new T.BoxGeometry(0.045,0.4,0.045).translate(x,0.24,-0.2),
+    new T.BoxGeometry(0.045,0.26,0.045).translate(x,0.57,0.18),new T.BoxGeometry(0.07,0.035,0.52).translate(x,0.71,-0.02));});
+  rock.add(new T.Mesh(mergeGeos(parts),w));
+  // Berceaux courbes
+  const arc=[];[-0.25,0.25].forEach(x=>arc.push(new T.TorusGeometry(1.4,0.03,4,14,0.66).rotateZ(-Math.PI/2-0.33).rotateY(Math.PI/2).translate(x,1.44,0)));
+  rock.add(new T.Mesh(mergeGeos(arc),dk));
   return {g,rock};
 }
 function buildGalerie(){
-  const g=new T.Group(),deck=mat(0x8a6a44),post=mat(0x6e5236),roof=mat(0x5a2a22);
-  box(7.2,0.18,2.6,deck,0,0.09,3.55,g);
-  [-3.4,-1.1,1.1,3.4].forEach(x=>box(0.14,2.3,0.14,post,x,1.25,4.75,g));
-  const r=box(7.4,0.12,2.8,roof,0,2.45,3.6,g);r.rotation.x=0.2;
-  box(7.2,0.08,0.08,post,0,0.9,4.8,g);
-  g.position.set(CABIN.x,CAMP_H,CABIN.z);shadows(g);scene.add(g);
+  const g=new T.Group(),deck=texMat(sidingTex('#9a7a55','#5e4632',true),1,1),post=new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3}),rail=mat(0x6e5236);
+  deck.map.repeat.set(1,14);
+  g.add(new T.Mesh(new T.BoxGeometry(7.2,0.18,2.6).translate(0,0.09,3.55),deck));
+  g.add(new T.Mesh(mergeGeos([-3.4,-1.1,1.1,3.4].map(x=>new T.CylinderGeometry(0.08,0.09,2.35,8).translate(x,1.25,4.75))),post));
+  // Garde-corps à barreaux, ouvert devant la porte
+  const rp=[];[[-3.4,0.4],[1.9,3.4]].forEach(([a,b])=>{rp.push(new T.BoxGeometry(b-a,0.07,0.09).translate((a+b)/2,0.95,4.78),new T.BoxGeometry(b-a,0.05,0.06).translate((a+b)/2,0.3,4.78));for(let x=a+0.2;x<b-0.05;x+=0.2)rp.push(new T.BoxGeometry(0.04,0.62,0.04).translate(x,0.62,4.78));});
+  [-1,1].forEach(sd=>{rp.push(new T.BoxGeometry(0.07,0.07,2.5).translate(sd*3.5,0.95,3.55));for(let z=2.5;z<4.7;z+=0.2)rp.push(new T.BoxGeometry(0.04,0.62,0.04).translate(sd*3.5,0.62,z));});
+  rp.push(new T.BoxGeometry(1.2,0.09,0.35).translate(1.15,0.045,5.0));  // marche
+  g.add(new T.Mesh(mergeGeos(rp),rail));
+  const r=new T.Mesh(new T.BoxGeometry(7.6,0.1,2.9),texMat(shingleTex('#5a2a22','#3e1c17'),9,3));r.position.set(0,2.47,3.6);r.rotation.x=0.2;g.add(r);
+  g.add(new T.Mesh(new T.BoxGeometry(7.2,0.16,0.12).translate(0,2.36,4.75),rail));
+  g.position.set(CABIN.x,CAMP_H,CABIN.z);bakeStatic(g);shadows(g);scene.add(g);
   [-3.4,-1.1,1.1,3.4].forEach(x=>addCol(CABIN.x+x,CABIN.z+4.75,0.15));
   [-2.3,-0.9].forEach(x=>{
     const ch=makeRocker();ch.g.position.set(CABIN.x+x,CAMP_H+0.18,CABIN.z+3.7);shadows(ch.g);scene.add(ch.g);
@@ -37,12 +51,16 @@ function buildGalerie(){
 const cabinWinLit=0xffa64a,cabinWinOff=0x8fa3ad;
 function buildPoele(){camp3d.poele=true;}
 function buildAgrandir(){
-  const g=new T.Group(),plank=mat(0x7a5232),roof=mat(0x5a2a22);
-  box(3.6,2.4,4.2,plank,0,1.2,0,g);
-  const r1=box(4.0,0.18,2.7,roof,0,2.9,1.0,g);r1.rotation.x=0.62;
-  const r2=box(4.0,0.18,2.7,roof,0,2.9,-1.0,g);r2.rotation.x=-0.62;
-  box(1.6,0.9,0.08,CABIN_WIN,0,1.4,2.12,g);
-  g.position.set(CABIN.x-4.8,CAMP_H,CABIN.z);shadows(g);scene.add(g);
+  // Rallonge en billots assortie à la cabane
+  const g=new T.Group(),W=3.6,D=4.2,Hh=2.4;
+  g.add(new T.Mesh(logWalls(W,D,Hh),[CABIN_LOG,RING_M,RING_M]));
+  const plank=texMat(sidingTex('#7a5232','#4d3220',true),1,1);plank.map.repeat.set(6,1);
+  g.add(new T.Mesh(gable(W,D+0.2,Hh+0.1,1.2,-W/2),plank));
+  roofTex(g,W+0.4,D,Hh+0.7,texMat(shingleTex('#5a2a22','#3e1c17'),6,8));
+  const wf=[],wg=[];[windowGeo(1.5,0.9,0,1.4,D/2+0.17,0),windowGeo(0.8,0.75,-W/2-0.17,1.4,0,-Math.PI/2)].forEach(w=>{wf.push(w.frame);wg.push(w.glass);});
+  g.add(new T.Mesh(mergeGeos(wf),mat(0xe8e0cc)),new T.Mesh(mergeGeos(wg),CABIN_WIN));
+  g.add(new T.Mesh(new T.BoxGeometry(W+0.3,0.18,D+0.3).translate(0,0.02,0),mat(0x7a756c)));
+  g.position.set(CABIN.x-4.8,CAMP_H,CABIN.z);bakeStatic(g);shadows(g);scene.add(g);
   [-1,1].forEach(b=>addCol(CABIN.x-4.8,CABIN.z+b*1.1,1.6));
 }
 const BUILD={galerie:buildGalerie,poele:buildPoele,agrandir:buildAgrandir};

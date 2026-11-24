@@ -14,33 +14,53 @@ function flameGroup(){
 }
 const BENCH_A=[0.4,2.5,4.6];
 function makeFeuModel(){
-  const g=new T.Group(),stone=mat(0x8a8780),wood=mat(0x6e5236),bark=mat(0x5e4630);
-  for(let i=0;i<11;i++){const a=i/11*Math.PI*2,s=new T.Mesh(new T.DodecahedronGeometry(0.2,0),stone);s.position.set(Math.cos(a)*0.75,0.1,Math.sin(a)*0.75);s.rotation.set(i,i*2,0);g.add(s);}
-  [0.6,-0.6,2].forEach(r=>{const l=box(0.8,0.14,0.14,wood,0,0.1,0,g);l.rotation.y=r;});
+  const g=new T.Group(),bark=logMatsFor('epinette');
+  g.add(new T.Mesh(stoneRing(13,0.78,0.2,3),STONE_M));
+  g.add(new T.Mesh(new T.CylinderGeometry(0.62,0.66,0.04,16).translate(0,0.02,0),mat(0x2a2522)));
+  // Bûches en tipi
+  const tp=[];for(let k=0;k<6;k++){const a=k/6*Math.PI*2;tp.push(new T.CylinderGeometry(0.05,0.065,0.85,7).translate(0,0.42,0).rotateX(0.45).rotateY(a).translate(Math.sin(a)*0.18,0,Math.cos(a)*0.18));}
+  g.add(new T.Mesh(mergeGeos(tp),bark));
+  // Bancs : demi-billots sur deux bûchettes
   BENCH_A.forEach(a=>{
-    const b=new T.Group(),log=new T.Mesh(new T.CylinderGeometry(0.22,0.24,1.5,10),[bark,endM,endM]);log.rotation.z=Math.PI/2;log.position.y=0.22;b.add(log);
+    const b=new T.Group();
+    const top=new T.Mesh(new T.CylinderGeometry(0.22,0.22,1.5,12,1,false,Math.PI,Math.PI),bark);top.rotation.z=Math.PI/2;top.position.y=0.36;b.add(top);
+    const flat=new T.Mesh(new T.BoxGeometry(1.5,0.03,0.44),mat(0xc9a679));flat.position.y=0.36;b.add(flat);
+    [-0.5,0.5].forEach(x=>{const l=new T.Mesh(new T.CylinderGeometry(0.13,0.14,0.32,10),bark);l.position.set(x,0.16,0);b.add(l);});
     b.position.set(Math.cos(a)*2.3,0,Math.sin(a)*2.3);b.rotation.y=-a+Math.PI/2;g.add(b);
   });
-  return g;
+  return bakeStatic(g);
 }
 function makeAbriModel(){
-  const g=new T.Group(),wood=mat(0x7a5232),dark=mat(0x4d3220),roof=mat(0x3f4a3a);
-  box(3.4,0.12,2.3,dark,0,0.06,0,g);
-  box(3.4,2.0,0.1,wood,0,1.0,-1.15,g);box(0.1,2.0,2.3,wood,-1.7,1.0,0,g);box(0.1,2.0,2.3,wood,1.7,1.0,0,g);
-  [-1.65,1.65].forEach(x=>box(0.12,2.5,0.12,dark,x,1.25,1.1,g));
-  const r=box(3.8,0.12,2.8,roof,0,2.25,0,g);r.rotation.x=-0.18;
-  return g;
+  const g=new T.Group(),post=new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3});
+  const boards=texMat(sidingTex('#7a5232','#3e2a1a',true),14,1),dark=mat(0x4d3220);
+  // Plancher en palettes
+  const fl=[];for(let k=0;k<7;k++)fl.push(new T.BoxGeometry(3.4,0.05,0.28).translate(0,0.15,-1.05+k*0.35));fl.push(new T.BoxGeometry(3.3,0.12,0.12).translate(0,0.06,-0.9),new T.BoxGeometry(3.3,0.12,0.12).translate(0,0.06,0.9));
+  g.add(new T.Mesh(mergeGeos(fl),mat(0x9a7a55)));
+  // Poteaux ronds, fond et côtés en planches
+  g.add(new T.Mesh(mergeGeos([[1.65,1.1,2.55],[-1.65,1.1,2.55],[1.65,-1.12,2.0],[-1.65,-1.12,2.0],[0,-1.12,2.0]].map(([x,z,h])=>new T.CylinderGeometry(0.07,0.08,h,8).translate(x,h/2,z))),post));
+  g.add(new T.Mesh(new T.BoxGeometry(3.4,1.95,0.06).translate(0,1.05,-1.17),boards));
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.06,1.95,2.3).translate(-1.72,1.05,0),new T.BoxGeometry(0.06,1.95,2.3).translate(1.72,1.05,0)]),texMat(sidingTex('#7a5232','#3e2a1a',true),10,1)));
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(3.5,0.1,0.1).translate(0,2.5,1.1),new T.BoxGeometry(3.5,0.1,0.1).translate(0,2.0,-1.15)]),dark));
+  // Toit de tôle incliné vers l'arrière
+  const r=new T.Mesh(new T.BoxGeometry(3.9,0.06,2.8),texMat(tinTex(),12,1,{shininess:30}));r.position.set(0,2.3,0);r.rotation.x=-0.2;g.add(r);
+  return bakeStatic(g);
 }
 function makeBbqModel(){
-  const g=new T.Group(),blk=mat(0x232323),steel=mat(0x8f969b),wood=mat(0x8a6a44);
-  [[-0.4,-0.2],[0.4,-0.2],[-0.4,0.2],[0.4,0.2]].forEach(([x,z])=>box(0.05,0.85,0.05,blk,x,0.43,z,g));
-  box(0.9,0.05,0.5,steel,0,0.35,0,g);
-  box(0.88,0.32,0.5,blk,0,1.0,0,g);
-  const lid=new T.Mesh(new T.CylinderGeometry(0.25,0.25,0.88,14,1,false,0,Math.PI),blk);lid.rotation.z=Math.PI/2;lid.position.set(0,1.16,0);g.add(lid);
-  box(0.12,0.04,0.04,steel,0,1.28,0.26,g);
-  box(0.36,0.04,0.46,wood,0.64,0.98,0,g);box(0.36,0.04,0.46,wood,-0.64,0.98,0,g);
-  const tank=new T.Mesh(new T.CylinderGeometry(0.15,0.15,0.42,10),mat(0xe8e4da));tank.position.set(0.18,0.58,0);g.add(tank);
-  const glow=box(0.7,0.05,0.02,new T.MeshBasicMaterial({color:0x3a2a20}),0,0.9,0.26,g);
+  const g=new T.Group(),blk=new T.MeshPhongMaterial({color:0x232323,shininess:40,specular:0x444444}),steel=new T.MeshPhongMaterial({color:0xb8bcc0,shininess:80,specular:0x888888}),wood=mat(0x8a6a44);
+  // Chariot : pattes, tablette du bas, deux roues
+  g.add(new T.Mesh(mergeGeos([[-0.4,-0.2],[0.4,-0.2],[-0.4,0.2],[0.4,0.2]].map(([x,z])=>new T.BoxGeometry(0.05,0.85,0.05).translate(x,0.43,z)).concat([new T.BoxGeometry(0.9,0.04,0.48).translate(0,0.3,0)])),blk));
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.1,0.1,0.05,12).rotateZ(Math.PI/2).translate(0.44,0.1,-0.2),new T.CylinderGeometry(0.1,0.1,0.05,12).rotateZ(Math.PI/2).translate(-0.44,0.1,-0.2)]),mat(0x111111)));
+  // Cuve et couvercle arrondi, poignée, thermomètre, boutons
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.88,0.3,0.5).translate(0,0.99,0),new T.BoxGeometry(0.88,0.12,0.06).translate(0,0.9,0.27)]),blk));
+  const lid=new T.Mesh(new T.CylinderGeometry(0.25,0.25,0.88,16,1,false,0,Math.PI),blk);lid.rotation.z=Math.PI/2;lid.position.set(0,1.14,0);g.add(lid);
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.018,0.018,0.5,8).rotateZ(Math.PI/2).translate(0,1.34,0.3),new T.BoxGeometry(0.03,0.08,0.06).translate(0.22,1.31,0.28),new T.BoxGeometry(0.03,0.08,0.06).translate(-0.22,1.31,0.28),
+    new T.CylinderGeometry(0.04,0.04,0.02,12).rotateX(Math.PI/2).translate(0,1.25,0.26)]),steel));
+  g.add(new T.Mesh(mergeGeos([-0.25,0,0.25].map(x=>new T.CylinderGeometry(0.03,0.03,0.04,10).rotateX(Math.PI/2).translate(x,0.9,0.31))),steel));
+  // Tablettes de côté en lattes
+  g.add(new T.Mesh(mergeGeos([0.6,-0.6].flatMap(x=>[0,1,2,3].map(k=>new T.BoxGeometry(0.34,0.035,0.1).translate(x+(x>0?0.04:-0.04),1.0,-0.17+k*0.115)))),wood));
+  // Bonbonne de propane
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.15,0.15,0.34,14).translate(0.2,0.5,0),new T.SphereGeometry(0.15,14,6,0,Math.PI*2,0,Math.PI/2).translate(0.2,0.67,0),new T.CylinderGeometry(0.09,0.09,0.08,10).translate(0.2,0.84,0)]),mat(0xe8e4da)));
+  const glow=new T.Mesh(new T.BoxGeometry(0.7,0.04,0.02),new T.MeshBasicMaterial({color:0x3a2a20}));glow.position.set(0,0.87,0.27);g.add(glow);
   g.userData.glow=glow;return g;
 }
 // Passage du repère d'une construction au monde

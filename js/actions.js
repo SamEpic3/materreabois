@@ -8,8 +8,8 @@ function priceOf(c){return c.len>=SAW_MIN?Math.round(SPECIES[c.sp].p*mkt(c.sp)*c
 function kindOf(len){return len>CRANE_MAX?'trop long : recoupe ou débusqueuse':len>CARRY_MAX?'billot long (grue) ✔':len>=SAW_MIN?'billot de sciage ✔':'bois de chauffage';}
 function pointInYard(x,z){return Math.hypot(x-YARD.x,z-YARD.z)<YARD.r;}
 function inYard(){return pointInYard(P.x,P.z);}
-function pieceGeo(len,ra,rb){const g=new T.CylinderGeometry(rb,ra,len,9);g.rotateX(Math.PI/2);return g;}
-function makePieceMesh(c){const m=c.split?new T.Mesh(splitGeo(c.len,c.ra,c.rb,c.split),SPLIT_MATS):new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMats);m.castShadow=true;m.receiveShadow=true;return m;}
+function pieceGeo(len,ra,rb){const g=new T.CylinderGeometry(rb,ra,len,11);g.rotateX(Math.PI/2);return g;}
+function makePieceMesh(c){const m=c.split?new T.Mesh(splitGeo(c.len,c.ra,c.rb,c.split),SPLIT_MATS):new T.Mesh(pieceGeo(c.len,c.ra,c.rb),logMatsFor(c.sp));m.castShadow=true;m.receiveShadow=true;return m;}
 function placePiece(pc){
   const fx=Math.sin(pc.rot),fz=Math.cos(pc.rot),h=pc.len/2;
   const h0=H(pc.cx-fx*h,pc.cz-fz*h)+pc.ra,h1=H(pc.cx+fx*h,pc.cz+fz*h)+pc.rb;
@@ -94,7 +94,7 @@ function context(){
 }
 function setCarry(c){
   P.carry=c;player.carryLog.visible=!!c;updateToolVisual();
-  if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb,c.split);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMats;}}
+  if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb,c.split);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMatsFor(c.sp);}}
 }
 function pickUp(pc){removePiece(pc);const c={sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb};if(pc.split)c.split=pc.split;setCarry(c);P.target=null;}
 function nearestVehicle(){let b=null,bd=1e9;for(const v of vehicles){const d=Math.hypot(P.x-v.x,P.z-v.z);if(d<v.spec.enterR&&d<bd){bd=d;b=v;}}return b;}
@@ -197,19 +197,18 @@ function hideTree(t){
   else{t.parts.forEach(pp=>TREE_INST[pp.g].setMatrixAt(pp.idx,ZERO_M));Object.values(TREE_INST).forEach(m=>m.instanceMatrix.needsUpdate=true);}
 }
 function makeStump(t){
-  const st=new T.Mesh(new T.CylinderGeometry(0.26*t.s,0.32*t.s,0.45,7),mat(t.type==='bouleau'?0xd9d4c8:0x6b5036));
-  st.position.set(t.x,t.y+0.2,t.z);shadows(st);scene.add(st);
+  const bm=logMatsFor(t.type)[0],st=new T.Mesh(STUMP_GEO,[bm,RING_M,bm]);st.scale.set(t.s,1,t.s);st.rotation.y=t.rot||0;
+  st.position.set(t.x,t.y-0.02,t.z);shadows(st);scene.add(st);
   const e={x:t.x,z:t.z,col:addCol(t.x,t.z,0.3*t.s),mesh:st,size:t.s,work:0,tree:t,id:t.planted?(t.id||uid()):null};stumpList.push(e);return e;
 }
 function makeCrown(t,x,z,rot){
   const g=new T.Group();g.rotation.y=rot;
   const cols=t.parts.filter(p=>p.g!=='trunk').map(p=>p.c),s=t.s;
   if(t.type==='epinette'||t.type==='sapin'){
-    const c=new T.Mesh(new T.ConeGeometry(1.0*s,3.0*s,7),mat(cols[0]));c.rotation.x=Math.PI/2;c.position.set(0,0,0.9*s);g.add(c);
-    const c2=new T.Mesh(new T.ConeGeometry(0.7*s,1.6*s,7),mat(cols[1]));c2.rotation.x=Math.PI/2;c2.position.set(0,0,2.6*s);g.add(c2);
+    const c=new T.Mesh(TREE_GEO.fir,treeMat(cols[0]));c.rotation.x=Math.PI/2;c.scale.set(1.3*s,3.4*s,1.3*s);c.position.set(0,0,0.2*s);g.add(c);
   }else{
-    const b1=new T.Mesh(TREE_GEO.blob,mat(cols[0]));b1.scale.set(1.4*s,0.9*s,1.6*s);b1.position.set(0,0,0.8*s);g.add(b1);
-    const b2=new T.Mesh(TREE_GEO.blob,mat(cols[1]));b2.scale.set(1.0*s,0.8*s,1.1*s);b2.position.set(0.3*s,0.2,2.0*s);g.add(b2);
+    const b1=new T.Mesh(TREE_GEO.crown,treeMat(cols[0]));b1.scale.set(1.6*s,1.0*s,1.8*s);b1.position.set(0,0,0.9*s);g.add(b1);
+    const b2=new T.Mesh(TREE_GEO.blob,treeMat(cols[1]));b2.scale.set(0.9*s,0.75*s,1.0*s);b2.position.set(0.3*s,0.2,2.1*s);g.add(b2);
   }
   g.position.set(x,H(x,z)+0.55*s,z);shadows(g);scene.add(g);
 }

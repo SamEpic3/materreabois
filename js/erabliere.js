@@ -14,17 +14,22 @@ function fmtL(l){return (Math.round(l*10)/10).toString().replace('.',',')+' L';}
 function pailTxt(p){return p.L<0.05?'vide':`${fmtL(p.L)} ${p.kind==='sirop'?'de sirop':'d\'eau d\'érable'}`;}
 
 /* ----- Modèles ----- */
+const GAL_M=new T.MeshPhongMaterial({color:0xb4babe,shininess:90,specular:0x999999,flatShading:false});
+// Seau de galvanisé : corps conique, rebord roulé, bandes, petite poignée
+function galBucket(r1,r2,h){return mergeGeos([new T.CylinderGeometry(r1,r2,h,16,1,true),new T.CircleGeometry(r2,16).rotateX(Math.PI/2).translate(0,-h/2+0.005,0),
+  new T.TorusGeometry(r1,0.012,5,16).rotateX(Math.PI/2).translate(0,h/2,0),new T.TorusGeometry(r1-(r1-r2)*0.3,0.007,4,16).rotateX(Math.PI/2).translate(0,h*0.2,0),new T.TorusGeometry(r1-(r1-r2)*0.75,0.007,4,16).rotateX(Math.PI/2).translate(0,-h*0.25,0)]);}
 function makeTapBucket(){
-  const g=new T.Group(),gal=mat(0xb0b6ba);
-  box(0.03,0.03,0.18,mat(0x8f969b),0,0.24,0.09,g);                       // chalumeau
-  const b=new T.Mesh(new T.CylinderGeometry(0.17,0.13,0.32,10),gal);b.position.set(0,0,0.2);g.add(b);
-  const lid=new T.Mesh(new T.ConeGeometry(0.24,0.12,10),gal);lid.position.set(0,0.22,0.22);g.add(lid);
+  const g=new T.Group(),dark=mat(0x6f7579);
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.014,0.018,0.16,8).rotateX(Math.PI/2).translate(0,0.25,0.08),new T.BoxGeometry(0.06,0.012,0.04).translate(0,0.235,0.15)]),dark)); // chalumeau et crochet
+  const b=new T.Mesh(galBucket(0.17,0.13,0.32),GAL_M);b.position.set(0,0,0.2);b.material.side=T.DoubleSide;g.add(b);
+  const lid=new T.Mesh(mergeGeos([new T.ConeGeometry(0.25,0.13,4,1,true).rotateY(Math.PI/4),new T.BoxGeometry(0.02,0.02,0.34).translate(0,0.06,0)]),GAL_M);lid.position.set(0,0.23,0.22);lid.rotation.x=0.15;g.add(lid);
   shadows(g);return g;
 }
 function makePail(){
-  const g=new T.Group(),gal=mat(0xa9b0b5);
-  const b=new T.Mesh(new T.CylinderGeometry(0.17,0.14,0.32,12),gal);b.position.y=0.16;g.add(b);
-  const h=new T.Mesh(new T.TorusGeometry(0.16,0.012,4,12,Math.PI),mat(0x55595c));h.position.y=0.32;g.add(h);
+  const g=new T.Group();
+  const b=new T.Mesh(galBucket(0.17,0.14,0.32),GAL_M);b.position.y=0.16;g.add(b);
+  const h=new T.Mesh(mergeGeos([new T.TorusGeometry(0.17,0.008,4,14,Math.PI).translate(0,0.32,0),new T.CylinderGeometry(0.018,0.018,0.1,8).rotateZ(Math.PI/2).translate(0,0.49,0),
+    new T.SphereGeometry(0.02,6,4).translate(0.17,0.3,0),new T.SphereGeometry(0.02,6,4).translate(-0.17,0.3,0)]),mat(0x55595c));g.add(h);
   const liq=new T.Mesh(new T.CylinderGeometry(0.155,0.155,0.01,12),new T.MeshBasicMaterial({color:SAP_COL}));liq.position.y=0.05;g.add(liq);
   g.userData.liq=liq;shadows(g);return g;
 }
@@ -36,13 +41,23 @@ function setPailLook(m,p){
 
 /* ----- Bouilloire à sirop (construction placée librement : voir constructions.js) ----- */
 function makeSucresModel(){
-  const g=new T.Group(),stone=mat(0x8a8780),metal=mat(0x9aa0a4),dark=mat(0x2a2a2a),wood=mat(0x6e5236);
-  for(let i=0;i<10;i++){const a=i/10*Math.PI*2,s=new T.Mesh(new T.DodecahedronGeometry(0.22,0),stone);s.position.set(Math.cos(a)*0.85,0.12,Math.sin(a)*0.85);s.rotation.set(i,i*2,0);g.add(s);}
-  [-0.25,0.25].forEach((x,i)=>{const l=box(0.9,0.16,0.16,wood,0,0.12,x,g);l.rotation.y=i?0.5:-0.5;});
-  [[-0.75,-0.45],[0.75,-0.45],[-0.75,0.45],[0.75,0.45]].forEach(([x,z])=>box(0.06,0.95,0.06,dark,x,0.48,z,g));
-  box(1.6,0.06,1.0,metal,0,0.95,0,g);
-  box(1.6,0.25,0.05,metal,0,1.08,0.5,g);box(1.6,0.25,0.05,metal,0,1.08,-0.5,g);box(0.05,0.25,1.0,metal,0.8,1.08,0,g);box(0.05,0.25,1.0,metal,-0.8,1.08,0,g);
-  return g;
+  // Évaporateur sur arche de briques : foyer ouvert à l'avant, casserole d'acier, cheminée
+  const g=new T.Group(),brick=texMat(canvasTex(64,64,(c,w,h)=>{c.fillStyle='#8e4a34';c.fillRect(0,0,w,h);c.fillStyle='#c9bfae';for(let y=0;y<h;y+=16){c.fillRect(0,y,w,2);for(let x=(y/16)%2?0:16;x<w;x+=32)c.fillRect(x,y,2,16);}}),3,2);
+  const metal=new T.MeshPhongMaterial({color:0x9aa0a4,shininess:70,specular:0x777777}),dark=mat(0x2a2a2a);
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.7,0.9,0.15).translate(0,0.45,-0.45),new T.BoxGeometry(0.15,0.9,1.05).translate(0.78,0.45,0),new T.BoxGeometry(0.15,0.9,1.05).translate(-0.78,0.45,0),
+    new T.BoxGeometry(0.55,0.9,0.15).translate(0.58,0.45,0.45),new T.BoxGeometry(0.55,0.9,0.15).translate(-0.58,0.45,0.45),new T.BoxGeometry(0.62,0.3,0.15).translate(0,0.75,0.45)]),brick));
+  g.add(new T.Mesh(new T.BoxGeometry(1.45,0.02,0.8).translate(0,0.01,0),mat(0x1a1715)));   // sol du foyer noirci
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.6,0.06,0.05).translate(0,0.63,0.56),new T.BoxGeometry(0.06,0.6,0.05).translate(0.3,0.31,0.56)]),dark));
+  // Casserole
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.6,0.06,1.0).translate(0,0.95,0),new T.BoxGeometry(1.6,0.25,0.05).translate(0,1.08,0.5),new T.BoxGeometry(1.6,0.25,0.05).translate(0,1.08,-0.5),
+    new T.BoxGeometry(0.05,0.25,1.0).translate(0.8,1.08,0),new T.BoxGeometry(0.05,0.25,1.0).translate(-0.8,1.08,0),new T.BoxGeometry(0.04,0.2,0.9).translate(0,1.05,0),
+    new T.CylinderGeometry(0.03,0.03,0.18,8).rotateX(Math.PI/2).translate(0.6,0.98,0.6)]),metal));
+  // Cheminée
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.13,0.13,1.9,12).translate(0,1.4,-0.62),new T.ConeGeometry(0.24,0.16,12).translate(0,2.42,-0.62),new T.CylinderGeometry(0.025,0.025,0.12,6).translate(0,2.31,-0.62)]),dark));
+  // Bois cordé à côté
+  const lg=[];for(let k=0;k<5;k++)lg.push(new T.CylinderGeometry(0.07,0.07,0.6,8).rotateX(Math.PI/2).translate(1.05+(k%3)*0.15-(k>2?-0.07:0),0.07+(k>2?0.12:0),0.1));
+  g.add(new T.Mesh(mergeGeos(lg),logMatsFor('erable')));
+  return bakeStatic(g);
 }
 function createSucres(b,o){
   const g=makeSucresModel();

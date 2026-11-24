@@ -188,7 +188,7 @@ function onPos(from,p){
   }
   // Seau ou bûche dans les mains
   const f=a.f,c=p.c;f.carryLog.visible=!!c&&!p.v;
-  if(c){const k=c.len+'|'+(c.split||0);if(a.ck!==k){a.ck=k;f.carryLog.geometry=c.split?splitGeo(c.len,c.ra,c.rb,c.split):pieceGeo(c.len,c.ra,c.rb);f.carryLog.material=c.split?SPLIT_MATS:logMats;}}
+  if(c){const k=c.len+'|'+(c.split||0)+'|'+c.sp;if(a.ck!==k){a.ck=k;f.carryLog.geometry=c.split?splitGeo(c.len,c.ra,c.rb,c.split):pieceGeo(c.len,c.ra,c.rb);f.carryLog.material=c.split?SPLIT_MATS:logMatsFor(c.sp);}}
   // Outil en main (le même modèle que chez soi)
   const tool=TOOLS.find(t=>t.id===p.tool),k=tool&&!c&&!p.pl&&!p.v&&p.m==='foot'?tool.kind:null;
   f.axe.visible=k==='axe';f.saw.visible=k==='saw';f.chain.visible=k==='chainsaw';f.shovel.visible=k==='shovel';
@@ -239,7 +239,7 @@ function updateAvatars(dt){
 }
 function posPacket(){
   const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);
-  if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0};
+  if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0,sp:P.carry.sp};
   if(P.pail)p.pl=1;
   if(S.mode==='vtt'&&V){p.v={id:V.id,x:rd(V.x,100),z:rd(V.z,100),th:rd(V.th,1000),sp:rd(V.v,10)};const tw=towed(V);if(tw)p.v.tw={id:tw.id,x:rd(tw.x,100),z:rd(tw.z,100),th:rd(tw.th,1000)};}
   return p;

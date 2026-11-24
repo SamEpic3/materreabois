@@ -1,8 +1,15 @@
 /* Le bonhomme : silhouettes, outils tenus en main, modèle du joueur */
 /* ---------- Silhouette visible derrière les arbres ---------- */
 const silMat=new T.MeshBasicMaterial({color:0xfff2c0,transparent:true,opacity:0.33,depthWrite:false,depthFunc:T.GreaterDepth});
-function markDynamic(root){root.traverse(o=>{if(!o.isMesh||o.userData.sil)return;o.renderOrder=20;(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m!==barkM&&m!==endM)m.transparent=true;});});}
-function addSilhouette(root){const list=[];root.traverse(o=>{if(o.isMesh&&!o.userData.sil)list.push(o);});list.forEach(o=>{const s=new T.Mesh(o.geometry,silMat);s.userData.sil=true;s.renderOrder=10;o.add(s);});}
+function markDynamic(root){root.traverse(o=>{if(!o.isMesh||o.userData.sil)return;o.renderOrder=20;(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m!==barkM&&m!==endM&&!m.userData.shared)m.transparent=true;});});}
+function addSilhouette(root){
+  // Pièces fixes (enfants directs) : une seule silhouette fusionnée ; pièces mobiles : silhouette chacune
+  root.updateMatrixWorld(true);const inv=new T.Matrix4().copy(root.matrixWorld).invert(),fixed=[],list=[];
+  root.traverse(o=>{if(o.isMesh&&!o.userData.sil)(o.parent===root?fixed:list).push(o);});
+  if(fixed.length>1){const s=new T.Mesh(mergeGeos(fixed.map(o=>o.geometry.clone().applyMatrix4(new T.Matrix4().multiplyMatrices(inv,o.matrixWorld)))),silMat);s.userData.sil=true;s.renderOrder=10;root.add(s);}
+  else list.push(...fixed);
+  list.forEach(o=>{const s=new T.Mesh(o.geometry,silMat);s.userData.sil=true;s.renderOrder=10;o.add(s);});
+}
 
 /* ---------- Bonhomme ---------- */
 function plaidTex(){
