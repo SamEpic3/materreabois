@@ -5,18 +5,6 @@ const SPLIT_BONUS=1.8;            // le bois fendu se vend plus cher
 const splitSide=mat(0xb08a5c);
 
 /* Quartiers de bûche (4 morceaux d'un cylindre) */
-function mergeGeos(list){
-  const pos=[],nor=[],uv=[],groups=[];let off=0;
-  list.forEach(g=>{
-    const a=g.attributes,n=a.position.count;
-    pos.push(...a.position.array);nor.push(...a.normal.array);uv.push(...(a.uv?a.uv.array:new Float32Array(n*2)));
-    (g.groups.length?g.groups:[{start:0,count:n,materialIndex:0}]).forEach(gr=>groups.push({start:gr.start+off,count:gr.count,m:gr.materialIndex}));
-    off+=n;
-  });
-  const out=new T.BufferGeometry();
-  out.setAttribute('position',new T.Float32BufferAttribute(pos,3));out.setAttribute('normal',new T.Float32BufferAttribute(nor,3));out.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
-  groups.forEach(g=>out.addGroup(g.start,g.count,g.m));return out;
-}
 // split : 2 = les deux moitiés tenues ensemble (en main), 1 = une moitié seule
 const splitCache={};
 function halfGeoParts(len,r,gap){

@@ -88,6 +88,25 @@ scene.add(sun);scene.add(sun.target);
 
 function mat(c){return new T.MeshPhongMaterial({color:c,flatShading:true,shininess:4});}
 function box(w,h,d,m,x,y,z,parent){const me=new T.Mesh(new T.BoxGeometry(w,h,d),m);me.position.set(x,y,z);if(parent)parent.add(me);return me;}
+// Fusionne plusieurs géométries en une seule (un seul objet à dessiner : plus rapide)
+function mergeGeos(list){
+  const pos=[],nor=[],uv=[],groups=[];let off=0;
+  list.forEach(g0=>{
+    const g=g0.index?g0.toNonIndexed():g0,a=g.attributes,n=a.position.count;
+    pos.push(...a.position.array);nor.push(...a.normal.array);uv.push(...(a.uv?a.uv.array:new Float32Array(n*2)));
+    (g.groups.length?g.groups:[{start:0,count:n,materialIndex:0}]).forEach(gr=>groups.push({start:gr.start+off,count:gr.count,m:gr.materialIndex}));
+    off+=n;
+  });
+  const out=new T.BufferGeometry();
+  out.setAttribute('position',new T.Float32BufferAttribute(pos,3));out.setAttribute('normal',new T.Float32BufferAttribute(nor,3));out.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
+  groups.forEach(g=>out.addGroup(g.start,g.count,g.m));return out;
+}
+// Profil vu de côté (u : vers l'avant, v : vers le haut) extrudé sur la largeur, centré
+function sideExtrude(shape,width,bevel){
+  const g=new T.ExtrudeGeometry(shape,{depth:width-2*(bevel||0),bevelEnabled:!!bevel,bevelThickness:bevel||0,bevelSize:bevel||0,bevelSegments:2,curveSegments:10});
+  g.translate(0,0,-(width-2*(bevel||0))/2);g.rotateY(-Math.PI/2);return g;
+}
+function cyl(r,len,seg){const g=new T.CylinderGeometry(r,r,len,seg||8);return g;}
 function shadows(o){o.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});}
 
 /* ---------- Terrain ---------- */

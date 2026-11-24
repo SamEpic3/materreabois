@@ -56,6 +56,7 @@ function frame(){
     camera.lookAt(camT);
   }
   sun.position.set(camT.x+28,camT.y+50,camT.z+12);sun.target.position.copy(camT);sun.target.updateMatrixWorld();
+  if(window.PHOTO){const f=window.PHOTO;activeCam=pcam;pcam.position.set(...f.pos);pcam.lookAt(...f.at);}   // caméra libre pour les captures de test
   updateFpTool();
   // Vitres du véhicule : invisibles quand on regarde de l'intérieur
   vehicles.forEach(v=>{const gl=v.mesh.g.userData.glass;if(gl){const hide=camMode==='fp'&&S.mode==='vtt'&&V===v;gl.forEach(m=>m.visible=!hide);}});

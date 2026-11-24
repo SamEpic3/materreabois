@@ -61,7 +61,7 @@ function updateVehicle(v,dt){
   v.q.slerp(_q,1-Math.exp(-12*dt));
   v.mesh.g.position.set(v.x,g1.h,v.z);v.mesh.g.quaternion.copy(v.q);
   v.mesh.wheels.forEach(w=>w.rotation.x=v.spin);
-  v.mesh.pivots.forEach(p=>p.rotation.y=v.steer);
+  v.mesh.pivots.forEach(p=>p.rotation.y=v.steer);if(v.mesh.bars)v.mesh.bars.rotation.y=v.steer*1.3;
   if(v.mesh.front){v.mesh.front.rotation.y=v.steer*0.7;v.mesh.rear.rotation.y=-v.steer*0.7;}
   if(tw)tw.mesh.wheels.forEach(w=>w.rotation.x+=v.v*dt/tw.spec.wr);
   updateDrag(v);

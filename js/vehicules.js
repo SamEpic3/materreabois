@@ -1,26 +1,81 @@
 /* Véhicules et remorques : modèles 3D, caractéristiques, création */
 /* ---------- VTT ---------- */
 const TL=1.9;
+/* VTT : carrosserie moulée (ailes avant et arrière), réservoir, siège rembourré, guidon qui tourne,
+   supports tubulaires, pneus à crampons. L'avant est vers +z. */
+const VTT_GEO=(()=>{
+  // Aile avant : nez qui descend vers les phares, arche au-dessus des roues
+  const fr=new T.Shape();
+  fr.moveTo(0.22,0.86);fr.lineTo(0.72,0.9);fr.quadraticCurveTo(1.0,0.9,1.08,0.72);fr.lineTo(1.08,0.62);
+  fr.lineTo(0.98,0.62);fr.absarc(0.62,0.34,0.46,Math.PI*0.17,Math.PI*0.83,false);fr.lineTo(0.22,0.66);fr.lineTo(0.22,0.86);
+  const front=sideExtrude(fr,1.18,0.03);
+  // Aile arrière
+  const rr=new T.Shape();
+  rr.moveTo(-0.3,0.84);rr.lineTo(-0.85,0.88);rr.quadraticCurveTo(-1.08,0.88,-1.1,0.7);rr.lineTo(-1.1,0.62);rr.lineTo(-1.0,0.62);
+  rr.absarc(-0.62,0.34,0.46,Math.PI*0.83,Math.PI*0.17,true);rr.lineTo(-0.3,0.66);rr.lineTo(-0.3,0.84);
+  const rear=sideExtrude(rr,1.18,0.03);
+  // Réservoir et capot central, siège rembourré
+  const tk=new T.Shape();tk.moveTo(0.0,0.86);tk.lineTo(0.42,0.88);tk.quadraticCurveTo(0.5,1.04,0.34,1.08);tk.lineTo(0.06,1.06);tk.quadraticCurveTo(-0.02,1.0,0.0,0.86);
+  const tank=sideExtrude(tk,0.5,0.05);
+  const st=new T.Shape();st.moveTo(-0.66,0.92);st.lineTo(0.04,0.92);st.lineTo(0.04,1.02);st.quadraticCurveTo(-0.03,1.08,-0.13,1.08);st.lineTo(-0.56,1.06);st.quadraticCurveTo(-0.68,1.04,-0.66,0.92);
+  const seat=sideExtrude(st,0.42,0.04);
+  // Châssis, moteur, repose-pieds
+  const frame=mergeGeos([new T.BoxGeometry(0.5,0.34,1.5).translate(0,0.56,-0.05),new T.BoxGeometry(0.44,0.3,0.5).translate(0,0.5,-0.05)]);
+  const feet=mergeGeos([new T.BoxGeometry(0.26,0.04,0.62).translate(0.4,0.46,-0.08),new T.BoxGeometry(0.26,0.04,0.62).translate(-0.4,0.46,-0.08)]);
+  // Supports tubulaires avant et arrière (cadre + barreaux)
+  function rack(z0,z1,y){
+    const parts=[],w=1.04,d=Math.abs(z1-z0),zc=(z0+z1)/2;
+    [-w/2,w/2].forEach(x=>parts.push(cyl(0.018,d,6).rotateX(Math.PI/2).translate(x,y,zc)));
+    [z0,z1].forEach(z=>parts.push(cyl(0.018,w,6).rotateZ(Math.PI/2).translate(0,y,z)));
+    for(let k=1;k<4;k++)parts.push(cyl(0.012,d,5).rotateX(Math.PI/2).translate(-w/2+k*w/4,y,zc));
+    [[-w/2,z0],[w/2,z0],[-w/2,z1],[w/2,z1]].forEach(([x,z])=>parts.push(cyl(0.016,0.1,6).translate(x,y-0.05,z)));
+    return mergeGeos(parts);
+  }
+  const racks=mergeGeos([rack(0.6,1.02,0.97),rack(-0.62,-1.06,0.95)]);
+  // Pare-chocs avant tubulaire et attache-remorque
+  const bump=mergeGeos([cyl(0.025,0.7,8).rotateZ(Math.PI/2).translate(0,0.56,1.2),cyl(0.022,0.2,6).rotateX(Math.PI/2).translate(0.3,0.56,1.12),cyl(0.022,0.2,6).rotateX(Math.PI/2).translate(-0.3,0.56,1.12),
+    new T.BoxGeometry(0.08,0.06,0.32).translate(0,0.42,-1.08),new T.SphereGeometry(0.035,8,6).translate(0,0.48,-1.22)]);
+  // Guidon (tourne avec la direction)
+  const bars=mergeGeos([cyl(0.022,0.32,6).translate(0,0.16,0),cyl(0.02,0.78,8).rotateZ(Math.PI/2).translate(0,0.3,-0.03),new T.BoxGeometry(0.16,0.07,0.1).translate(0,0.31,0.02)]);
+  const grips=mergeGeos([cyl(0.03,0.13,8).rotateZ(Math.PI/2).translate(0.33,0.3,-0.03),cyl(0.03,0.13,8).rotateZ(Math.PI/2).translate(-0.33,0.3,-0.03)]);
+  // Phares et feu arrière, silencieux
+  const lamps=mergeGeos([cyl(0.075,0.05,12).rotateX(Math.PI/2).translate(0.28,0.76,1.1),cyl(0.075,0.05,12).rotateX(Math.PI/2).translate(-0.28,0.76,1.1)]);
+  const tail=new T.BoxGeometry(0.16,0.06,0.03).translate(0,0.8,-1.12);
+  const muffler=mergeGeos([cyl(0.06,0.4,10).rotateX(Math.PI/2).translate(0.34,0.68,-0.9),cyl(0.03,0.1,8).rotateX(Math.PI/2).translate(0.34,0.68,-1.12)]);
+  return {front,rear,tank,seat,frame,feet,racks,bump,bars,grips,lamps,tail,muffler};
+})();
+// Pneu à crampons (arrondi) et jante; une géométrie par taille, partagée
+const WHEEL_GEO={};
+function wheelGeo(wr,ww){
+  const k=wr+'|'+ww;if(WHEEL_GEO[k])return WHEEL_GEO[k];
+  const ri=wr*0.58,h=ww/2,pts=[[ri,-h],[wr*0.9,-h],[wr*0.98,-h*0.75],[wr,-h*0.3],[wr,h*0.3],[wr*0.98,h*0.75],[wr*0.9,h],[ri,h]].map(([r,y])=>new T.Vector2(r,y));
+  const tire=new T.LatheGeometry(pts,18);
+  const lugs=[],n=Math.round(wr*55);   // crampons en chevrons, peu saillants
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2;const l=new T.BoxGeometry(0.022,ww*0.4,wr*0.13);l.translate(0,(i%2?1:-1)*ww*0.2,0);
+    l.applyMatrix4(new T.Matrix4().makeRotationY(a).multiply(new T.Matrix4().makeTranslation(wr+0.004,0,0)));lugs.push(l);}
+  const tread=mergeGeos([tire,...lugs]);tread.rotateZ(Math.PI/2);
+  const rim=mergeGeos([new T.CylinderGeometry(ri,ri,ww*0.8,12),new T.CylinderGeometry(ri*0.35,ri*0.35,ww*0.9,8)]);rim.rotateZ(Math.PI/2);
+  return WHEEL_GEO[k]={tread,rim};
+}
 function makeVTT(){
-  const g=new T.Group();
-  const green=mat(0x3d6b35),dark=mat(0x1e1e1e),metal=mat(0x56595c),light=new T.MeshBasicMaterial({color:0xfff3b0});
-  box(1.0,0.35,1.7,green,0,0.62,0,g);
-  box(1.18,0.1,0.62,green,0,0.82,0.6,g);box(1.18,0.1,0.62,green,0,0.82,-0.6,g);
-  box(0.42,0.14,0.8,dark,0,0.9,-0.15,g);
-  box(0.52,0.22,0.4,green,0,0.9,0.36,g);
-  box(0.06,0.3,0.06,metal,0,1.0,0.52,g);box(0.9,0.06,0.06,metal,0,1.14,0.52,g);
-  box(1.0,0.05,0.42,metal,0,0.97,0.86,g);box(1.0,0.05,0.42,metal,0,0.97,-0.82,g);
-  box(0.14,0.08,0.04,light,0.26,0.72,0.86,g);box(0.14,0.08,0.04,light,-0.26,0.72,0.86,g);
-  box(0.08,0.08,0.35,metal,0,0.42,-0.95,g);
+  const g=new T.Group(),G=VTT_GEO;
+  const body=new T.MeshPhongMaterial({color:0x3d6b35,flatShading:true,shininess:30,specular:0x333333});
+  const black=mat(0x1c1c1c),steel=new T.MeshPhongMaterial({color:0x2e3134,shininess:40,specular:0x444444}),chrome=new T.MeshPhongMaterial({color:0xb8bcc0,shininess:90,specular:0x888888});
+  const seatM=new T.MeshPhongMaterial({color:0x232323,shininess:20,specular:0x222222});
+  const add=(geo,m)=>{const me=new T.Mesh(geo,m);g.add(me);return me;};
+  add(G.frame,steel);add(G.feet,black);add(G.front,body);add(G.rear,body);add(G.tank,body);add(G.seat,seatM);
+  add(G.racks,steel);add(G.bump,steel);add(G.muffler,chrome);
+  add(G.lamps,new T.MeshBasicMaterial({color:0xfff3b0}));add(G.tail,new T.MeshBasicMaterial({color:0xc0261e}));
+  const bars=new T.Group();bars.position.set(0,0.98,0.38);bars.rotation.x=-0.25;g.add(bars);
+  bars.add(new T.Mesh(G.bars,steel),new T.Mesh(G.grips,black));
   const {wheels,pivots}=addWheels(g,0.34,0.3,0.56,0.62,-0.62);
   shadows(g);addSilhouette(g);
-  return {g,wheels,pivots};
+  return {g,wheels,pivots,bars};
 }
 function addWheels(g,wr,ww,wx,zf,zr){
-  const wg=new T.CylinderGeometry(wr,wr,ww,12);wg.rotateZ(Math.PI/2);
-  const tire=mat(0x1b1b1b),hub=mat(0x9a9ea2),hg=new T.CylinderGeometry(wr*0.45,wr*0.45,ww+0.02,8);hg.rotateZ(Math.PI/2);
+  const W=wheelGeo(wr,ww),tire=mat(0x1b1b1b),hub=new T.MeshPhongMaterial({color:0x8a8e92,shininess:50,specular:0x555555});
   const wheels=[],pivots=[];
-  const mk=()=>{const w=new T.Group();w.add(new T.Mesh(wg,tire));w.add(new T.Mesh(hg,hub));return w;};
+  const mk=()=>{const w=new T.Group();w.add(new T.Mesh(W.tread,tire));w.add(new T.Mesh(W.rim,hub));return w;};
   [[wx,zf],[-wx,zf]].forEach(([x,z])=>{const pv=new T.Group();pv.position.set(x,wr,z);const w=mk();pv.add(w);g.add(pv);pivots.push(pv);wheels.push(w);});
   [[wx,zr],[-wx,zr]].forEach(([x,z])=>{const w=mk();w.position.set(x,wr,z);g.add(w);wheels.push(w);});
   return {wheels,pivots};
@@ -116,7 +171,7 @@ function makeSkidder(){
 }
 const SPECS={
   vtt:{name:'VTT',build:makeVTT,hitch:1.15,wb:1.25,wr:0.34,maxF:9,maxR:3.5,acc:6.5,mudLoss:0.6,steer:0.55,hl:0.8,hw:0.55,
-       cols:[[0.55,0.68],[-0.55,0.68]],enterR:2.6,seat:[0,0.06,-0.22],hide:false,eye:[0,1.72,-0.2],side:1.4,cam:[7.5,3.0],arrowY:2.7},
+       cols:[[0.55,0.68],[-0.55,0.68]],enterR:2.6,seat:[0,0.15,-0.3],hide:false,eye:[0,1.8,-0.28],side:1.4,cam:[7.5,3.0],arrowY:2.7},
   pickup:{name:'Pick-up',build:makePickup,hitch:2.85,wb:3.2,wr:0.42,maxF:16,maxR:4,acc:5.5,mudLoss:0.75,steer:0.6,hl:1.6,hw:0.85,
        cols:[[1.8,1.0],[0.6,1.05],[-0.6,1.05],[-1.8,1.0]],enterR:3.2,seat:[0.45,0.3,0.2],hide:true,eye:[0.45,1.78,0.25],side:1.9,cam:[11,4.2],arrowY:3.6,bedCap:8},
   skid:{name:'Débusqueuse',build:makeSkidder,hitch:null,wb:2.6,wr:0.65,maxF:8,maxR:3.5,acc:4.5,mudLoss:0.2,steer:0.4,steerRate:2.5,hl:1.5,hw:1.0,
