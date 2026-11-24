@@ -140,5 +140,5 @@ function updateCamp(dt){
   });
   CABIN_WIN.color.set(stove.fuel>0?cabinWinLit:cabinWinOff);
   if(stove.fuel>0&&puff)spawnPuffAt(chimney.x,chimney.y,chimney.z,false);
-  seats.forEach(s=>{if(!s.grp)return;const on=S.mode==='sit'&&P.seat===s;s.grp.rotation.x=on?Math.sin(S.time*1.8)*0.09:s.grp.rotation.x*0.95;});
+  seats.forEach(s=>{if(!s.grp)return;const on=(S.mode==='sit'&&P.seat===s)||s.netSit;s.grp.rotation.x=on?Math.sin(S.time*1.8)*0.09:s.grp.rotation.x*0.95;});
 }

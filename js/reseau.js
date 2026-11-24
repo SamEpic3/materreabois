@@ -197,9 +197,23 @@ function onPos(from,p){
 }
 function updateAvatars(dt){
   const k=1-Math.exp(-10*dt);
+  seats.forEach(s=>{s.netSit=false;});
   for(const id in NET.avatars){
     const a=NET.avatars[id],p=a.p;if(!p)continue;
     const f=a.f,v=p.v&&vehicles.find(v=>v.id===p.v.id);
+    // Assis : sur le même siège que chez lui (la chaise berçante bouge avec lui)
+    const st=p.m==='sit'?seats.find(s=>Math.hypot(s.x-p.x,s.z-p.z)<0.3):null;
+    if(st){
+      st.netSit=true;
+      if(a.sitOn!==st){
+        if(st.grp){st.grp.add(f.g);f.g.position.set(0,st.y-0.9+0.1,-0.02);f.g.rotation.set(0,0,0);}
+        else{scene.add(f.g);f.g.position.set(st.x,H(st.x,st.z)+st.y-0.9+0.05,st.z);f.g.rotation.set(0,st.rot,0);}
+        f.legL.rotation.set(-1.45,0,0.08);f.legR.rotation.set(-1.45,0,-0.08);f.armL.rotation.set(-0.35,0,0);f.armR.rotation.set(-0.35,0,0);
+        a.sitOn=st;a.x=a.tx=st.x;a.z=a.tz=st.z;
+      }
+      f.g.visible=true;a.l.position.set(st.x,H(st.x,st.z)+2.3,st.z);continue;
+    }
+    if(a.sitOn){scene.add(f.g);a.sitOn=null;f.legL.rotation.set(0,0,0);f.legR.rotation.set(0,0,0);f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);}
     if(v){
       if(a.inVeh!==v){v.mesh.g.add(f.g);f.g.position.set(...v.spec.seat);f.g.rotation.set(0,0,0);a.inVeh=v;
         f.legL.rotation.x=f.legR.rotation.x=-1.35;f.armL.rotation.x=f.armR.rotation.x=-1.05;}
