@@ -109,7 +109,7 @@ function sitDown(s){
   P.x=s.x;P.z=s.z;P.rot=s.rot;
   if(s.grp){s.grp.add(player.g);player.g.position.set(0,s.y-0.9+0.1,-0.02);player.g.rotation.set(0,0,0);}
   else{player.g.position.set(s.x,H(s.x,s.z)+s.y-0.9+0.05,s.z);player.g.rotation.set(0,s.rot,0);}
-  player.legL.rotation.set(-1.45,0,0.08);player.legR.rotation.set(-1.45,0,-0.08);player.armL.rotation.set(-0.35,0,0);player.armR.rotation.set(-0.35,0,0);
+  legPose(player,'sit');player.armL.rotation.set(-0.35,0,0);player.armR.rotation.set(-0.35,0,0);
   updateToolVisual();
 }
 function standUp(){
@@ -117,7 +117,7 @@ function standUp(){
   scene.add(player.g);
   P.x=s.x+Math.sin(s.rot)*0.9;P.z=s.z+Math.cos(s.rot)*0.9;
   const p={x:P.x,z:P.z};pushOut(p,0.35);P.x=p.x;P.z=p.z;
-  player.legL.rotation.set(0,0,0);player.legR.rotation.set(0,0,0);player.armL.rotation.set(0,0,0);player.armR.rotation.set(0,0,0);
+  legPose(player,'stand');player.armL.rotation.set(0,0,0);player.armR.rotation.set(0,0,0);
   updateToolVisual();
 }
 function sitContext(){return {enter:'Se lever',act:null,act2:null,full:false,info:P.seat.kind==='chaise'?'Tu te berces sur la galerie 😌':'Il fait bon près du feu'};}

@@ -171,7 +171,7 @@ function makeSkidder(){
 }
 const SPECS={
   vtt:{name:'VTT',build:makeVTT,hitch:1.15,wb:1.25,wr:0.34,maxF:9,maxR:3.5,acc:6.5,mudLoss:0.6,steer:0.55,hl:0.8,hw:0.55,
-       cols:[[0.55,0.68],[-0.55,0.68]],enterR:2.6,seat:[0,0.15,-0.3],hide:false,eye:[0,1.8,-0.28],side:1.4,cam:[7.5,3.0],arrowY:2.7},
+       cols:[[0.55,0.68],[-0.55,0.68]],enterR:2.6,ride:true,seat:[0,0.15,-0.3],hide:false,eye:[0,1.8,-0.28],side:1.4,cam:[7.5,3.0],arrowY:2.7},
   pickup:{name:'Pick-up',build:makePickup,hitch:2.85,wb:3.2,wr:0.42,maxF:16,maxR:4,acc:5.5,mudLoss:0.75,steer:0.6,hl:1.6,hw:0.85,
        cols:[[1.8,1.0],[0.6,1.05],[-0.6,1.05],[-1.8,1.0]],enterR:3.2,seat:[0.45,0.3,0.2],hide:true,eye:[0.45,1.78,0.25],side:1.9,cam:[11,4.2],arrowY:3.6,bedCap:8},
   skid:{name:'Débusqueuse',build:makeSkidder,hitch:null,wb:2.6,wr:0.65,maxF:8,maxR:3.5,acc:4.5,mudLoss:0.2,steer:0.4,steerRate:2.5,hl:1.5,hw:1.0,

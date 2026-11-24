@@ -62,11 +62,20 @@ function makeShovelModel(){
 }
 // Hachette : vieux fer brun-gris et manche foncé usé; hache : tête peinte en rouge, manche de frêne clair
 function axeColors(axe,id){axe.userData.head.color.set(id==='hachette'?0x6f665f:0xb23a2a);axe.userData.handle.color.set(id==='hachette'?0x6e5236:0xb08550);}
+// Position des jambes : debout, assis sur une chaise, à cheval sur un VTT (pieds sur les repose-pieds)
+function legPose(f,mode){
+  const kL=f.legL.userData.knee,kR=f.legR.userData.knee;
+  if(mode==='ride'){f.legL.rotation.set(-1.2,0,0.32);f.legR.rotation.set(-1.2,0,-0.32);kL.rotation.x=kR.rotation.x=1.5;}
+  else if(mode==='drive'){f.legL.rotation.set(-1.35,0,0.1);f.legR.rotation.set(-1.35,0,-0.1);kL.rotation.x=kR.rotation.x=1.2;}
+  else if(mode==='sit'){f.legL.rotation.set(-1.45,0,0.08);f.legR.rotation.set(-1.45,0,-0.08);kL.rotation.x=kR.rotation.x=1.45;}
+  else{f.legL.rotation.set(0,0,0);f.legR.rotation.set(0,0,0);kL.rotation.x=kR.rotation.x=0;}
+}
 function makePlayer(){
   const g=new T.Group();
   const jeans=mat(0x2b3a55),skin=mat(0xe0b48a),boot=mat(0x3a2a1c),tuque=mat(0x2a6e3f),plaid=new T.MeshPhongMaterial({map:plaidTex(),flatShading:true,shininess:4}),eye=new T.MeshBasicMaterial({color:0x1a1a1a}),beard=mat(0x5a3a22);
   const legL=new T.Group(),legR=new T.Group();legL.position.set(0.14,0.9,0);legR.position.set(-0.14,0.9,0);
-  [legL,legR].forEach(l=>{box(0.2,0.8,0.22,jeans,0,-0.4,0,l);box(0.22,0.14,0.32,boot,0,-0.83,0.04,l);g.add(l);});
+  // Jambes en deux morceaux : cuisse, puis genou qui plie (tibia + botte)
+  [legL,legR].forEach(l=>{box(0.2,0.44,0.22,jeans,0,-0.22,0,l);const k=new T.Group();k.position.set(0,-0.42,0);box(0.2,0.4,0.22,jeans,0,-0.18,0,k);box(0.22,0.14,0.32,boot,0,-0.41,0.04,k);l.add(k);l.userData.knee=k;g.add(l);});
   box(0.56,0.72,0.34,plaid,0,1.26,0,g);
   const armL=new T.Group(),armR=new T.Group();armL.position.set(0.37,1.56,0);armR.position.set(-0.37,1.56,0);
   [armL,armR].forEach(a=>{box(0.17,0.6,0.19,plaid,0,-0.3,0,a);box(0.15,0.13,0.16,skin,0,-0.66,0,a);g.add(a);});

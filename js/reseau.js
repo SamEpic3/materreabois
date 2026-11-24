@@ -208,23 +208,23 @@ function updateAvatars(dt){
       if(a.sitOn!==st){
         if(st.grp){st.grp.add(f.g);f.g.position.set(0,st.y-0.9+0.1,-0.02);f.g.rotation.set(0,0,0);}
         else{scene.add(f.g);f.g.position.set(st.x,H(st.x,st.z)+st.y-0.9+0.05,st.z);f.g.rotation.set(0,st.rot,0);}
-        f.legL.rotation.set(-1.45,0,0.08);f.legR.rotation.set(-1.45,0,-0.08);f.armL.rotation.set(-0.35,0,0);f.armR.rotation.set(-0.35,0,0);
+        legPose(f,'sit');f.armL.rotation.set(-0.35,0,0);f.armR.rotation.set(-0.35,0,0);
         a.sitOn=st;a.x=a.tx=st.x;a.z=a.tz=st.z;
       }
       f.g.visible=true;a.l.position.set(st.x,H(st.x,st.z)+2.3,st.z);continue;
     }
-    if(a.sitOn){scene.add(f.g);a.sitOn=null;f.legL.rotation.set(0,0,0);f.legR.rotation.set(0,0,0);f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);}
+    if(a.sitOn){scene.add(f.g);a.sitOn=null;legPose(f,'stand');f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);}
     if(v){
       if(a.inVeh!==v){v.mesh.g.add(f.g);f.g.position.set(...v.spec.seat);f.g.rotation.set(0,0,0);a.inVeh=v;
-        f.legL.rotation.x=f.legR.rotation.x=-1.35;f.armL.rotation.x=f.armR.rotation.x=-1.05;}
+        legPose(f,v.spec.ride?'ride':'drive');f.armL.rotation.x=f.armR.rotation.x=-1.05;}
       f.g.visible=!v.spec.hide;a.l.position.set(v.x,H(v.x,v.z)+3,v.z);a.x=v.x;a.z=v.z;
       continue;
     }
-    if(a.inVeh){a.inVeh.mesh.g.remove(f.g);scene.add(f.g);a.inVeh=null;f.legL.rotation.set(0,0,0);f.legR.rotation.set(0,0,0);f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);a.x=a.tx;a.z=a.tz;}
+    if(a.inVeh){a.inVeh.mesh.g.remove(f.g);scene.add(f.g);a.inVeh=null;legPose(f,'stand');f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);a.x=a.tx;a.z=a.tz;}
     const ox=a.x,oz=a.z;a.x+=(a.tx-a.x)*k;a.z+=(a.tz-a.z)*k;a.rot+=wrapAng(a.trot-a.rot)*k;
     const spd=Math.hypot(a.x-ox,a.z-oz)/Math.max(dt,1e-3);
     a.jy=lerp(a.jy||0,p.j||0,k);f.g.visible=true;f.g.position.set(a.x,H(a.x,a.z)+a.jy,a.z);f.g.rotation.y=a.rot;
-    if(p.m==='sit'){f.legL.rotation.x=f.legR.rotation.x=-1.4;f.g.position.y-=0.45;}
+    if(p.m==='sit'){legPose(f,'sit');f.g.position.y-=0.45;}
     else{a.phase+=dt*spd*3.2;const sw=Math.min(1,spd/2)*0.6*Math.sin(a.phase);f.legL.rotation.x=sw;f.legR.rotation.x=-sw;f.armL.rotation.x=-sw*0.8;f.armR.rotation.x=p.c?-2.6:sw*0.8;
       if(a.ar!==undefined){f.armR.rotation.x=a.ar;f.armL.rotation.x=a.ar;}}
     a.l.position.set(a.x,H(a.x,a.z)+2.6,a.z);
