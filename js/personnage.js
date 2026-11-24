@@ -29,7 +29,7 @@ function makeChainModel(old){
 function makeShovelModel(){
   const g=new T.Group(),wood=mat(0xa77d4c),steel=mat(0x7d858a);
   box(0.045,0.045,1.0,wood,0,0,0.42,g);box(0.14,0.04,0.05,wood,0,0,-0.08,g);
-  const bl=box(0.24,0.03,0.3,steel,0,-0.02,1.02,g);bl.rotation.x=0.25;
+  const bl=box(0.24,0.03,0.3,steel,0,0.02,1.02,g);bl.rotation.x=-0.25;   // palette relevée vers le haut
   return g;
 }
 function axeColors(axe,id){axe.userData.head.color.set(id==='hachette'?0x7d6a5c:0xb23a2a);axe.userData.handle.color.set(id==='hachette'?0x6e5236:0xa77d4c);}

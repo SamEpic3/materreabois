@@ -60,7 +60,8 @@ canvas.addEventListener('pointermove',e=>{
   if((S.mode==='place'||S.mode==='pick')&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&(p.drag||Math.hypot(q.x-p.sx,q.y-p.sy)>12)){p.drag=true;mapPan(q.x-p.x,q.y-p.y);}
   if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(q.x-p.sx,q.y-p.sy)>12){
     if(S.mode==='vtt'){camVehOff=wrapAng(camVehOff-(q.x-p.x)*0.008);camYaw-=(q.x-p.x)*0.008;}else{camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;}
-    if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);}
+    if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);
+    else camTpTilt=clamp(camTpTilt+(q.y-p.y)*0.005,-0.6,1.0);}
   p.x=q.x;p.y=q.y;
   if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()];const r=pinch.d/(Math.hypot(a.x-b.x,a.y-b.y)||1);if(camMode==='tp')chaseDist=clamp(pinch.cd*r,0.5,2.5);else if(camMode==='iso'){zoom=clamp(pinch.z*r,ZMIN,ZMAX);updateProj();}}
 });

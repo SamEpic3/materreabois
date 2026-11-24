@@ -32,8 +32,9 @@ function makePickup(){
   box(1.92,0.55,1.6,red,0,1.15,1.85,g);                 // capot
   box(1.92,0.5,1.9,red,0,1.15,0.35,g);                  // bas de cabine
   box(1.86,0.5,1.7,red,0,1.65,0.3,g);                   // cabine
-  box(1.88,0.42,0.06,glass,0,1.62,1.17,g);              // pare-brise
-  box(1.9,0.36,1.3,glass,0,1.64,0.35,g);                // vitres
+  const ws=box(1.88,0.42,0.06,glass,0,1.62,1.17,g);     // pare-brise
+  const wn=box(1.9,0.36,1.3,glass,0,1.64,0.35,g);       // vitres
+  g.userData.glass=[ws,wn];                              // cachées en vue 1re personne
   box(1.86,0.08,1.75,red,0,1.93,0.3,g);                 // toit
   box(0.1,0.55,2.3,red,0.91,1.2,-1.5,g);box(0.1,0.55,2.3,red,-0.91,1.2,-1.5,g);
   box(1.82,0.55,0.1,red,0,1.2,-2.62,g);box(1.72,0.06,2.3,dark,0,0.95,-1.5,g);

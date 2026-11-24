@@ -77,7 +77,8 @@ function updateVTT(dt){
     t.q.slerp(_q,1-Math.exp(-(t.hitch?12:5)*dt));
     t.mesh.g.position.set(t.x,g2.h,t.z);t.mesh.g.quaternion.copy(t.q);
     // Cercle du timon : seulement quand un véhicule est prêt à atteler
-    t.mark.visible=!t.hitch&&vehicles.some(v=>canAttach(v,t));
+    const near=Math.hypot(t.x-(S.mode==='vtt'?V.x:P.x),t.z-(S.mode==='vtt'?V.z:P.z))<9;   // seulement de près
+    t.mark.visible=!t.hitch&&near&&vehicles.some(v=>canAttach(v,t));
     if(t.mark.visible){const p=tongue(t);t.mark.position.set(p.x,H(p.x,p.z)+0.08,p.z);t.mark.material.color.set(0x5fe07a);}
     if(t.crane)updateCrane(t,dt);
   });

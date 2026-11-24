@@ -41,7 +41,9 @@ function frame(){
       pcam.lookAt(P.x+Math.sin(camYaw)*cp,ey+Math.sin(camPitch),P.z+Math.cos(camYaw)*cp);
     }
   }else if(camMode==='tp'){
-    const car=S.mode==='vtt',dist=(car?V.spec.cam[0]:5.5)*chaseDist,ht=(car?V.spec.cam[1]:2.4)*Math.sqrt(chaseDist);
+    const car=S.mode==='vtt',dist0=(car?V.spec.cam[0]:5.5)*chaseDist,ht0=(car?V.spec.cam[1]:2.4)*Math.sqrt(chaseDist);
+    // Hauteur de la caméra réglable (glisser de haut en bas) : on tourne autour du joueur ou du véhicule
+    const R=Math.hypot(dist0,ht0),ang=clamp(Math.atan2(ht0,dist0)+camTpTilt,0.03,1.35),dist=R*Math.cos(ang),ht=R*Math.sin(ang);
     let cx=camT.x-camFwd.x*dist,cz=camT.z-camFwd.z*dist;
     const cy=Math.max(camT.y+ht,H(cx,cz)+1.2);
     pcam.position.set(cx,cy,cz);
@@ -53,6 +55,8 @@ function frame(){
   }
   sun.position.set(camT.x+28,camT.y+50,camT.z+12);sun.target.position.copy(camT);sun.target.updateMatrixWorld();
   updateFpTool();
+  // Vitres du véhicule : invisibles quand on regarde de l'intérieur
+  vehicles.forEach(v=>{const gl=v.mesh.g.userData.glass;if(gl){const hide=camMode==='fp'&&S.mode==='vtt'&&V===v;gl.forEach(m=>m.visible=!hide);}});
   if(sky.visible){sky.position.copy(pcam.position);skyMat.uniforms.uTime.value=S.time;}
   renderer.render(scene,activeCam);
   requestAnimationFrame(frame);

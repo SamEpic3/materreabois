@@ -73,7 +73,7 @@ const sky=new T.Mesh(new T.SphereGeometry(300,24,12),skyMat);sky.renderOrder=-10
 let zoom=isTouch?11:14;const ZMIN=6,ZMAX=32;
 const camera=new T.OrthographicCamera(-1,1,1,-1,1,500);
 const pcam=new T.PerspectiveCamera(60,viewW()/viewH(),0.1,400);
-let camMode='iso',activeCam=camera,camYaw=0,camYawT=0,chaseDist=1,camPitch=-0.1,camVehOff=0;   // camVehOff : regard tourné par rapport au véhicule
+let camMode='iso',activeCam=camera,camYaw=0,camYawT=0,chaseDist=1,camPitch=-0.1,camVehOff=0,camTpTilt=0;   // camVehOff : regard tourné par rapport au véhicule
 function updateProj(){const a=viewW()/viewH();camera.left=-zoom*a;camera.right=zoom*a;camera.top=zoom;camera.bottom=-zoom;camera.updateProjectionMatrix();pcam.aspect=a;pcam.updateProjectionMatrix();}
 updateProj();
 
