@@ -15,7 +15,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyE'&&!e.repeat)doEnter();
   if(e.code==='KeyR'&&!e.repeat){if(S.mode==='place')rotatePlace();else if(S.mode==='pick'){}else doHitch();}
   if(e.code==='KeyF'&&!e.repeat)doAct2();
-  if(e.code==='Space'&&!e.repeat)doAct();
+  if(e.code==='Space'&&!e.repeat){if(S.mode==='foot'&&!context().act)jump();else doAct();}
   if(e.code==='KeyZ')rotateCam(-1);
   if(e.code==='KeyC')rotateCam(1);
   if(e.code==='KeyV'&&!e.repeat)toggleCam();

@@ -60,3 +60,26 @@ function updateToolVisual(){
   player.axe.visible=show&&k==='axe';player.saw.visible=show&&k==='saw';player.chain.visible=show&&k==='chainsaw';player.shovel.visible=show&&k==='shovel';if(player.plant)player.plant.visible=show&&k==='plant';
   if(TOOL){player.axe.scale.setScalar(TOOL.id==='hachette'?0.78:1);axeColors(player.axe,TOOL.id);}
 }
+
+/* Outil en main en vue 1re personne : un bras et l'outil accrochés à la caméra */
+const fpTool=(()=>{
+  const g=new T.Group(),arm=new T.Group();g.add(arm);
+  const plaid=mat(0xa33a2a),skin=mat(0xe2b08a);
+  box(0.13,0.13,0.42,plaid,0,0,0.12,arm);box(0.12,0.11,0.12,skin,0,0,-0.12,arm);
+  const tools={axe:makeAxeModel(),saw:makeSawModel(),chainsaw:makeChainModel(),shovel:makeShovelModel()};
+  for(const k in tools){const t=tools[k];t.rotation.y=Math.PI;t.position.set(0,0,-0.12);arm.add(t);}
+  g.position.set(0.32,-0.36,-0.42);scene.add(pcam);pcam.add(g);g.visible=false;
+  g.traverse(o=>{if(o.isMesh)o.castShadow=false;});
+  return {g,arm,tools};
+})();
+function updateFpTool(){
+  const show=camMode==='fp'&&S.mode==='foot'&&TOOL&&TOOL.kind!=='plant'&&!P.carry&&!P.pail;
+  fpTool.g.visible=!!show;if(!show)return;
+  for(const k in fpTool.tools)fpTool.tools[k].visible=k===TOOL.kind;
+  if(TOOL.kind==='axe'){fpTool.tools.axe.scale.setScalar(TOOL.id==='hachette'?0.78:1);axeColors(fpTool.tools.axe,TOOL.id);}
+  const r=player.armR.rotation.x,k=TOOL.kind;
+  // r : 0 au repos, -2.7 hache levée; on le traduit en mouvement vu de face
+  if(k==='axe'||k==='shovel'){fpTool.arm.rotation.x=0.35-r*0.5;fpTool.arm.position.z=0;}
+  else{fpTool.arm.rotation.x=0.2;fpTool.arm.position.z=P.swing>0?Math.sin(S.time*(k==='saw'?18:60))*(k==='saw'?0.08:0.01):0;}
+  fpTool.arm.position.y=P.swing>0?0:Math.sin(P.phase*2)*0.01;
+}

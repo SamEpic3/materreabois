@@ -1,7 +1,12 @@
 /* Mise à jour du joueur à pied (déplacement, animations) */
 /* ---------- Mise à jour : à pied ---------- */
 const camRight=new T.Vector3(),camFwd=new T.Vector3();
+// Saut (Espace à pied, quand il n'y a pas d'action à faire)
+P.jumpY=0;P.jumpV=0;
+function jump(){if(P.jumpY>0.001||P.swing>0)return;P.jumpV=P.carry?2.6:4.2;}
+function updateJump(dt){if(P.jumpV===0&&P.jumpY===0)return;P.jumpV-=13*dt;P.jumpY+=P.jumpV*dt;if(P.jumpY<=0){P.jumpY=0;P.jumpV=0;}}
 function updateFoot(dt){
+  updateJump(dt);
   const inp=readInput(true);
   let dx=0,dz=0;
   if(Math.abs(inp.x)+Math.abs(inp.y)>0.08){
@@ -46,7 +51,8 @@ function updateFoot(dt){
   }else{
     player.armL.rotation.x=lerp(player.armL.rotation.x,-sw*0.8,0.3);player.armR.rotation.x=lerp(player.armR.rotation.x,sw*0.8,0.3);
   }
-  player.g.position.set(P.x,H(P.x,P.z)+(amt>0.01?Math.abs(Math.cos(P.phase))*0.05:0),P.z);
+  player.g.position.set(P.x,H(P.x,P.z)+P.jumpY+(amt>0.01&&P.jumpY===0?Math.abs(Math.cos(P.phase))*0.05:0),P.z);
+  if(P.jumpY>0){player.legL.rotation.x=-0.5;player.legR.rotation.x=0.3;}
   player.g.rotation.y=P.rot;
   if(marker.visible){marker.material.opacity=0.5+0.3*Math.sin(S.time*6);}
 }

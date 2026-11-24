@@ -190,11 +190,11 @@ function groundRing(cx,cz,r0,r1,seg,color,opacity){
 
 /* ---------- Étiquettes ---------- */
 const labels=[];
-function label(text,x,y,z,range){
+function label(text,x,y,z,range,plain){   // plain : sans fond (émoticônes)
   const cv=document.createElement('canvas');cv.width=512;cv.height=96;const ctx=cv.getContext('2d');
-  ctx.font='bold 52px system-ui,sans-serif';const w=ctx.measureText(text).width+48;
+  ctx.font=plain?'72px system-ui,sans-serif':'bold 52px system-ui,sans-serif';const w=ctx.measureText(text).width+48;
   ctx.fillStyle='rgba(30,28,22,0.75)';const x0=(512-w)/2;
-  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,8,w,80,24);else ctx.rect(x0,8,w,80);ctx.fill();
+  if(!plain){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,8,w,80,24);else ctx.rect(x0,8,w,80);ctx.fill();}
   ctx.fillStyle='#ffe7b0';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,50);
   const tex=new T.CanvasTexture(cv);
   const s=new T.Sprite(new T.SpriteMaterial({map:tex,depthTest:false,transparent:true}));

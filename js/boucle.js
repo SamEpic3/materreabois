@@ -36,9 +36,9 @@ function frame(){
       const cp=Math.cos(camPitch+0.075);
       pcam.lookAt(vg.localToWorld(_v.set(e[0]+Math.sin(camVehOff)*cp*12,e[1]+Math.sin(camPitch+0.075)*12-0.3,e[2]+Math.cos(camVehOff)*cp*12)));
     }else{
-      pcam.position.set(P.x,H(P.x,P.z)+1.68,P.z);
+      const ey=H(P.x,P.z)+1.68+P.jumpY;pcam.position.set(P.x,ey,P.z);
       const cp=Math.cos(camPitch);
-      pcam.lookAt(P.x+Math.sin(camYaw)*cp,H(P.x,P.z)+1.68+Math.sin(camPitch),P.z+Math.cos(camYaw)*cp);
+      pcam.lookAt(P.x+Math.sin(camYaw)*cp,ey+Math.sin(camPitch),P.z+Math.cos(camYaw)*cp);
     }
   }else if(camMode==='tp'){
     const car=S.mode==='vtt',dist=(car?V.spec.cam[0]:5.5)*chaseDist,ht=(car?V.spec.cam[1]:2.4)*Math.sqrt(chaseDist);
@@ -52,6 +52,7 @@ function frame(){
     camera.lookAt(camT);
   }
   sun.position.set(camT.x+28,camT.y+50,camT.z+12);sun.target.position.copy(camT);sun.target.updateMatrixWorld();
+  updateFpTool();
   if(sky.visible){sky.position.copy(pcam.position);skyMat.uniforms.uTime.value=S.time;}
   renderer.render(scene,activeCam);
   requestAnimationFrame(frame);

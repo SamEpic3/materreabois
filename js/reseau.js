@@ -204,7 +204,7 @@ function updateAvatars(dt){
     if(a.inVeh){a.inVeh.mesh.g.remove(f.g);scene.add(f.g);a.inVeh=null;f.legL.rotation.set(0,0,0);f.legR.rotation.set(0,0,0);f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);a.x=a.tx;a.z=a.tz;}
     const ox=a.x,oz=a.z;a.x+=(a.tx-a.x)*k;a.z+=(a.tz-a.z)*k;a.rot+=wrapAng(a.trot-a.rot)*k;
     const spd=Math.hypot(a.x-ox,a.z-oz)/Math.max(dt,1e-3);
-    f.g.visible=true;f.g.position.set(a.x,H(a.x,a.z),a.z);f.g.rotation.y=a.rot;
+    a.jy=lerp(a.jy||0,p.j||0,k);f.g.visible=true;f.g.position.set(a.x,H(a.x,a.z)+a.jy,a.z);f.g.rotation.y=a.rot;
     if(p.m==='sit'){f.legL.rotation.x=f.legR.rotation.x=-1.4;f.g.position.y-=0.45;}
     else{a.phase+=dt*spd*3.2;const sw=Math.min(1,spd/2)*0.6*Math.sin(a.phase);f.legL.rotation.x=sw;f.legR.rotation.x=-sw;f.armL.rotation.x=-sw*0.8;f.armR.rotation.x=p.c?-2.6:sw*0.8;}
     a.l.position.set(a.x,H(a.x,a.z)+2.6,a.z);
@@ -218,7 +218,7 @@ function updateAvatars(dt){
   });
 }
 function posPacket(){
-  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};
+  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.jumpY>0.01)p.j=rd(P.jumpY,100);
   if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0};
   if(P.pail)p.pl=1;
   if(S.mode==='vtt'&&V){p.v={id:V.id,x:rd(V.x,100),z:rd(V.z,100),th:rd(V.th,1000),sp:rd(V.v,10)};const tw=towed(V);if(tw)p.v.tw={id:tw.id,x:rd(tw.x,100),z:rd(tw.z,100),th:rd(tw.th,1000)};}
@@ -305,7 +305,7 @@ function onMessage(m){
   }else if(m.t==='ack'){NET.lastSeq=Math.max(NET.lastSeq,m.seq);
   }else if(m.t==='pos'){if(NET.ready)onPos(m.from,m.p);
   }else if(m.t==='chat'){if(NET.ready)addChat(m.m);
-  }else if(m.t==='emote'){const a=NET.ready&&NET.avatars[m.from];if(a&&EMOTES.includes(m.e))showBubble(a,m.e);
+  }else if(m.t==='emote'){const a=NET.ready&&NET.avatars[m.from];if(a&&EMOTES.includes(m.e))showBubble(a,m.e,true);
   }else if(m.t==='joined'){
     NET.online[m.id]={name:m.name};delete S.others[m.id];showOthers();
     const a=NET.avatars[m.id];if(a){/* nom à jour */}
@@ -413,13 +413,13 @@ $('chatInput').addEventListener('keydown',e=>{
 $('chatInput').addEventListener('keyup',e=>e.stopPropagation());
 setInterval(()=>{if(!CHAT.open&&CHAT.list.length)renderChat();},1000);
 CHAT.self={self:true,bubble:null,bubbleT:0};
-function showBubble(a,txt){
+function showBubble(a,txt,plain){
   if(a.bubble){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);}
-  const p=bubblePos(a);a.bubble=label(txt,p.x,p.y,p.z,40);a.bubbleT=6;
+  const p=bubblePos(a);a.bubble=label(txt,p.x,p.y,p.z,40,plain);a.bubbleT=6;
 }
 // Émoticônes : seulement une bulle au-dessus de la tête, rien dans le clavardage
 const EMOTES=['👍','👋','😀','😂','😮','😢','😡','❤️','🌲','🪓','🍁','🔥'];
-function sendEmote(e){netSend({t:'emote',e});showBubble(CHAT.self,e);closeChat();}
+function sendEmote(e){netSend({t:'emote',e});showBubble(CHAT.self,e,true);closeChat();}
 {const row=$('chatEmotes');EMOTES.forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>sendEmote(e);row.appendChild(b);});}
 function bubblePos(a){
   if(a.self){const inV=S.mode==='vtt'&&V,x=inV?V.x:P.x,z=inV?V.z:P.z;return {x,y:H(x,z)+(inV?3.6:3.3),z};}
@@ -430,3 +430,20 @@ function updateBubbles(dt){
     a.bubbleT-=dt;const p=bubblePos(a);a.bubble.position.set(p.x,p.y,p.z);
     if(a.bubbleT<=0){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);a.bubble=null;}}
 }
+
+/* ---------- Liste des joueurs (clic sur le rectangle en haut à gauche) ---------- */
+function renderPlayers(){
+  const esc=t=>String(t||'').replace(/</g,'&lt;');
+  let h='<h3>👥 Joueurs</h3>';
+  if(!NET.on){h+='<div class="pl">🟢 '+esc(myName())+' <small>(toi)</small></div><div class="pl"><small>Tu joues seul sur cet appareil. Entre un code de terre au départ pour jouer à plusieurs.</small></div>';}
+  else{
+    h+='<div class="pl">🟢 '+esc(myName())+' <small>(toi'+(NET.host?', hôte':'')+')</small></div>';
+    for(const id in NET.online)if(id!==ME.id)h+='<div class="pl">🟢 '+esc(NET.online[id].name||'Partenaire')+(NET.hostId===id?' <small>(hôte)</small>':'')+'</div>';
+    for(const id in S.others)if(!NET.online[id]&&id!==ME.id){const o=S.others[id];h+='<div class="pl">⚪ '+esc(o.name||'Partenaire')+(o.t?' <small>vu '+ago(o.t)+'</small>':' <small>hors ligne</small>')+'</div>';}
+    h+='<div class="pl"><small>Terre « '+esc(NET.room)+' »</small></div>';
+  }
+  $('players').innerHTML=h;
+}
+$('stats').addEventListener('click',e=>{e.stopPropagation();const p=$('players');if(p.classList.contains('hidden')){renderPlayers();p.classList.remove('hidden');}else p.classList.add('hidden');});
+$('players').addEventListener('click',()=>$('players').classList.add('hidden'));
+setInterval(()=>{if(!$('players').classList.contains('hidden'))renderPlayers();},2000);
