@@ -102,7 +102,13 @@ wss.on('connection',ws=>{
       const code=String(m.room||'').trim().toLowerCase().slice(0,40);
       if(!code||!m.id){send(ws,{t:'error',msg:'Code de terre manquant'});return;}
       r=await getRoom(code);id=String(m.id).slice(0,40);
-      const old=r.clients.get(id);if(old&&old!==ws){try{old.close(4000,'remplacé');}catch(e){}}
+      const old=r.clients.get(id);
+      if(old&&old!==ws&&old.readyState===1&&old.tab&&m.tab&&old.tab!==m.tab){
+        // Le même joueur est déjà là dans un autre onglet : ce nouvel onglet prendra une autre identité
+        send(ws,{t:'dup'});r=null;id=null;return;
+      }
+      if(old&&old!==ws){try{old.close(4000,'remplacé');}catch(e){}}
+      ws.tab=m.tab||null;
       r.clients.set(id,ws);
       r.players[id]=Object.assign(r.players[id]||{},{name:String(m.name||'').slice(0,20)});
       if(!r.host||!r.clients.has(r.host))pickHost(r);

@@ -6,7 +6,7 @@
 const ME_KEY='terre-a-bois-joueur',SAVE_KEY='terre-a-bois-sauvegarde';
 const ME=(()=>{let m=null;try{m=JSON.parse(localStorage.getItem(ME_KEY)||'null');}catch(e){}
   if(!m||!m.id)m={id:'j'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:''};return m;})();
-function saveMe(){try{localStorage.setItem(ME_KEY,JSON.stringify(ME));}catch(e){}}
+function saveMe(){const m=Object.assign({},ME);if(m.tabAlt){m.id=m.id.replace(/~.*$/,'');m.name=m.name.replace(/ \(2\)$/,'');delete m.tabAlt;}try{localStorage.setItem(ME_KEY,JSON.stringify(m));}catch(e){}}
 function myName(){return ME.name||'Moi';}
 
 /* ----- Stockage (à remplacer par le serveur plus tard) ----- */

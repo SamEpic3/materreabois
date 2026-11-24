@@ -12,6 +12,10 @@ function serverUrl(){
   return q||localStorage.getItem('terre-a-bois-serveur')||SERVER_DEFAULT;
 }
 const rd=(v,k)=>Math.round(v*k)/k;
+// Chaque onglet a son numéro. Si le même joueur ouvre la terre dans deux onglets, le 2e devient un autre joueur.
+const TAB_ID=(()=>{try{let t=sessionStorage.getItem('terre-a-bois-onglet');if(!t){t=Math.random().toString(36).slice(2,8);sessionStorage.setItem('terre-a-bois-onglet',t);}return t;}catch(e){return Math.random().toString(36).slice(2,8);}})();
+function useTabIdentity(){ME.id=ME.id.replace(/~.*$/,'')+'~'+TAB_ID;ME.name=(ME.name||'Moi').replace(/ \(2\)$/,'')+' (2)';ME.tabAlt=true;}
+try{if(sessionStorage.getItem('terre-a-bois-alt')==='1')useTabIdentity();}catch(e){}
 
 /* ---------- Collections synchronisées ---------- */
 const treeRef=t=>t.planted?'p'+t.id:'t'+treeList.indexOf(t);
@@ -253,7 +257,7 @@ function connect(resume){
   let ws;
   try{ws=new WebSocket(serverUrl());}catch(e){netFail('Adresse du serveur invalide');return;}
   NET.ws=ws;
-  ws.onopen=()=>{NET.retry=0;ws.send(JSON.stringify({t:'hello',room:NET.room,id:ME.id,name:myName(),resume:!!resume,lastSeq:NET.lastSeq}));};
+  ws.onopen=()=>{NET.retry=0;ws.send(JSON.stringify({t:'hello',room:NET.room,id:ME.id,name:myName(),resume:!!resume,lastSeq:NET.lastSeq,tab:TAB_ID}));};
   ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data);}catch(e){return;}onMessage(m);};
   ws.onclose=()=>{
     if(NET.ws!==ws)return;
@@ -316,6 +320,10 @@ function onMessage(m){
     NET.hostId=m.id;NET.host=m.id===ME.id;if(NET.host)setTimeout(()=>sendSnap(),500);
   }else if(m.t==='snapReq'){
     sendSnap();
+  }else if(m.t==='dup'){
+    try{sessionStorage.setItem('terre-a-bois-alt','1');}catch(e){}
+    {const o=NET.ws;NET.ws=null;try{o.close();}catch(e){}}useTabIdentity();$('playerName').value=ME.name;toast('Déjà ouvert dans un autre onglet : cet onglet joue comme « '+ME.name+' »');
+    setTimeout(()=>connect(false),300);
   }else if(m.t==='error'){netFail(m.msg||'Erreur du serveur');}
 }
 function netFail(msg){
@@ -342,6 +350,7 @@ function startClicked(){
 
 /* ---------- À chaque image ---------- */
 function updateNet(dt){
+  NET.lastFrame=performance.now();
   if(!NET.on||!NET.ready)return;
   // Qui conduit quoi
   vehicles.forEach(v=>{if(S.mode==='vtt'&&V===v)v.driver=ME.id;else if(v.driver===ME.id)v.driver=null;});
@@ -355,6 +364,13 @@ function updateNet(dt){
 }
 function netLeaving(){if(!NET.on||!NET.ready)return;if(NET.host)sendSnap(true);sendMe();}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')netLeaving();});
+// Onglet caché ou fenêtre réduite : le navigateur arrête l'animation, mais on continue d'envoyer nos changements et notre position
+setInterval(()=>{
+  if(performance.now()-(NET.lastFrame||0)<700||!NET.on||!NET.ready||!NET.ws||NET.ws.readyState!==1)return;
+  const ops=collectOps();if(ops.length)netSend({t:'op',ops});
+  netSend({t:'pos',p:posPacket()});
+  if(NET.host&&(NET.snapT-=1)<=0){NET.snapT=20;sendSnap();}
+},1000);
 addEventListener('pagehide',()=>{netLeaving();if(NET.on&&NET.ws){netSend({t:'bye'});}});
 
 /* ---------- Clavardage ---------- */
