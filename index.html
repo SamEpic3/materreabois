@@ -61,6 +61,7 @@
   <div class="card">
     <button id="helpClose" class="xclose hidden" title="Fermer" aria-label="Fermer">✕</button>
     <h1>Terre à bois 🌲</h1>
+    <div id="helpBody" class="hidden">
     <p>Prototype n° 1 : bûcher à la hachette, transporter les billots à l'épaule jusqu'à la remorque, puis les rapporter au camp en VTT.</p>
     <h2>Sur ordinateur</h2>
     <ul>
@@ -97,11 +98,14 @@
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
       <li><b>Remorque :</b> <kbd>R</kbd> pour atteler ou dételer. Recule le crochet du VTT jusqu'au cercle au bout du timon (il devient vert), puis arrête-toi. Ça marche aussi à pied, à côté du timon.</li>
     </ul>
+    </div>
+    <div id="startForm">
     <label class="pname">Ton nom : <input id="playerName" maxlength="20" placeholder="ex. Sam" autocomplete="off"></label>
     <label class="pname">Code de la terre (pour jouer à plusieurs) : <input id="roomCode" maxlength="40" placeholder="laisse vide pour jouer seul" autocomplete="off" autocapitalize="none"></label>
     <p class="netmsg" id="netMsg"></p>
     <button id="btnStart">Jouer</button>
     <button id="btnReset" class="reset">Nouvelle partie (efface la sauvegarde)</button>
+    </div>
   </div>
 </div>
 <div id="shop" class="hidden">

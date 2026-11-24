@@ -53,7 +53,7 @@ function loadGame(given){
   if(d.ver===2){   // on remet le monde et MON joueur à plat; les autres joueurs sont gardés à part
     const me=(d.players||{})[ME.id]||null;
     S.others={};for(const id in d.players||{})if(id!==ME.id)S.others[id]=d.players[id];
-    S.journal=d.journal||[];
+    S.journal=d.journal||[];compactJournal();
     d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,tool:me?me.tool:null,seedSel:me?me.seedSel:null});
   }
   S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;

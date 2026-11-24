@@ -20,23 +20,44 @@ const Stockage={
 
 /* ----- Journal ----- */
 S.journal=[];               // {t, who, k?, n?, m?, txt}
-const JOURNAL_MAX=200,JOURNAL_MERGE=10*60*1000;
+const JOURNAL_MAX=200,JOURNAL_MERGE=45*60*1000;   // les actions répétées dans les 45 min se regroupent
 function jlog(txt){S.journal.push({id:uid(),t:Date.now(),who:ME.id,txt});trimJournal();}
-// Regroupe les actions répétées (vendre des billots, planter…) en une seule ligne
-function jcount(k,n,m,fmt){
-  const last=S.journal[S.journal.length-1],now=Date.now();
-  if(last&&last.k===k&&last.who===ME.id&&now-last.t<JOURNAL_MERGE){last.n+=n;last.m+=m;last.t=now;last.txt=fmt(last.n,last.m);}
-  else S.journal.push({id:uid(),t:now,who:ME.id,k,n,m,txt:fmt(n,m)});
+const pl=(n,a,b)=>n>1?b:a;
+// Texte de chaque sorte d'action répétée (n : combien, m : argent)
+const JFMT={
+  bois:(n,m)=>`a vendu ${n} ${pl(n,'billot','billots')} de sciage (+${m} $)`,
+  fendu:(n,m)=>`a vendu ${n} ${pl(n,'morceau','morceaux')} de bois fendu (+${m} $)`,
+  chauffage:(n,m)=>`a vendu ${n} ${pl(n,'bûche','bûches')} de chauffage (+${m} $)`,
+  sirop:(n,m)=>`a vendu ${fmtL(n)} de sirop (+${m} $)`,
+  plant:n=>`a planté ${n} ${pl(n,'arbre','arbres')}`,
+  fendre:n=>`a fendu ${n} ${pl(n,'bûche','bûches')}`
+};
+// Regroupe avec la dernière ligne de la même sorte du même joueur (même s'il y a eu d'autres lignes entre les deux)
+function jcount(k,n,m){
+  const now=Date.now();let e=null;
+  for(let i=S.journal.length-1;i>=Math.max(0,S.journal.length-40);i--){const x=S.journal[i];if(now-x.t>JOURNAL_MERGE)break;if(x.k===k&&x.who===ME.id){e=x;S.journal.splice(i,1);break;}}
+  if(e){e.n+=n;e.m+=m;e.t=now;e.txt=JFMT[k](e.n,e.m);S.journal.push(e);}
+  else S.journal.push({id:uid(),t:now,who:ME.id,k,n,m,txt:JFMT[k](n,m)});
   trimJournal();
 }
+// Ménage des anciens journaux : regroupe les lignes répétées proches dans le temps
+function compactJournal(){
+  const out=[];
+  S.journal.slice().sort((a,b)=>a.t-b.t).forEach(x=>{
+    if(x.k&&JFMT[x.k]){
+      for(let i=out.length-1;i>=0;i--){const y=out[i];if(x.t-y.t>JOURNAL_MERGE)break;
+        if(y.k===x.k&&y.who===x.who){y.n+=x.n||0;y.m+=x.m||0;y.t=x.t;y.txt=JFMT[y.k](y.n,y.m);out.splice(i,1);out.push(y);return;}}
+    }
+    out.push(x);
+  });
+  S.journal=out;trimJournal();
+}
 function trimJournal(){if(S.journal.length>JOURNAL_MAX)S.journal.splice(0,S.journal.length-JOURNAL_MAX);}
-const pl=(n,a,b)=>n>1?b:a;
 const J={
-  wood:(c,pr)=>c.len>=SAW_MIN?jcount('bois',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'billot','billots')} de sciage (+${m} $)`)
-              :(c.split?jcount('fendu',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'morceau','morceaux')} de bois fendu (+${m} $)`):jcount('chauffage',1,pr,(n,m)=>`a vendu ${n} ${pl(n,'bûche','bûches')} de chauffage (+${m} $)`)),
-  syrup:(L,pr)=>jcount('sirop',L,pr,(n,m)=>`a vendu ${fmtL(n)} de sirop (+${m} $)`),
-  plant:()=>jcount('plant',1,0,n=>`a planté ${n} ${pl(n,'arbre','arbres')}`),
-  split:()=>jcount('fendre',1,0,n=>`a fendu ${n} ${pl(n,'bûche','bûches')}`),
+  wood:(c,pr)=>jcount(c.len>=SAW_MIN?'bois':c.split?'fendu':'chauffage',1,pr),
+  syrup:(L,pr)=>jcount('sirop',L,pr),
+  plant:()=>jcount('plant',1,0),
+  split:()=>jcount('fendre',1,0),
   buy:(what,pr)=>jlog(`a acheté ${what} (${pr} $)`),
   sell:(what,pr)=>jlog(`a vendu ${what} (+${pr} $)`),
   build:(what)=>jlog(`a construit ${what}`),
