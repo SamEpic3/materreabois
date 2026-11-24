@@ -54,9 +54,6 @@ function makeSucresModel(){
     new T.CylinderGeometry(0.03,0.03,0.18,8).rotateX(Math.PI/2).translate(0.6,0.98,0.6)]),metal));
   // Cheminée
   g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.13,0.13,1.9,12).translate(0,1.4,-0.62),new T.ConeGeometry(0.24,0.16,12).translate(0,2.42,-0.62),new T.CylinderGeometry(0.025,0.025,0.12,6).translate(0,2.31,-0.62)]),dark));
-  // Bois cordé à côté
-  const lg=[];for(let k=0;k<5;k++)lg.push(new T.CylinderGeometry(0.07,0.07,0.6,8).rotateX(Math.PI/2).translate(1.05+(k%3)*0.15-(k>2?-0.07:0),0.07+(k>2?0.12:0),0.1));
-  g.add(new T.Mesh(mergeGeos(lg),logMatsFor('erable')));
   return bakeStatic(g);
 }
 function createSucres(b,o){

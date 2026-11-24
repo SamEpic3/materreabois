@@ -17,15 +17,11 @@ function makeFeuModel(){
   const g=new T.Group(),bark=logMatsFor('epinette');
   g.add(new T.Mesh(stoneRing(13,0.78,0.2,3),STONE_M));
   g.add(new T.Mesh(new T.CylinderGeometry(0.62,0.66,0.04,16).translate(0,0.02,0),mat(0x2a2522)));
-  // Bûches en tipi
-  const tp=[];for(let k=0;k<6;k++){const a=k/6*Math.PI*2;tp.push(new T.CylinderGeometry(0.05,0.065,0.85,7).translate(0,0.42,0).rotateX(0.45).rotateY(a).translate(Math.sin(a)*0.18,0,Math.cos(a)*0.18));}
-  g.add(new T.Mesh(mergeGeos(tp),bark));
-  // Bancs : demi-billots sur deux bûchettes
+  // Bûches couchées et croisées au centre, comme avant
+  g.add(new T.Mesh(mergeGeos([0.6,-0.6,2].map((r,k)=>new T.CylinderGeometry(0.07,0.07,0.8,8).rotateZ(Math.PI/2).rotateY(r).translate(0,0.1+k*0.02,0))),bark));
+  // Bancs : billots couchés
   BENCH_A.forEach(a=>{
-    const b=new T.Group();
-    const top=new T.Mesh(new T.CylinderGeometry(0.22,0.22,1.5,12,1,false,Math.PI,Math.PI),bark);top.rotation.z=Math.PI/2;top.position.y=0.36;b.add(top);
-    const flat=new T.Mesh(new T.BoxGeometry(1.5,0.03,0.44),mat(0xc9a679));flat.position.y=0.36;b.add(flat);
-    [-0.5,0.5].forEach(x=>{const l=new T.Mesh(new T.CylinderGeometry(0.13,0.14,0.32,10),bark);l.position.set(x,0.16,0);b.add(l);});
+    const b=new T.Group(),log=new T.Mesh(new T.CylinderGeometry(0.22,0.24,1.5,11),bark);log.rotation.z=Math.PI/2;log.position.y=0.22;b.add(log);
     b.position.set(Math.cos(a)*2.3,0,Math.sin(a)*2.3);b.rotation.y=-a+Math.PI/2;g.add(b);
   });
   return bakeStatic(g);
