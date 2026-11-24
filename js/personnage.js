@@ -11,9 +11,37 @@ function plaidTex(){
   for(let i=0;i<32;i+=16){c.fillRect(i,0,8,32);c.fillRect(0,i,32,8);}
   const t=new T.CanvasTexture(cv);t.magFilter=T.NearestFilter;t.wrapS=t.wrapT=T.RepeatWrapping;return t;
 }
+/* Hache et hachette : vraie tête forgée (coin qui s'amincit vers le tranchant) et manche galbé.
+   Repère : le manche suit +z (la main est à z≈0), le tranchant est vers -y. */
+const AXE_GEO=(()=>{
+  // Manche : profil tourné (bout renflé, taille fine, plus épais sous la tête), ovale et légèrement arqué
+  const prof=[[0,-0.06],[0.022,-0.056],[0.027,-0.035],[0.021,0.0],[0.016,0.15],[0.0155,0.4],[0.018,0.55],[0.021,0.7],[0.016,0.72],[0,0.722]].map(([r,y])=>new T.Vector2(r,y));
+  const handle=new T.LatheGeometry(prof,10);handle.rotateX(Math.PI/2);handle.scale(0.78,1,1);
+  {const a=handle.attributes.position;for(let i=0;i<a.count;i++){const z=a.getZ(i);a.setY(i,a.getY(i)-0.014*Math.sin(Math.PI*clamp((z+0.06)/0.78,0,1)));}handle.computeVertexNormals();}
+  // Tête vue de côté (u : le long du manche, v : vers le haut) : talon en haut, joues, taillant évasé en bas
+  const sh=new T.Shape();
+  sh.moveTo(0.555,0.05);sh.lineTo(0.655,0.05);sh.lineTo(0.662,0.018);
+  sh.quadraticCurveTo(0.648,-0.04,0.705,-0.148);
+  sh.quadraticCurveTo(0.6,-0.172,0.505,-0.14);
+  sh.quadraticCurveTo(0.56,-0.05,0.55,0.018);sh.lineTo(0.555,0.05);
+  const head=new T.ExtrudeGeometry(sh,{depth:0.026,bevelEnabled:true,bevelThickness:0.01,bevelSize:0.006,bevelSegments:2,curveSegments:10});
+  head.translate(0,0,-0.013);head.rotateY(-Math.PI/2);
+  // Le coin s'amincit vers le tranchant
+  {const a=head.attributes.position;for(let i=0;i<a.count;i++){const y=a.getY(i);a.setX(i,a.getX(i)*(1-0.78*smoothstep(-0.02,-0.15,y)));}head.computeVertexNormals();}
+  // Bande affûtée, plus claire, le long du tranchant
+  const eb=new T.Shape();
+  eb.moveTo(0.706,-0.149);eb.quadraticCurveTo(0.6,-0.174,0.503,-0.141);eb.lineTo(0.51,-0.124);eb.quadraticCurveTo(0.6,-0.152,0.692,-0.13);eb.lineTo(0.706,-0.149);
+  const edge=new T.ExtrudeGeometry(eb,{depth:0.007,bevelEnabled:false,curveSegments:10});edge.translate(0,0,-0.0035);edge.rotateY(-Math.PI/2);
+  // Coin de bois et coin de métal visibles sur le dessus de l'œil
+  const wedge=new T.BoxGeometry(0.008,0.006,0.07);wedge.translate(0,0.055,0.605);
+  return {handle,head,edge,wedge};
+})();
 function makeAxeModel(){
-  const axe=new T.Group(),hm=mat(0x9a7448),head=mat(0x8f969b);
-  box(0.05,0.05,0.75,hm,0,0,0.3,axe);box(0.05,0.2,0.16,head,0,-0.04,0.64,axe);
+  const axe=new T.Group();
+  const hm=new T.MeshPhongMaterial({color:0x9a7448,shininess:12});
+  const head=new T.MeshPhongMaterial({color:0x8f969b,flatShading:true,shininess:45,specular:0x555555});
+  const edge=new T.MeshPhongMaterial({color:0xdfe3e6,flatShading:true,shininess:80,specular:0x999999});
+  axe.add(new T.Mesh(AXE_GEO.handle,hm),new T.Mesh(AXE_GEO.head,head),new T.Mesh(AXE_GEO.edge,edge),new T.Mesh(AXE_GEO.wedge,mat(0x3a3a3a)));
   axe.userData.head=head;axe.userData.handle=hm;return axe;
 }
 function makeSawModel(){
@@ -32,7 +60,8 @@ function makeShovelModel(){
   const bl=box(0.24,0.03,0.3,steel,0,0.02,1.02,g);bl.rotation.x=-0.25;   // palette relevée vers le haut
   return g;
 }
-function axeColors(axe,id){axe.userData.head.color.set(id==='hachette'?0x7d6a5c:0xb23a2a);axe.userData.handle.color.set(id==='hachette'?0x6e5236:0xa77d4c);}
+// Hachette : vieux fer brun-gris et manche foncé usé; hache : tête peinte en rouge, manche de frêne clair
+function axeColors(axe,id){axe.userData.head.color.set(id==='hachette'?0x6f665f:0xb23a2a);axe.userData.handle.color.set(id==='hachette'?0x6e5236:0xb08550);}
 function makePlayer(){
   const g=new T.Group();
   const jeans=mat(0x2b3a55),skin=mat(0xe0b48a),boot=mat(0x3a2a1c),tuque=mat(0x2a6e3f),plaid=new T.MeshPhongMaterial({map:plaidTex(),flatShading:true,shininess:4}),eye=new T.MeshBasicMaterial({color:0x1a1a1a}),beard=mat(0x5a3a22);
