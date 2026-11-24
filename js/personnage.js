@@ -15,7 +15,7 @@ function plaidTex(){
    Repère : le manche suit +z (la main est à z≈0), le tranchant est vers -y. */
 const AXE_GEO=(()=>{
   // Manche : profil tourné (bout renflé, taille fine, plus épais sous la tête), ovale et légèrement arqué
-  const prof=[[0,-0.06],[0.022,-0.056],[0.027,-0.035],[0.021,0.0],[0.016,0.15],[0.0155,0.4],[0.018,0.55],[0.021,0.7],[0.016,0.72],[0,0.722]].map(([r,y])=>new T.Vector2(r,y));
+  const prof=[[0,-0.06],[0.04,-0.056],[0.048,-0.035],[0.038,0.0],[0.031,0.15],[0.03,0.4],[0.034,0.55],[0.038,0.7],[0.03,0.72],[0,0.722]].map(([r,y])=>new T.Vector2(r,y));
   const handle=new T.LatheGeometry(prof,10);handle.rotateX(Math.PI/2);handle.scale(0.78,1,1);
   {const a=handle.attributes.position;for(let i=0;i<a.count;i++){const z=a.getZ(i);a.setY(i,a.getY(i)-0.014*Math.sin(Math.PI*clamp((z+0.06)/0.78,0,1)));}handle.computeVertexNormals();}
   // Tête vue de côté (u : le long du manche, v : vers le haut) : talon en haut, joues, taillant évasé en bas
@@ -27,13 +27,13 @@ const AXE_GEO=(()=>{
   const head=new T.ExtrudeGeometry(sh,{depth:0.026,bevelEnabled:true,bevelThickness:0.01,bevelSize:0.006,bevelSegments:2,curveSegments:10});
   head.translate(0,0,-0.013);head.rotateY(-Math.PI/2);
   // Le coin s'amincit vers le tranchant
-  {const a=head.attributes.position;for(let i=0;i<a.count;i++){const y=a.getY(i);a.setX(i,a.getX(i)*(1-0.78*smoothstep(-0.02,-0.15,y)));}head.computeVertexNormals();}
+  {const a=head.attributes.position;for(let i=0;i<a.count;i++){const y=a.getY(i);a.setX(i,a.getX(i)*1.6*(1-0.86*smoothstep(-0.02,-0.15,y)));/* œil assez large pour le manche, puis coin mince */}head.computeVertexNormals();}
   // Bande affûtée, plus claire, le long du tranchant
   const eb=new T.Shape();
   eb.moveTo(0.706,-0.149);eb.quadraticCurveTo(0.6,-0.174,0.503,-0.141);eb.lineTo(0.51,-0.124);eb.quadraticCurveTo(0.6,-0.152,0.692,-0.13);eb.lineTo(0.706,-0.149);
   const edge=new T.ExtrudeGeometry(eb,{depth:0.007,bevelEnabled:false,curveSegments:10});edge.translate(0,0,-0.0035);edge.rotateY(-Math.PI/2);
   // Coin de bois et coin de métal visibles sur le dessus de l'œil
-  const wedge=new T.BoxGeometry(0.008,0.006,0.07);wedge.translate(0,0.055,0.605);
+  const wedge=new T.BoxGeometry(0.012,0.006,0.07);wedge.translate(0,0.055,0.605);
   return {handle,head,edge,wedge};
 })();
 function makeAxeModel(){
