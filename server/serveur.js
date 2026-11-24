@@ -142,6 +142,8 @@ wss.on('connection',ws=>{
       const e={t:Date.now(),from:id,name:(r.players[id]||{}).name||'',txt};
       r.chat.push(e);if(r.chat.length>50)r.chat.splice(0,r.chat.length-50);
       broadcast(r,{t:'chat',m:e});persist(r);
+    }else if(m.t==='emote'){
+      broadcast(r,{t:'emote',from:id,e:String(m.e||'').slice(0,8)},id);
     }else if(m.t==='pos'){
       broadcast(r,{t:'pos',from:id,p:m.p},id);
     }else if(m.t==='me'){

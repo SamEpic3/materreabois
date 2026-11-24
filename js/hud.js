@@ -70,7 +70,7 @@ function updateHUD(){
   const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : `+(g.p?`${g.p} seau${g.p>1?'x':''}`:`${g.l}/${g.c}`)).join(' · ')||'Aucune remorque';
   const hud=`${S.money}|${S.delivered}|${loadTxt}|${S.mode}|${V?Math.round(Math.abs(V.v)*3.6):0}|${hint}`;
   if(hud===lastHud)return;lastHud=hud;
-  $('sMoney').textContent=S.money+' $';$('sTool').textContent=TOOL?TOOL.name:'Mains vides';$('sDel').textContent=S.delivered;$('sLoad').textContent=loadTxt;
+  $('sMoney').textContent=S.money+' $';$('sTool').textContent=TOOL?TOOL.name:'Mains vides';
   $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=V?Math.round(Math.abs(V.v)*3.6):0;
   $('hint').textContent=hint;
 }

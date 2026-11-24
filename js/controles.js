@@ -58,7 +58,9 @@ canvas.addEventListener('pointermove',e=>{
   }
   const p=pointers.get(e.pointerId);if(!p)return;
   if((S.mode==='place'||S.mode==='pick')&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&(p.drag||Math.hypot(q.x-p.sx,q.y-p.sy)>12)){p.drag=true;mapPan(q.x-p.x,q.y-p.y);}
-  if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(q.x-p.sx,q.y-p.sy)>12){camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);}
+  if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(q.x-p.sx,q.y-p.sy)>12){
+    if(S.mode==='vtt'){camVehOff=wrapAng(camVehOff-(q.x-p.x)*0.008);camYaw-=(q.x-p.x)*0.008;}else{camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;}
+    if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);}
   p.x=q.x;p.y=q.y;
   if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()];const r=pinch.d/(Math.hypot(a.x-b.x,a.y-b.y)||1);if(camMode==='tp')chaseDist=clamp(pinch.cd*r,0.5,2.5);else if(camMode==='iso'){zoom=clamp(pinch.z*r,ZMIN,ZMAX);updateProj();}}
 });
@@ -102,8 +104,8 @@ $('btnAct').addEventListener('pointerdown',e=>{e.preventDefault();doAct();});
 /* ---------- Caméra ---------- */
 let camAz=Math.PI/4,camAzT=camAz;
 const camT=new T.Vector3(P.x,H(P.x,P.z),P.z);
-function rotateCam(d){if(camMode!=='iso')camYawT+=d*Math.PI/4;else camAzT+=d*Math.PI/2;}
-const FOG=new T.Fog(0xc9d6dc,30,110);
+function rotateCam(d){if(camMode!=='iso'){if(S.mode==='vtt')camVehOff=wrapAng(camVehOff+d*Math.PI/4);else camYawT+=d*Math.PI/4;}else camAzT+=d*Math.PI/2;}
+const FOG=new T.Fog(SKY_HORIZON,30,110);
 function toggleCam(){
   if(S.mode==='place'||S.mode==='pick'){toast('Vue isométrique pendant la construction');return;}
   applyCamMode(camMode==='iso'?'tp':camMode==='tp'?'fp':'iso');
@@ -112,11 +114,11 @@ function toggleCam(){
 function applyCamMode(m){
   camMode=m;
   activeCam=camMode==='iso'?camera:pcam;
-  scene.fog=camMode==='iso'?null:FOG;
+  scene.fog=camMode==='iso'?null:FOG;sky.visible=camMode!=='iso';
   silMat.visible=camMode==='iso';
   player.g.visible=camMode!=='fp'&&!(S.mode==='vtt'&&V.spec.hide);
   pcam.fov=camMode==='fp'?70:60;pcam.updateProjectionMatrix();camPitch=-0.1;
-  camYaw=camYawT=S.mode==='vtt'?V.th:P.rot;
+  camYaw=camYawT=S.mode==='vtt'?V.th+camVehOff:P.rot;
 }
 $('btnCam').addEventListener('click',toggleCam);
 $('rotL').addEventListener('click',()=>rotateCam(-1));
@@ -124,5 +126,6 @@ $('rotR').addEventListener('click',()=>rotateCam(1));
 $('zIn').addEventListener('click',()=>{if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist/1.25,0.5,2.5);return;}zoom=clamp(zoom/1.25,ZMIN,ZMAX);updateProj();});
 $('zOut').addEventListener('click',()=>{if(camMode==='fp')return;if(camMode==='tp'){chaseDist=clamp(chaseDist*1.25,0.5,2.5);return;}zoom=clamp(zoom*1.25,ZMIN,ZMAX);updateProj();});
 $('btnHelp').addEventListener('click',()=>$('help').classList.remove('hidden'));
+$('helpClose').addEventListener('click',()=>$('help').classList.add('hidden'));
 $('btnStart').addEventListener('click',()=>{if(started){$('help').classList.add('hidden');return;}startClicked();});
 const ELEV=0.6155; // 35,26° : vraie isométrique

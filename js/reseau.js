@@ -305,6 +305,7 @@ function onMessage(m){
   }else if(m.t==='ack'){NET.lastSeq=Math.max(NET.lastSeq,m.seq);
   }else if(m.t==='pos'){if(NET.ready)onPos(m.from,m.p);
   }else if(m.t==='chat'){if(NET.ready)addChat(m.m);
+  }else if(m.t==='emote'){const a=NET.ready&&NET.avatars[m.from];if(a&&EMOTES.includes(m.e))showBubble(a,m.e);
   }else if(m.t==='joined'){
     NET.online[m.id]={name:m.name};delete S.others[m.id];showOthers();
     const a=NET.avatars[m.id];if(a){/* nom à jour */}
@@ -388,9 +389,7 @@ function addChat(m,quiet){
   if(quiet)return;
   // Bulle au-dessus de la tête de celui qui parle (les autres, et soi-même)
   const a=m.from===ME.id?CHAT.self:NET.avatars[m.from];
-  if(a){const txt=m.txt.length>40?m.txt.slice(0,38)+'…':m.txt;
-    if(a.bubble){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);}
-    const p=bubblePos(a);a.bubble=label('💬 '+txt,p.x,p.y,p.z,40);a.bubbleT=6;}
+  if(a)showBubble(a,m.txt.length>40?m.txt.slice(0,38)+'…':m.txt);
 }
 function openChat(){
   if(!NET.on||!NET.ready)return;
@@ -414,6 +413,14 @@ $('chatInput').addEventListener('keydown',e=>{
 $('chatInput').addEventListener('keyup',e=>e.stopPropagation());
 setInterval(()=>{if(!CHAT.open&&CHAT.list.length)renderChat();},1000);
 CHAT.self={self:true,bubble:null,bubbleT:0};
+function showBubble(a,txt){
+  if(a.bubble){scene.remove(a.bubble);const i=labels.indexOf(a.bubble);if(i>=0)labels.splice(i,1);}
+  const p=bubblePos(a);a.bubble=label(txt,p.x,p.y,p.z,40);a.bubbleT=6;
+}
+// Émoticônes : seulement une bulle au-dessus de la tête, rien dans le clavardage
+const EMOTES=['👍','👋','😀','😂','😮','😢','😡','❤️','🌲','🪓','🍁','🔥'];
+function sendEmote(e){netSend({t:'emote',e});showBubble(CHAT.self,e);closeChat();}
+{const row=$('chatEmotes');EMOTES.forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>sendEmote(e);row.appendChild(b);});}
 function bubblePos(a){
   if(a.self){const inV=S.mode==='vtt'&&V,x=inV?V.x:P.x,z=inV?V.z:P.z;return {x,y:H(x,z)+(inV?3.6:3.3),z};}
   return {x:a.x,y:H(a.x,a.z)+(a.inVeh?3.6:3.3),z:a.z};

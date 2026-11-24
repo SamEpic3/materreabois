@@ -5,7 +5,7 @@ function frame(){
   const dt=Math.min(clock.getDelta(),0.05);S.time+=dt;
   camAz+=(camAzT-camAz)*(1-Math.exp(-8*dt));
   if(camMode!=='iso'){
-    if(S.mode==='vtt')camYawT=camYaw+wrapAng(V.th-camYaw);
+    if(S.mode==='vtt')camYawT=camYaw+wrapAng(V.th+camVehOff-camYaw);   // la caméra suit le véhicule, avec le décalage choisi
     camYaw+=wrapAng(camYawT-camYaw)*(1-Math.exp(-(S.mode==='vtt'?3:10)*dt));
     camFwd.set(Math.sin(camYaw),0,Math.cos(camYaw));camRight.set(-Math.cos(camYaw),0,Math.sin(camYaw));
   }else{
@@ -33,7 +33,8 @@ function frame(){
   }else if(camMode==='fp'){
     if(S.mode==='vtt'){
       const vg=V.mesh.g,e=V.spec.eye;vg.updateMatrixWorld();pcam.position.copy(vg.localToWorld(_v.set(e[0],e[1],e[2])));
-      pcam.lookAt(vg.localToWorld(_v.set(e[0],e[1]-0.3,12)));
+      const cp=Math.cos(camPitch+0.075);
+      pcam.lookAt(vg.localToWorld(_v.set(e[0]+Math.sin(camVehOff)*cp*12,e[1]+Math.sin(camPitch+0.075)*12-0.3,e[2]+Math.cos(camVehOff)*cp*12)));
     }else{
       pcam.position.set(P.x,H(P.x,P.z)+1.68,P.z);
       const cp=Math.cos(camPitch);
@@ -51,6 +52,7 @@ function frame(){
     camera.lookAt(camT);
   }
   sun.position.set(camT.x+28,camT.y+50,camT.z+12);sun.target.position.copy(camT);sun.target.updateMatrixWorld();
+  if(sky.visible){sky.position.copy(pcam.position);skyMat.uniforms.uTime.value=S.time;}
   renderer.render(scene,activeCam);
   requestAnimationFrame(frame);
 }

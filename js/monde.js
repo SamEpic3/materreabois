@@ -43,12 +43,37 @@ renderer.setSize(viewW(),viewH());
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=T.PCFSoftShadowMap;
 const scene=new T.Scene();
-scene.background=new T.Color(0xc9d6dc);
+scene.background=new T.Color(0xbcd3e2);
+/* Ciel : un dôme qui suit la caméra, dégradé bleu + nuages qui dérivent (calculés dans le shader, une seule
+   petite géométrie, pas de texture). Visible surtout en vue 3e et 1re personne. */
+const SKY_HORIZON=0xd6e6f0;
+const skyMat=new T.ShaderMaterial({
+  uniforms:{uTime:{value:0},uTop:{value:new T.Color(0x2f6fbf)},uMid:{value:new T.Color(0x78acdc)},uHor:{value:new T.Color(SKY_HORIZON)},uSun:{value:new T.Vector3(0.45,0.75,0.2).normalize()}},
+  vertexShader:'varying vec3 vDir;void main(){vDir=normalize(position);vec4 p=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*p;gl_Position.z=gl_Position.w*0.9999;}',
+  fragmentShader:`uniform float uTime;uniform vec3 uTop,uMid,uHor,uSun;varying vec3 vDir;
+    float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+    float fbm(vec2 p){return n(p)*0.55+n(p*2.03+3.1)*0.28+n(p*4.11+7.7)*0.17;}
+    void main(){
+      vec3 d=normalize(vDir);float y=d.y;
+      vec3 c=mix(uHor,uMid,smoothstep(-0.02,0.25,y));c=mix(c,uTop,smoothstep(0.25,0.9,y));
+      float s=max(dot(d,uSun),0.0);c+=vec3(1.0,0.93,0.75)*(pow(s,600.0)*1.6+pow(s,12.0)*0.18);
+      if(y>0.0){
+        vec2 uv=d.xz/(y+0.12)*1.6+vec2(uTime*0.012,uTime*0.004);
+        float k=smoothstep(0.52,0.78,fbm(uv))*smoothstep(0.0,0.18,y);
+        vec3 cc=mix(vec3(0.82,0.85,0.9),vec3(1.0),smoothstep(0.55,0.85,fbm(uv+0.35)));
+        c=mix(c,cc,k*0.85);
+      }
+      gl_FragColor=vec4(c,1.0);
+    }`,
+  side:T.BackSide,depthWrite:false,fog:false
+});
+const sky=new T.Mesh(new T.SphereGeometry(300,24,12),skyMat);sky.renderOrder=-10;sky.frustumCulled=false;sky.visible=false;scene.add(sky);
 
 let zoom=isTouch?11:14;const ZMIN=6,ZMAX=32;
 const camera=new T.OrthographicCamera(-1,1,1,-1,1,500);
 const pcam=new T.PerspectiveCamera(60,viewW()/viewH(),0.1,400);
-let camMode='iso',activeCam=camera,camYaw=0,camYawT=0,chaseDist=1,camPitch=-0.1;
+let camMode='iso',activeCam=camera,camYaw=0,camYawT=0,chaseDist=1,camPitch=-0.1,camVehOff=0;   // camVehOff : regard tourné par rapport au véhicule
 function updateProj(){const a=viewW()/viewH();camera.left=-zoom*a;camera.right=zoom*a;camera.top=zoom;camera.bottom=-zoom;camera.updateProjectionMatrix();pcam.aspect=a;pcam.updateProjectionMatrix();}
 updateProj();
 

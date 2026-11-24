@@ -14,7 +14,7 @@ function doEnter(){
       updateToolVisual();return;
     }
     if(c.enterVeh.driver&&c.enterVeh.driver!==ME.id){toast(`${(NET.online[c.enterVeh.driver]||{}).name||'Ton partenaire'} conduit déjà`);return;}
-    V=c.enterVeh;
+    V=c.enterVeh;camVehOff=0;camPitch=-0.1;
     S.mode='vtt';P.target=null;marker.visible=false;
     V.mesh.g.add(player.g);player.g.position.set(...V.spec.seat);player.g.rotation.set(0,0,0);
     player.g.visible=!V.spec.hide&&camMode!=='fp';

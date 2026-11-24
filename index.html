@@ -19,8 +19,7 @@
 <canvas id="c"></canvas>
 
 <div id="stats" class="panel">
-  💰 <b id="sMoney">35000 $</b> &nbsp;·&nbsp; 🪵 Livrés : <b id="sDel">0</b><br>
-  <b id="sLoad">Remorque : 0/6</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span><span id="netStatus" class="hidden"></span>
+  💰 <b id="sMoney">35000 $</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span><span id="netStatus" class="hidden"></span>
 </div>
 <div id="hint" class="panel"></div>
 
@@ -55,10 +54,11 @@
 <div id="joy" class="hidden"><div id="joyKnob"></div></div>
 <div id="toast"></div>
 <div id="chatLog" class="hidden"></div>
-<div id="chatBox" class="hidden"><input id="chatInput" maxlength="200" placeholder="Écris un message…" autocomplete="off" enterkeyhint="send"><button id="chatSend">Envoyer</button></div>
+<div id="chatBox" class="hidden"><div id="chatEmotes"></div><input id="chatInput" maxlength="200" placeholder="Écris un message…" autocomplete="off" enterkeyhint="send"><button id="chatSend">Envoyer</button></div>
 
 <div id="help">
   <div class="card">
+    <button id="helpClose" class="xclose hidden" title="Fermer" aria-label="Fermer">✕</button>
     <h1>Terre à bois 🌲</h1>
     <p>Prototype n° 1 : bûcher à la hachette, transporter les billots à l'épaule jusqu'à la remorque, puis les rapporter au camp en VTT.</p>
     <h2>Sur ordinateur</h2>
@@ -105,35 +105,35 @@
 </div>
 <div id="shop" class="hidden">
   <div class="card">
+    <button id="shopClose" class="xclose" title="Fermer" aria-label="Fermer">✕</button>
     <h1>🏪 Magasin général</h1>
     <div class="money" id="shopMoney"></div>
     <div id="shopList"></div>
-    <button id="shopClose">Sortir du magasin</button>
   </div>
 </div>
 <div id="board" class="hidden">
   <div class="card">
+    <button id="boardClose" class="xclose" title="Fermer" aria-label="Fermer">✕</button>
     <h1>🪧 Prix du bois</h1>
     <div class="money" id="boardSub"></div>
     <div id="boardList"></div>
-    <button id="boardClose">Fermer</button>
   </div>
 </div>
 <div id="journal" class="hidden">
   <div class="card">
+    <button id="journalClose" class="xclose" title="Fermer" aria-label="Fermer">✕</button>
     <h1>📜 Journal de la terre</h1>
     <div class="money">Ce que chacun a fait sur la terre</div>
     <div id="journalList"></div>
-    <button id="journalClose">Fermer</button>
   </div>
 </div>
 <div id="proj" class="hidden">
   <div class="card">
+    <button id="projClose" class="xclose" title="Fermer" aria-label="Fermer">✕</button>
     <h1>🏕️ Projets du camp</h1>
     <div class="money" id="projMoney"></div>
     <div class="projTools"><button id="projMove">↔️ Déplacer</button><button id="projDemo">🧨 Démolir</button></div>
     <div id="projList"></div>
-    <button id="projClose">Fermer</button>
   </div>
 </div>
 <div id="err">Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion Internet, puis recharge la page.</div>

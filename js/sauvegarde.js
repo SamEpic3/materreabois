@@ -117,7 +117,7 @@ function beginWorld(d){
     if(r.grown)bits.push(`${r.grown} arbre${r.grown>1?'s ont':' a'} fini de pousser`);
     setTimeout(()=>toast(r.away>120&&bits.length?`Absent ${fmtAway(r.away)} : ${bits.join(', ')}`:'Partie reprise'),600);
   }
-  $('help').classList.add('hidden');
+  $('help').classList.add('hidden');$('helpClose').classList.remove('hidden');
 }
 setInterval(()=>{if(started)saveGame();},10000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame();});
