@@ -8,9 +8,10 @@ if(isTouch)document.body.classList.add('touch');
 let ROT=false;
 function scrW(){return document.documentElement.clientWidth||innerWidth;}
 function scrH(){return document.documentElement.clientHeight||innerHeight;}
-function viewW(){return ROT?scrH():innerWidth;}
-function viewH(){return ROT?scrW():innerHeight;}
-function toView(cx,cy){return ROT?{x:cy,y:scrW()-cx}:{x:cx,y:cy};}
+const LAY={w:0,h:0,top:0};   // en vue tournée : taille du jeu et bande sous la barre d'état (voir pwa.js)
+function viewW(){return ROT?LAY.w:innerWidth;}
+function viewH(){return ROT?LAY.h:innerHeight;}
+function toView(cx,cy){return ROT?{x:cy-LAY.top,y:LAY.h-cx}:{x:cx,y:cy};}
 
 /* ---------- Outils ---------- */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));

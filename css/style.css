@@ -93,7 +93,9 @@
   .shopSec{margin:14px 0 2px;font-size:13px;font-weight:700;color:#7a4a18;text-transform:uppercase;letter-spacing:.04em}
   #app{position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden;background:#bcd3e2}
   body.rot #app{transform-origin:0 0}
-  body.rot{--pad-l:env(safe-area-inset-top,0px);--pad-t:env(safe-area-inset-right,0px);--pad-r:env(safe-area-inset-bottom,0px);--pad-b:env(safe-area-inset-left,0px)}
+  body.rot,html:has(body.rot){background:#000}
+  body.rot .card{max-height:calc(var(--appH,100vh) - 80px)!important}
+  body.rot{--pad-l:0px;--pad-t:env(safe-area-inset-right,0px);--pad-r:env(safe-area-inset-bottom,0px);--pad-b:env(safe-area-inset-left,0px)}
   body.touch #hint{top:auto;bottom:calc(14px + var(--pad-b));max-width:40%}
   #joyKnob.run{background:#ffb02e}
   .item .thumb.emoji{display:flex;align-items:center;justify-content:center;font-size:36px}
