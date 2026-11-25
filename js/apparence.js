@@ -1,7 +1,7 @@
 /* Apparence du bûcheron : chemise, chapeau (tuque, casquette ou rien), couleur du chapeau, barbe.
    Choisie dans l'inventaire (bouton « Apparence »), gardée sur cet appareil et vue par les autres joueurs. */
 const SHIRTS={rouge:['#b3241f','rgba(20,10,10,.85)','Rouge'],bleu:['#2d5b9a','rgba(10,14,30,.8)','Bleue'],vert:['#2f6b3a','rgba(10,25,12,.8)','Verte'],
-  noir:['#3a3a3a','rgba(160,30,30,.75)','Noire'],jaune:['#c8a12a','rgba(30,24,10,.8)','Jaune'],gris:['#8c8c88','rgba(30,30,30,.7)','Grise']};
+  noir:['#4a4a4a','rgba(12,12,12,.88)','Noire'],jaune:['#c8a12a','rgba(30,24,10,.8)','Jaune'],gris:['#8c8c88','rgba(30,30,30,.7)','Grise']};
 const HAT_COLS={vert:[0x2a6e3f,'Vert'],rouge:[0xa52a24,'Rouge'],bleu:[0x2d4f8a,'Bleu'],noir:[0x2a2a2a,'Noir'],orange:[0xd8682a,'Orange'],gris:[0x8a8a8a,'Gris']};
 const HATS={tuque:'Tuque',cap:'Casquette',none:'Aucun'};
 const LOOK={shirt:'rouge',hat:'tuque',hatCol:'vert',beard:true};

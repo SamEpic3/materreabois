@@ -75,7 +75,9 @@ function H(x,z){
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
   h-=0.18*mudAt(x,z);
   if(x>60){const e=lakeE(x,z);if(e<2.0){h=lerp(h,LAKE_Y+0.35,smoothstep(2.0,1.1,e));h-=3.2*smoothstep(1.0,0.5,e);}}
-  if(x>100&&z<-15){const ri=riverInfo(x,z);if(ri.d<11){const ys=riverY(ri.s);h=lerp(h,ys+0.45,smoothstep(11,3.4,ri.d));h-=1.5*smoothstep(2.9,0.9,ri.d);}}
+  if(x>100&&z<-15){const ri=riverInfo(x,z);if(ri.d<11){const ys=riverY(ri.s),le=lakeE(x,z),out=smoothstep(0.95,1.3,le);
+    const hr=lerp(h,ys+0.45,smoothstep(11,3.4,ri.d)*out)-1.5*smoothstep(2.9,0.9,ri.d);
+    h=out<1?Math.min(h,hr):hr;}}   // dans le lac, la rivière ne fait que creuser (pas de berge)
   return h;
 }
 // Profondeur d'eau (négatif : pas d'eau)
@@ -762,6 +764,7 @@ function updateCulling(f){
     const t=(L-RIVER_L[i])/(RIVER_L[i+1]-RIVER_L[i]),[ax,az]=RIVER[i],[bx,bz]=RIVER[i+1];
     const x=ax+(bx-ax)*t,z=az+(bz-az)*t,dl=Math.hypot(bx-ax,bz-az),nx=-(bz-az)/dl,nz=(bx-ax)/dl,y=riverY(L/RIVER_L[RIVER_L.length-1])+0.02;
     pts.push([x+nx*2.6,y,z+nz*2.6],[x-nx*2.6,y,z-nz*2.6]);
+    if(lakeE(x,z)<0.97)break;   // le lac prend le relais (pas deux surfaces l'une sur l'autre)
   }
   const pos=[];for(let k=0;k<pts.length/2-1;k++){const a=pts[2*k],b=pts[2*k+1],c=pts[2*k+2],d=pts[2*k+3];pos.push(...a,...c,...b,...b,...c,...d);}
   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.computeVertexNormals();

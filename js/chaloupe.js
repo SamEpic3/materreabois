@@ -9,7 +9,7 @@ function boatOutline(){
   return s.getPoints(10);
 }
 function makeBoatModel(){
-  const g=new T.Group(),pts=boatOutline(),n=pts.length,H0=0.0,H1=0.48;
+  const g=new T.Group(),pts=boatOutline(),n=pts.length,H0=-0.12,H1=0.48;
   const alu=new T.MeshPhongMaterial({color:0x9aa3a8,shininess:70,specular:0x777777,side:T.DoubleSide,flatShading:true});
   const inner=new T.MeshPhongMaterial({color:0x7e878c,shininess:40,flatShading:true});
   const pos=[];
@@ -21,7 +21,10 @@ function makeBoatModel(){
   const hull=new T.BufferGeometry();hull.setAttribute('position',new T.Float32BufferAttribute(pos,3));hull.computeVertexNormals();
   g.add(new T.Mesh(hull,alu));
   const fs=new T.Shape(pts.map(p=>new T.Vector2(p.x*0.8,p.y*0.96)));
-  g.add(new T.Mesh(new T.ShapeGeometry(fs).rotateX(Math.PI/2).translate(0,H0+0.02,0),inner));
+  g.add(new T.Mesh(new T.ShapeGeometry(fs).rotateX(-Math.PI/2).translate(0,0.06,0),inner));                       // plancher (au-dessus de l'eau)
+  g.add(new T.Mesh(new T.ShapeGeometry(fs).rotateX(Math.PI/2).translate(0,H0,0),alu));                          // dessous de la coque
+  // Membrures du plancher
+  g.add(new T.Mesh(mergeGeos([-1.3,-0.6,0.1,0.8].map(z=>new T.BoxGeometry(1.0,0.03,0.05).translate(0,0.08,z))),new T.MeshPhongMaterial({color:0x6a7378,flatShading:true})));
   // Plat-bord, bancs, tolets
   const rim=[];for(let i=0;i<n-1;i++){const a=pts[i],b=pts[i+1],L=Math.hypot(b.x-a.x,b.y-a.y);rim.push(new T.BoxGeometry(0.05,0.05,L+0.02).rotateY(Math.atan2(b.x-a.x,b.y-a.y)).translate((a.x+b.x)/2,H1,(a.y+b.y)/2));}
   rim.push(new T.BoxGeometry(1.24,0.04,0.28).translate(0,0.33,-1.2),new T.BoxGeometry(1.3,0.04,0.28).translate(0,0.33,0.1),new T.BoxGeometry(0.92,0.04,0.26).translate(0,0.33,1.05));
@@ -31,6 +34,7 @@ function makeBoatModel(){
   const oars=[-1,1].map(sd=>{const o=new T.Group();o.position.set(sd*0.64,H1+0.06,0.2);
     const m=new T.Mesh(mergeGeos([new T.CylinderGeometry(0.022,0.022,2.1,6).rotateZ(Math.PI/2).translate(sd*0.35,0,0),new T.BoxGeometry(0.42,0.015,0.13).translate(sd*1.42,0,0)]),mat(0xb08a5a));
     o.add(m);g.add(o);return o;});
+  oars.forEach((o,i)=>{o.rotation.y=(i?-1:1)*Math.PI/2;});   // rangées au départ
   g.userData.oars=oars;
   g.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   return g;
@@ -40,7 +44,7 @@ function makeBoatTrailer(){
   const g=new T.Group(),steel=mat(0x2f3a44),wood=mat(0x6b4a2c),tire=mat(0x1b1b1b),rim=mat(0x9aa0a4);
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.08,0.08,3.4).translate(0.42,0.42,-0.2),new T.BoxGeometry(0.08,0.08,3.4).translate(-0.42,0.42,-0.2),
     new T.BoxGeometry(0.92,0.08,0.08).translate(0,0.42,-1.6),new T.BoxGeometry(0.92,0.08,0.08).translate(0,0.42,0.3),
-    new T.BoxGeometry(0.06,0.06,1.2).rotateY(0.33).translate(0.2,0.42,1.85),new T.BoxGeometry(0.06,0.06,1.2).rotateY(-0.33).translate(-0.2,0.42,1.85),
+    new T.BoxGeometry(0.06,0.06,1.22).rotateY(-0.35).translate(0.21,0.42,1.83),new T.BoxGeometry(0.06,0.06,1.22).rotateY(0.35).translate(-0.21,0.42,1.83),
     new T.CylinderGeometry(0.05,0.05,0.06,10).translate(0,0.47,2.4),new T.BoxGeometry(0.06,0.55,0.06).translate(0,0.68,1.5),new T.CylinderGeometry(0.06,0.06,0.12,10).rotateZ(Math.PI/2).translate(0,0.92,1.5),
     new T.BoxGeometry(1.5,0.06,0.06).translate(0,0.3,-0.4)]),steel));
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.12,0.08,2.6).translate(0.3,0.5,-0.4),new T.BoxGeometry(0.12,0.08,2.6).translate(-0.3,0.5,-0.4)]),wood));
@@ -83,11 +87,15 @@ function updateBoat(v,dt){
   v.row=(v.row||0)+dt*((driving?Math.abs(thr)+Math.abs(turn)*0.6:(v.net?Math.min(1,Math.abs(v.net.sp||0)):0))*6);
   if(Math.floor(v.row/Math.PI)!==pr)sfxSplash(v.x,v.z,0.12);
   const m=v.mesh,bob=Math.sin(S.time*1.3+v.x)*0.03;
-  m.g.position.set(v.x,LAKE_Y-0.14+bob,v.z);
+  m.g.position.set(v.x,LAKE_Y-0.02+bob,v.z);
   m.g.rotation.set(Math.sin(S.time*1.1+v.z)*0.025,v.th,Math.sin(S.time*0.9)*0.03-turn*0.04);
   // Coups de rames
   const rowing=driving?(thr||turn):(v.net&&Math.abs(v.net.sp||0)>0.1);
-  m.oars.forEach((o,i)=>{const s=i?1:-1;if(rowing){o.rotation.y=s*Math.sin(v.row)*0.55;o.rotation.z=s*(0.15+Math.max(0,Math.cos(v.row))*0.2);}else{o.rotation.y*=0.9;o.rotation.z=s*0.2;}});
+  const manned=driving||!!v.driver;
+  m.oars.forEach((o,i)=>{const s=i?1:-1;
+    if(rowing){o.rotation.y=s*Math.sin(v.row)*0.55;o.rotation.z=s*(0.15+Math.max(0,Math.cos(v.row))*0.2);}
+    else if(manned){o.rotation.y*=0.9;o.rotation.z=s*0.2;}
+    else{o.rotation.y+=(-s*Math.PI/2-o.rotation.y)*0.1;o.rotation.z*=0.9;}});   // rangées le long de la chaloupe
   if(driving){P.x=v.x;P.z=v.z;P.rot=v.th;if(rowing&&!P.fishing){player.armR.rotation.x=player.armL.rotation.x=-1.2+Math.sin(v.row)*0.5;}}
 }
 
