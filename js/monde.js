@@ -25,6 +25,8 @@ const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (
 const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même forêt pour les sauvegardes
 const CABIN={x:-7,z:2};
 const VILLAGE={x:-50,z:46,r:13};
+// Zones aplanies (plus grandes que les rayons d'origine, qui servent encore à générer la forêt d'origine)
+const CAMP_FLAT=24,VIL_FLAT=27;
 const CAP=6;
 
 const SEGS=[];
@@ -67,9 +69,9 @@ function lakeE(x,z){const dx=(x-LAKE.x)/LAKE.rx,dz=(z-LAKE.z)/LAKE.rz,a=Math.ata
 const LAKE_Y=(()=>{let s=0;for(let i=0;i<32;i++){const a=i/32*Math.PI*2;s+=baseH(LAKE.x+Math.cos(a)*LAKE.rx*1.45,LAKE.z+Math.sin(a)*LAKE.rz*1.45);}return s/32-0.25;})();
 function H(x,z){
   let h=baseH(x,z);
-  const tc=smoothstep(CAMP.r+8,CAMP.r,Math.hypot(x-CAMP.x,z-CAMP.z));
+  const tc=smoothstep(CAMP_FLAT+8,CAMP_FLAT,Math.hypot(x-CAMP.x,z-CAMP.z));
   const tt=smoothstep(4,1.8,trailDist(x,z));
-  const tv=smoothstep(VILLAGE.r+8,VILLAGE.r,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
+  const tv=smoothstep(VIL_FLAT+8,VIL_FLAT,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
   h+=detailH(x,z)*(1-Math.max(tc,tt,tv));
   h+=hillH(x,z);
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
@@ -261,9 +263,9 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const hy=H(x,z);pos.setY(i,hy);
     {const e=0.5,hx=H(x+e,z)-H(x-e,z),hz=H(x,z+e)-H(x,z-e),l=Math.hypot(hx,2*e,hz);nor.setXYZ(i,-hx/l,2*e/l,-hz/l);}
     const n=0.5+0.5*Math.sin(x*0.21+Math.cos(z*0.17)*2)*Math.cos(z*0.13);
-    const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP.r+3,CAMP.r-3,dc);
+    const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP_FLAT-1,CAMP_FLAT-7,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
-    const vilF=smoothstep(VILLAGE.r+2,VILLAGE.r-4,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
+    const vilF=smoothstep(VIL_FLAT-2,VIL_FLAT-8,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
     const patch=vilF*(0.38+0.25*Math.sin(x*0.55+1.7)*Math.cos(z*0.47));
     const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
@@ -415,84 +417,219 @@ function vpos(lx,lz){return {x:VILLAGE.x+VR.x*lx+VF.x*lz,z:VILLAGE.z+VR.z*lx+VF.
 function bldCols(lx,lz,hw,hd){for(let a=-hw+1.4;a<=hw-1.39;a+=Math.max(0.01,(2*hw-2.8)/Math.max(1,Math.round((2*hw-2.8)/2.4))))for(let b=-hd+1.4;b<=hd-1.39;b+=Math.max(0.01,(2*hd-2.8)/Math.max(1,Math.round((2*hd-2.8)/2.4)))){const p=vpos(lx+a,lz+b);addCol(p.x,p.z,1.55);}}
 function gableRoof(g,w,d,y,m){const r1=box(w+0.6,0.18,d/2+0.5,m,0,y,d/4+0.1,g);r1.rotation.x=0.62;const r2=box(w+0.6,0.18,d/2+0.5,m,0,y,-d/4-0.1,g);r2.rotation.x=-0.62;}
 let STORE_DOOR;
+const VIL_WIN=new T.MeshBasicMaterial({color:0x9fb8c8});        // vitres du village
+const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de rue
 {
-  // Magasin général : déclin crème, fausse façade avec enseigne, galerie couverte, vitrines
-  const textSign=(txt,w,h,bg,fg)=>{const t=canvasTex(512,Math.round(512*h/w),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=6;c.strokeRect(8,8,W-16,H-16);c.fillStyle=fg;c.font=`bold ${Math.round(H*0.46)}px Georgia,serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(txt,W/2,H/2+2);});return new T.MeshBasicMaterial({map:t});};
-  const g=new T.Group(),red=mat(0x8e2b22),dark=mat(0x3b2a1e),win=new T.MeshBasicMaterial({color:0xf4d27a}),wood=mat(0x7a5232),trim=mat(0xf6f1e4);
-  const cream=texMat(sidingTex('#e8e0cc','#b9ae96'),1,16);
-  g.add(new T.Mesh(new T.BoxGeometry(8,3.6,6).translate(0,1.8,0),cream));
-  roofTex(g,8,6,4.05,texMat(shingleTex('#8e2b22','#5e1b15'),10,9));
-  g.add(new T.Mesh(new T.BoxGeometry(8.2,1.7,0.2).translate(0,4.25,3.05),cream));
-  const sign=new T.Mesh(new T.PlaneGeometry(5.6,0.85),textSign('MAGASIN GÉNÉRAL',5.6,0.85,'#2f5a3a','#f3e6c4'));sign.position.set(0,4.3,3.17);g.add(sign);
-  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.16,3.6,0.16).translate(4.0,1.8,3.0),new T.BoxGeometry(0.16,3.6,0.16).translate(-4.0,1.8,3.0),new T.BoxGeometry(8.4,0.14,0.18).translate(0,5.1,3.1)]),trim));
-  const dg=doorGeo(1.2,2.2,0,3.04);g.add(new T.Mesh(dg.door,mat(0x2f5a3a)),new T.Mesh(dg.frame,trim),new T.Mesh(dg.knob,mat(0xc9a84a)));
-  const wf=[],wgl=[];[-2.6,2.6].forEach(x=>{const w=windowGeo(1.6,1.1,x,1.75,3.08,0);wf.push(w.frame);wgl.push(w.glass);});
-  [[-4.07,-1.2],[-4.07,1.2]].forEach(([x,z])=>{const w=windowGeo(0.9,0.9,x,2.0,z,-Math.PI/2);wf.push(w.frame);wgl.push(w.glass);});
-  g.add(new T.Mesh(mergeGeos(wf),trim),new T.Mesh(mergeGeos(wgl),win));
-  // Galerie : plancher, poteaux, garde-corps, toit
-  const porch=[new T.BoxGeometry(8.6,0.16,1.9).translate(0,0.08,3.95)];
-  [-4.1,-1.4,1.4,4.1].forEach(x=>porch.push(new T.BoxGeometry(0.14,2.9,0.14).translate(x,1.5,4.75)));
-  [[-2.75,-4.1,-1.4],[2.75,1.4,4.1]].forEach(([cx,a,b])=>{porch.push(new T.BoxGeometry(b-a,0.08,0.08).translate(cx,0.95,4.75));for(let x=a+0.25;x<b-0.1;x+=0.25)porch.push(new T.BoxGeometry(0.05,0.8,0.05).translate(x,0.5,4.75));});
-  porch.push(new T.BoxGeometry(1.4,0.1,0.4).translate(0,0.05,5.05));
-  g.add(new T.Mesh(mergeGeos(porch),wood));
-  const pr=new T.Mesh(new T.BoxGeometry(8.8,0.12,2.0),texMat(shingleTex('#8e2b22','#5e1b15'),10,3));pr.position.set(0,3.02,3.95);pr.rotation.x=0.12;g.add(pr);
-  // Baril et caisses sur la galerie
-  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.28,0.3,0.8,12).translate(-3.3,0.56,4.3),new T.BoxGeometry(0.6,0.5,0.6).translate(3.2,0.41,4.2),new T.BoxGeometry(0.5,0.4,0.5).translate(3.3,0.86,4.15)]),mat(0x8a6040)));
-  const p=vpos(0,-3);g.position.set(p.x,VIL_H,p.z);g.rotation.y=VROT;bakeStatic(g);shadows(g);scene.add(g);bldCols(0,-3,4,3);
-  STORE_DOOR=vpos(0,1.9);
-  label('Magasin général',p.x,VIL_H+6.6,p.z);
-  // Église : déclin blanc, clocher à abat-sons, flèche et croix, hautes fenêtres, perron
-  const c=new T.Group(),white=texMat(sidingTex('#f1eee6','#c9c4b8'),1,18),grey=texMat(shingleTex('#5b5f63','#3b3e41'),12,6),silver=mat(0xc7ccd0);
-  c.add(new T.Mesh(new T.BoxGeometry(5,4,8).translate(0,2,0),white));
-  const rr1=new T.Mesh(new T.BoxGeometry(3.2,0.18,8.4),grey);rr1.position.set(1.25,4.85,0);rr1.rotation.z=-0.62;c.add(rr1);
-  const rr2=new T.Mesh(new T.BoxGeometry(3.2,0.18,8.4),grey);rr2.position.set(-1.25,4.85,0);rr2.rotation.z=0.62;c.add(rr2);
-  {const sh=new T.Shape();sh.moveTo(-2.5,4);sh.lineTo(2.5,4);sh.lineTo(0,5.75);sh.lineTo(-2.5,4);const gf=new T.ExtrudeGeometry(sh,{depth:0.1,bevelEnabled:false});gf.translate(0,0,3.95);c.add(new T.Mesh(gf,white));const gb=gf.clone();gb.translate(0,0,-8);c.add(new T.Mesh(gb,white));}
-  c.add(new T.Mesh(new T.BoxGeometry(1.8,3.0,1.8).translate(0,5.3,3.2),white));
-  c.add(new T.Mesh(mergeGeos([0,1,2,3].map(k=>new T.BoxGeometry(0.7,1.0,0.06).translate(0,6.1,0.92).rotateY(k*Math.PI/2).translate(0,0,0))).translate(0,0,3.2),mat(0x2b2b2b)));
-  c.add(new T.Mesh(new T.BoxGeometry(2.0,0.14,2.0).translate(0,6.85,3.2),mat(0xe0ddd5)));
-  const sp=new T.Mesh(new T.ConeGeometry(1.15,3.2,4),silver);sp.position.set(0,8.5,3.2);sp.rotation.y=Math.PI/4;c.add(sp);
-  c.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.08,0.8,0.08).translate(0,10.45,3.2),new T.BoxGeometry(0.45,0.08,0.08).translate(0,10.55,3.2)]),mat(0xd9c27a)));
-  const cw=[],cg=[];[-1.2,1.2].forEach(z=>[2.53,-2.53].forEach(x=>{const w=windowGeo(0.7,1.6,x,2.2,z+(z>0?1:-1)*1.4,x>0?Math.PI/2:-Math.PI/2);cw.push(w.frame);cg.push(w.glass);}));
-  c.add(new T.Mesh(mergeGeos(cw),mat(0xffffff)),new T.Mesh(mergeGeos(cg),new T.MeshBasicMaterial({color:0x7fa6c9})));
-  const cd=doorGeo(1.2,2.3,0,4.02);c.add(new T.Mesh(cd.door,mat(0x6b2a22)),new T.Mesh(cd.frame,mat(0xffffff)),new T.Mesh(cd.knob,mat(0xc9a84a)));
-  c.add(new T.Mesh(mergeGeos([new T.BoxGeometry(2.4,0.15,0.5).translate(0,0.075,4.3),new T.BoxGeometry(2.0,0.15,0.4).translate(0,0.225,4.2)]),mat(0x9a958c)));
-  const pc=vpos(12,-5);c.position.set(pc.x,VIL_H,pc.z);c.rotation.y=VROT;bakeStatic(c);shadows(c);scene.add(c);bldCols(12,-5,2.5,4);
-  // Maison : déclin bleu, volets, cheminée, perron
-  [[-10,-10,'#4f6f8f','#2e4458',0x2e2a26]].forEach(([lx,lz,wc,lc,rc])=>{
-    const h=new T.Group();h.add(new T.Mesh(new T.BoxGeometry(5,2.8,4.5).translate(0,1.4,0),texMat(sidingTex(wc,lc),1,13)));
-    h.add(new T.Mesh(mergeGeos([gable(5,4.5,2.8,1.35,2.5),gable(5,4.5,2.8,1.35,-2.5)]),texMat(sidingTex(wc,lc),1,7)));
-    roofTex(h,5,4.5,3.25,texMat(shingleTex('#3a3430','#262220'),8,7));
-    const hd=doorGeo(1,1.9,0,2.27);h.add(new T.Mesh(hd.door,mat(0x8e2b22)),new T.Mesh(hd.frame,mat(0xf1eee6)),new T.Mesh(hd.knob,mat(0xc9a84a)));
-    const hw=[],hg=[],sh=[];[1.5,-1.5].forEach(x=>{const w=windowGeo(0.9,0.85,x,1.5,2.3,0);hw.push(w.frame);hg.push(w.glass);sh.push(new T.BoxGeometry(0.3,0.9,0.05).translate(x+0.68,1.5,2.3),new T.BoxGeometry(0.3,0.9,0.05).translate(x-0.68,1.5,2.3));});
-    h.add(new T.Mesh(mergeGeos(hw),mat(0xf1eee6)),new T.Mesh(mergeGeos(hg),win),new T.Mesh(mergeGeos(sh),mat(0x2a3a2a)));
-    h.add(new T.Mesh(stoneStack(0.55,0.55,4.3,-1.6,0,-0.9,21),new T.MeshPhongMaterial({color:0x9a7a6a,flatShading:true,vertexColors:true,shininess:3})));
-    h.add(new T.Mesh(new T.BoxGeometry(1.6,0.2,0.8).translate(0,0.1,2.65),mat(0x8a857c)));
-    const q=vpos(lx,lz);h.position.set(q.x,VIL_H,q.z);h.rotation.y=VROT;bakeStatic(h);shadows(h);scene.add(h);bldCols(lx,lz,2.5,2.25);
+  const VMC={},vmat=c=>VMC[c]||(VMC[c]=mat(c));
+  const textSign=(txt,w,h,bg,fg,font)=>{const t=canvasTex(512,Math.max(32,Math.round(512*h/w)),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=Math.max(3,H*0.06);c.strokeRect(H*0.08,H*0.08,W-H*0.16,H-H*0.16);c.fillStyle=fg;c.font=`bold ${Math.round(H*(font||0.46))}px Georgia,serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(txt,W/2,H/2+2);});return new T.MeshBasicMaterial({map:t});};
+  const placeB=(g,lx,lz)=>{const p=vpos(lx,lz);g.position.set(p.x,VIL_H,p.z);g.rotation.y=VROT;bakeStatic(g);shadows(g);g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});scene.add(g);return p;};
+  const colL=(lx,lz,r)=>{const p=vpos(lx,lz);addCol(p.x,p.z,r);};
+  const wood=vmat(0x7a5232),trim=vmat(0xf6f1e4),dark=vmat(0x3b2a1e),gold=vmat(0xc9a84a),black=vmat(0x222222);
+
+  /* ===== Magasin général : deux étages, fausse façade, grande galerie, vitrines ===== */
+  {
+    const g=new T.Group(),W=12,D=9,Hh=6.2;
+    const cream=texMat(sidingTex('#e8e0cc','#b9ae96'),1,28),shing=texMat(shingleTex('#8e2b22','#5e1b15'),14,10),green=vmat(0x2f5a3a);
+    g.add(new T.Mesh(new T.BoxGeometry(W,Hh,D).translate(0,Hh/2,0),cream));
+    g.add(new T.Mesh(mergeGeos([gable(W,D+0.1,Hh,2.4,W/2),gable(W,D+0.1,Hh,2.4,-W/2)]),texMat(sidingTex('#e8e0cc','#b9ae96'),1,10)));
+    roofTex(g,W,D,Hh+1.2,shing,0.45,0.5);
+    // Planches de coin, bandeau entre les étages, fausse façade et corniche
+    const tr=[];[-1,1].forEach(sx=>[-1,1].forEach(sz=>tr.push(new T.BoxGeometry(0.22,Hh,0.22).translate(sx*W/2,Hh/2,sz*D/2))));
+    tr.push(new T.BoxGeometry(W+0.3,0.22,0.12).translate(0,3.2,D/2+0.06),new T.BoxGeometry(W+0.8,0.3,0.5).translate(0,Hh+3.05,D/2+0.15),new T.BoxGeometry(W+0.5,0.18,0.35).translate(0,Hh+2.75,D/2+0.12));
+    g.add(new T.Mesh(mergeGeos(tr),trim));
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(W+0.4,3.0,0.3).translate(0,Hh+1.4,D/2+0.1),new T.BoxGeometry(4,0.8,0.3).translate(0,Hh+3.3,D/2+0.1)]),cream));
+    const sign=new T.Mesh(new T.PlaneGeometry(9.5,1.35),textSign('MAGASIN GÉNÉRAL',9.5,1.35,'#2f5a3a','#f3e6c4'));sign.position.set(0,Hh+1.35,D/2+0.27);g.add(sign);
+    const yr=new T.Mesh(new T.PlaneGeometry(2.6,0.5),textSign('1923',2.6,0.5,'#e8e0cc','#2f5a3a',0.6));yr.position.set(0,Hh+3.3,D/2+0.27);g.add(yr);
+    // Rez-de-chaussée : porte double vitrée avec imposte, deux grandes vitrines
+    const fr=[],gl=[];
+    [[-1,0.5],[1,-0.5]].forEach(([s])=>{const x=s*0.5;fr.push(new T.BoxGeometry(0.96,2.6,0.08).translate(x,1.3,D/2+0.05));});
+    g.add(new T.Mesh(mergeGeos(fr),green));
+    [-0.5,0.5].forEach(x=>gl.push(new T.PlaneGeometry(0.6,1.3).translate(x,1.65,D/2+0.1)));
+    gl.push(new T.PlaneGeometry(1.8,0.5).translate(0,2.95,D/2+0.02));
+    [-3.7,3.7].forEach(x=>{const w=windowGeo(3.0,1.9,x,1.75,D/2+0.06,0);fr.length=0;g.add(new T.Mesh(w.frame,trim));gl.push(w.glass.clone().translate(0,0,0.02));
+      g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.06,1.9,0.06).translate(x,1.75,D/2+0.1),new T.BoxGeometry(3.0,0.06,0.06).translate(x,2.3,D/2+0.1)]),trim));
+      g.add(new T.Mesh(new T.BoxGeometry(3.1,0.3,0.35).translate(x,0.55,D/2+0.2),wood));                       // boîte à fleurs
+      g.add(new T.Mesh(mergeGeos([0,1,2,3,4,5].map(k=>new T.SphereGeometry(0.13,6,4).translate(x-1.25+k*0.5,0.78,D/2+0.22))),vmat(x<0?0xd8402a:0xe8c23a)));
+    });
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(2.3,0.12,0.12).translate(0,2.66,D/2+0.06),new T.BoxGeometry(0.12,2.75,0.12).translate(1.1,1.35,D/2+0.06),new T.BoxGeometry(0.12,2.75,0.12).translate(-1.1,1.35,D/2+0.06)]),trim));
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.04,0.3,0.06).translate(0.18,1.3,D/2+0.12),new T.BoxGeometry(0.04,0.3,0.06).translate(-0.18,1.3,D/2+0.12)]),gold));
+    // Étage : fenêtres à volets
+    const uf=[],us=[];[-4.5,-1.5,1.5,4.5].forEach(x=>{const w=windowGeo(1.0,1.4,x,4.65,D/2+0.06,0);uf.push(w.frame);gl.push(w.glass);us.push(new T.BoxGeometry(0.42,1.45,0.05).translate(x-0.75,4.65,D/2+0.06),new T.BoxGeometry(0.42,1.45,0.05).translate(x+0.75,4.65,D/2+0.06));});
+    [-1,1].forEach(sd=>[-2.2,2.2].forEach(z=>[1.8,4.65].forEach(y=>{const w=windowGeo(1.0,1.3,sd*(W/2+0.06),y,z,sd*Math.PI/2);uf.push(w.frame);gl.push(w.glass);})));
+    g.add(new T.Mesh(mergeGeos(uf),trim),new T.Mesh(mergeGeos(us),green),new T.Mesh(mergeGeos(gl),VIL_WIN));
+    // Galerie couverte : plancher, marches, poteaux tournés, garde-corps, toit en appentis
+    const P=[new T.BoxGeometry(W+1.2,0.24,2.8).translate(0,0.12,D/2+1.4),new T.BoxGeometry(3,0.14,0.45).translate(0,0.07,D/2+3.0)];
+    [-6.3,-3.3,-1.4,1.4,3.3,6.3].forEach(x=>P.push(new T.CylinderGeometry(0.1,0.12,3.1,8).translate(x,1.7,D/2+2.65)));
+    [[-6.3,-3.3],[-3.3,-1.4],[1.4,3.3],[3.3,6.3]].forEach(([a,b])=>{P.push(new T.BoxGeometry(b-a,0.08,0.09).translate((a+b)/2,1.05,D/2+2.65),new T.BoxGeometry(b-a,0.06,0.07).translate((a+b)/2,0.35,D/2+2.65));for(let x=a+0.22;x<b-0.1;x+=0.22)P.push(new T.BoxGeometry(0.05,0.7,0.05).translate(x,0.7,D/2+2.65));});
+    g.add(new T.Mesh(mergeGeos(P),wood));
+    const pr=new T.Mesh(new T.BoxGeometry(W+1.6,0.14,3.1),texMat(shingleTex('#8e2b22','#5e1b15'),14,3));pr.position.set(0,3.45,D/2+1.45);pr.rotation.x=0.13;g.add(pr);
+    g.add(new T.Mesh(new T.BoxGeometry(W+1.6,0.32,0.08).translate(0,3.12,D/2+3.0),trim));
+    const sub=new T.Mesh(new T.PlaneGeometry(6.5,0.3),textSign('ÉPICERIE · QUINCAILLERIE · POSTE',6.5,0.3,'#f6f1e4','#2f5a3a',0.62));sub.position.set(0,3.12,D/2+3.05);g.add(sub);
+    // Banc, barils, caisses de pommes, glacière, lanterne au-dessus de la porte
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.8,0.07,0.45).translate(-4.8,0.7,D/2+0.6),new T.BoxGeometry(1.8,0.5,0.06).translate(-4.8,1.0,D/2+0.38),new T.BoxGeometry(0.08,0.46,0.4).translate(-5.6,0.47,D/2+0.6),new T.BoxGeometry(0.08,0.46,0.4).translate(-4.0,0.47,D/2+0.6),
+      new T.BoxGeometry(0.6,0.45,0.45).translate(5.4,0.47,D/2+1.0),new T.BoxGeometry(0.6,0.45,0.45).translate(4.7,0.47,D/2+1.2),new T.BoxGeometry(0.6,0.45,0.45).translate(5.1,0.92,D/2+1.05)]),vmat(0x9a7448)));
+    g.add(new T.Mesh(mergeGeos([new T.SphereGeometry(0.1,6,4).translate(5.3,0.72,D/2+1.0),new T.SphereGeometry(0.1,6,4).translate(5.5,0.72,D/2+0.95),new T.SphereGeometry(0.1,6,4).translate(4.6,0.72,D/2+1.25),new T.SphereGeometry(0.1,6,4).translate(4.85,0.72,D/2+1.2)]),vmat(0xc22a1e)));
+    g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.3,0.33,0.85,12).translate(-6.0,0.67,D/2+1.9),new T.CylinderGeometry(0.3,0.33,0.85,12).translate(-6.0,0.67,D/2+1.2)]),vmat(0x8a6040)));
+    g.add(new T.Mesh(new T.BoxGeometry(1.1,1.1,0.7).translate(3.0,0.79,D/2+0.55),vmat(0xf2f2f2)));
+    const ice=new T.Mesh(new T.PlaneGeometry(0.9,0.35),textSign('GLACE',0.9,0.35,'#f2f2f2','#2d5b9a',0.7));ice.position.set(3.0,1.0,D/2+0.91);g.add(ice);
+    g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.12,0.1,0.28,8).translate(0,2.95,D/2+0.45),new T.BoxGeometry(0.04,0.3,0.32).translate(0,3.12,D/2+0.3)]),black));
+    const lampG=new T.Mesh(new T.CylinderGeometry(0.08,0.08,0.18,8).translate(0,2.95,D/2+0.45),VIL_LAMP);g.add(lampG);
+    // Vieille pompe à essence rouge, à côté
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.6,1.7,0.45).translate(7.9,0.85,D/2+3.2),new T.CylinderGeometry(0.22,0.22,0.12,12).translate(7.9,1.76,D/2+3.2)]),vmat(0xb3241f)));
+    g.add(new T.Mesh(new T.SphereGeometry(0.22,12,8).translate(7.9,2.0,D/2+3.2),vmat(0xf6f1e4)));
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.45,0.4,0.03).translate(7.9,1.25,D/2+3.43),new T.BoxGeometry(0.06,0.5,0.06).translate(8.25,1.0,D/2+3.3)]),vmat(0xe8e0cc)));
+    g.add(new T.Mesh(new T.BoxGeometry(1.2,0.12,1.0).translate(7.9,0.06,D/2+3.2),vmat(0x8a857c)));
+    // Cheminée de briques sur le côté
+    g.add(new T.Mesh(stoneStack(0.7,0.7,Hh+3.3,-W/2+1.4,0,-2,31),new T.MeshPhongMaterial({color:0x9a5a46,flatShading:true,vertexColors:true,shininess:3})));
+    const p=placeB(g,0,-5);
+    // Collisions : bâtiment, poteaux de la galerie, pompe
+    bldCols(0,-5,6,4.5);[-6.3,-3.3,-1.4,1.4,3.3,6.3].forEach(x=>colL(x,-5+D/2+2.65,0.2));colL(7.9,-5+D/2+3.2,0.5);colL(-6,-5+D/2+1.55,0.4);
+    STORE_DOOR=vpos(0,1.9);
+    label('Magasin général',p.x,VIL_H+10.6,p.z);
+  }
+
+  /* ===== Église : grande nef, clocher avec horloge et flèche, vitraux, perron, petit cimetière ===== */
+  {
+    const c=new T.Group(),L=14,Wd=8,Hh=6.5,white=texMat(sidingTex('#f1eee6','#c9c4b8'),1,26),grey=texMat(shingleTex('#5b5f63','#3b3e41'),16,9),silver=new T.MeshPhongMaterial({color:0xc7ccd0,shininess:80,specular:0x999999,flatShading:true});
+    const nave=new T.Group();c.add(nave);nave.rotation.y=Math.PI/2;        // longueur selon z (avant : +z)
+    nave.add(new T.Mesh(new T.BoxGeometry(L,Hh,Wd).translate(0,Hh/2,0),white));
+    nave.add(new T.Mesh(mergeGeos([gable(L,Wd+0.1,Hh,3.2,L/2),gable(L,Wd+0.1,Hh,3.2,-L/2)]),texMat(sidingTex('#f1eee6','#c9c4b8'),1,12)));
+    roofTex(nave,L,Wd,Hh+1.62,grey,0.68,0.45);
+    // Vitraux en ogive (4 de chaque côté)
+    const vit=canvasTex(64,128,(cx,w,h)=>{const cols=['#3a6fb8','#c23a2e','#e8b83a','#3c8a4a','#7a4ab0'];for(let y=0;y<h;y+=16)for(let x=0;x<w;x+=16){cx.fillStyle=cols[(x/16+y/16*2)%5];cx.fillRect(x,y,16,16);}cx.strokeStyle='#222';cx.lineWidth=2;for(let y=0;y<=h;y+=16){cx.beginPath();cx.moveTo(0,y);cx.lineTo(w,y);cx.stroke();}for(let x=0;x<=w;x+=16){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,h);cx.stroke();}});
+    const vm=new T.MeshBasicMaterial({map:vit}),wf=[],wg=[];
+    [-4.6,-1.6,1.4,4.4].forEach(x=>[-1,1].forEach(s=>{const z=s*(Wd/2+0.06),ry=s>0?0:Math.PI;
+      const w=windowGeo(1.0,2.4,x,2.9,z,ry);wf.push(w.frame);wg.push(w.glass);
+      const tri=new T.Shape();tri.moveTo(-0.58,0);tri.lineTo(0.58,0);tri.lineTo(0,0.62);tri.lineTo(-0.58,0);const tg=new T.ShapeGeometry(tri);tg.rotateY(ry);tg.translate(x,4.15,z+s*0.01);wg.push(tg);
+      wf.push(new T.BoxGeometry(1.3,0.1,0.1).rotateZ(0.5).translate(x-0.3,4.45,z),new T.BoxGeometry(1.3,0.1,0.1).rotateZ(-0.5).translate(x+0.3,4.45,z));}));
+    nave.add(new T.Mesh(mergeGeos(wf),vmat(0xffffff)),new T.Mesh(mergeGeos(wg),vm));
+    // Sacristie à l'arrière
+    nave.add(new T.Mesh(new T.BoxGeometry(3,3.4,4).translate(L/2+1.5,1.7,0),white));
+    const sr=new T.Mesh(new T.BoxGeometry(3.6,0.14,4.6),grey);sr.position.set(L/2+1.5,3.7,0);sr.rotation.z=-0.25;nave.add(sr);
+    // Clocher : tour, horloge, abat-sons, corniche, flèche octogonale, croix
+    const tz=L/2+1.7,TW=3.4;
+    c.add(new T.Mesh(new T.BoxGeometry(TW,Hh+3.6,TW).translate(0,(Hh+3.6)/2,tz),white));
+    c.add(new T.Mesh(mergeGeos([[-1,-1],[1,-1],[-1,1],[1,1]].map(([a,b])=>new T.BoxGeometry(0.2,Hh+3.6,0.2).translate(a*TW/2,(Hh+3.6)/2,tz+b*TW/2))),vmat(0xe0ddd5)));
+    const by=Hh+3.6;
+    c.add(new T.Mesh(mergeGeos([new T.BoxGeometry(TW+0.4,0.25,TW+0.4).translate(0,by,tz),new T.BoxGeometry(TW,2.2,TW).translate(0,by+1.25,tz).scale(1,1,1),new T.BoxGeometry(TW+0.5,0.3,TW+0.5).translate(0,by+2.45,tz)]),white));
+    const lv=[];[0,1,2,3].forEach(k=>{for(let j=0;j<5;j++){const gg=new T.BoxGeometry(1.8,0.08,0.3).rotateX(0.5).translate(0,by+0.6+j*0.3,TW/2+0.04);gg.rotateY(k*Math.PI/2);lv.push(gg.translate(0,0,0));}});
+    const lvM=mergeGeos(lv);lvM.translate(0,0,tz);c.add(new T.Mesh(lvM,vmat(0x3a3a3a)));
+    const sp=new T.Mesh(new T.ConeGeometry(1.9,7.5,8),silver);sp.position.set(0,by+2.6+3.75,tz);sp.rotation.y=Math.PI/8;c.add(sp);
+    c.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.12,1.3,0.12).translate(0,by+10.8,tz),new T.BoxGeometry(0.75,0.12,0.12).translate(0,by+11.0,tz),new T.SphereGeometry(0.16,8,6).translate(0,by+10.15,tz)]),vmat(0xd9c27a)));
+    const clock=new T.Mesh(new T.CircleGeometry(0.75,24),new T.MeshBasicMaterial({map:canvasTex(128,128,(cx,w,h)=>{cx.fillStyle='#f6f1e4';cx.beginPath();cx.arc(64,64,62,0,7);cx.fill();cx.strokeStyle='#222';cx.lineWidth=5;cx.stroke();
+      cx.fillStyle='#222';for(let i=0;i<12;i++){const a=i/12*Math.PI*2;cx.fillRect(64+Math.sin(a)*50-3,64-Math.cos(a)*50-3,6,6);}cx.lineWidth=6;cx.beginPath();cx.moveTo(64,64);cx.lineTo(64,22);cx.stroke();cx.beginPath();cx.moveTo(64,64);cx.lineTo(92,64);cx.stroke();})}));
+    clock.position.set(0,Hh+1.9,tz+TW/2+0.02);c.add(clock);
+    // Rosace et grande porte double en arc
+    const rose=new T.Mesh(new T.CircleGeometry(0.6,20),vm);rose.position.set(0,Hh-0.3,tz+TW/2+0.02);c.add(rose);
+    c.add(new T.Mesh(new T.TorusGeometry(0.62,0.06,6,24).translate(0,Hh-0.3,tz+TW/2+0.03),vmat(0xffffff)));
+    const dg1=doorGeo(0.9,2.8,-0.46,tz+TW/2+0.03),dg2=doorGeo(0.9,2.8,0.46,tz+TW/2+0.03);
+    c.add(new T.Mesh(mergeGeos([dg1.door,dg2.door]),vmat(0x6b2a22)),new T.Mesh(mergeGeos([dg1.frame,dg2.frame]),vmat(0xffffff)),new T.Mesh(mergeGeos([dg1.knob,dg2.knob]),gold));
+    const arch=new T.Shape();arch.moveTo(-1.05,0);arch.lineTo(1.05,0);arch.lineTo(0,0.8);arch.lineTo(-1.05,0);c.add(new T.Mesh(new T.ShapeGeometry(arch).translate(0,2.85,tz+TW/2+0.04),vmat(0xffffff)));
+    c.add(new T.Mesh(mergeGeos([new T.BoxGeometry(4.2,0.18,1.6).translate(0,0.09,tz+TW/2+0.8),new T.BoxGeometry(3.4,0.18,1.1).translate(0,0.27,tz+TW/2+0.55),new T.BoxGeometry(2.6,0.18,0.6).translate(0,0.45,tz+TW/2+0.3)]),vmat(0x9a958c)));
+    // Petit cimetière derrière : clôture blanche, croix et pierres tombales
+    const cx0=7.5,cz=8,cf=[],cr=[];
+    for(let x=-3;x<=3.01;x+=0.35){cf.push(new T.BoxGeometry(0.06,0.7,0.04).translate(cx0+x,0.35,cz-2.5));if(Math.abs(x)>0.7)cf.push(new T.BoxGeometry(0.06,0.7,0.04).translate(cx0+x,0.35,cz+2.5));}
+    for(let z=-2.5;z<=2.5;z+=0.35){cf.push(new T.BoxGeometry(0.04,0.7,0.06).translate(cx0-3,0.35,cz+z),new T.BoxGeometry(0.04,0.7,0.06).translate(cx0+3,0.35,cz+z));}
+    cf.push(new T.BoxGeometry(6,0.06,0.05).translate(cx0,0.55,cz-2.5),new T.BoxGeometry(2.3,0.06,0.05).translate(cx0-1.85,0.55,cz+2.5),new T.BoxGeometry(2.3,0.06,0.05).translate(cx0+1.85,0.55,cz+2.5),new T.BoxGeometry(0.05,0.06,5).translate(cx0-3,0.55,cz),new T.BoxGeometry(0.05,0.06,5).translate(cx0+3,0.55,cz));
+    c.add(new T.Mesh(mergeGeos(cf),vmat(0xf4f1ea)));
+    [[-2,-1.2],[-0.6,-1.2],[0.8,-1.2],[2.1,-1.2],[-1.8,0.7],[1.6,0.7],[2.3,1.7]].forEach(([x,z],i)=>{x+=cx0;
+      if(i%3===0)cr.push(new T.BoxGeometry(0.1,0.9,0.08).translate(x,0.45,cz+z),new T.BoxGeometry(0.5,0.08,0.08).translate(x,0.65,cz+z));
+      else cr.push(new T.BoxGeometry(0.55,0.7,0.14).translate(x,0.35,cz+z),new T.CylinderGeometry(0.275,0.275,0.14,10,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(Math.PI/2).translate(x,0.7,cz+z));});
+    c.add(new T.Mesh(mergeGeos(cr),vmat(0x9a9890)));
+    const p=placeB(c,16,-4);
+    bldCols(16,-4,4,7);bldCols(16,-4+tz,1.7,1.7);bldCols(16,-12.5,2,1.5);
+    for(let x=-3;x<=3.01;x+=1){colL(16+cx0+x,-4+cz-2.5,0.25);if(Math.abs(x)>0.7)colL(16+cx0+x,-4+cz+2.5,0.25);}
+    for(let z=-1.5;z<=1.51;z+=1){colL(16+cx0-3,-4+cz+z,0.25);colL(16+cx0+3,-4+cz+z,0.25);}
+    label('Église',p.x,VIL_H+12,p.z);
+  }
+
+  /* ===== Maisons : déclin coloré, volets, galerie, cheminée ===== */
+  [[-8,-16,'#4f6f8f','#2e4458','#8e2b22',0],[6,-17,'#d8b84a','#9a7a2a','#2f5a3a',1]].forEach(([lx,lz,wc,lc,dc,k])=>{
+    const h=new T.Group();h.add(new T.Mesh(new T.BoxGeometry(6,3.0,5).translate(0,1.5,0),texMat(sidingTex(wc,lc),1,14)));
+    h.add(new T.Mesh(mergeGeos([gable(6,5,3.0,1.6,3),gable(6,5,3.0,1.6,-3)]),texMat(sidingTex(wc,lc),1,7)));
+    roofTex(h,6,5,3.6,texMat(shingleTex('#3a3430','#262220'),9,7),0.6,0.45);
+    const hd=doorGeo(1,2.0,0.8,2.52);h.add(new T.Mesh(hd.door,vmat(parseInt(dc.slice(1),16))),new T.Mesh(hd.frame,vmat(0xf1eee6)),new T.Mesh(hd.knob,gold));
+    const hw=[],hg=[],sh=[];[-1.4,2.2].forEach(x=>{const w=windowGeo(0.9,1.0,x,1.6,2.56,0);hw.push(w.frame);hg.push(w.glass);sh.push(new T.BoxGeometry(0.32,1.05,0.05).translate(x+0.7,1.6,2.56),new T.BoxGeometry(0.32,1.05,0.05).translate(x-0.7,1.6,2.56));});
+    [-1.3,1.3].forEach(z=>[-1,1].forEach(sd=>{const w=windowGeo(0.8,0.9,sd*3.06,1.6,z,sd*Math.PI/2);hw.push(w.frame);hg.push(w.glass);}));
+    h.add(new T.Mesh(mergeGeos(hw),vmat(0xf1eee6)),new T.Mesh(mergeGeos(hg),VIL_WIN),new T.Mesh(mergeGeos(sh),vmat(0x2a3a2a)));
+    h.add(new T.Mesh(stoneStack(0.6,0.6,4.8,-1.9,0,-1.0,21+k),new T.MeshPhongMaterial({color:0x9a7a6a,flatShading:true,vertexColors:true,shininess:3})));
+    const gp=[new T.BoxGeometry(6.4,0.18,1.6).translate(0,0.09,3.3)];[-3,-0.2,3].forEach(x=>gp.push(new T.BoxGeometry(0.12,2.3,0.12).translate(x,1.25,4.0)));
+    for(let x=-3;x<-0.3;x+=0.25)gp.push(new T.BoxGeometry(0.05,0.6,0.05).translate(x,0.5,4.0));gp.push(new T.BoxGeometry(2.8,0.07,0.07).translate(-1.6,0.82,4.0));
+    h.add(new T.Mesh(mergeGeos(gp),vmat(0xf1eee6)));
+    const pr=new T.Mesh(new T.BoxGeometry(6.6,0.1,1.8),texMat(shingleTex('#3a3430','#262220'),9,2));pr.position.set(0,2.45,3.3);pr.rotation.x=0.18;h.add(pr);
+    // Corde à bois et boîte aux lettres
+    h.add(new T.Mesh(mergeGeos([0,1,2,3,4,5,6,7].map(i=>new T.CylinderGeometry(0.11,0.11,0.5,7).rotateX(Math.PI/2).translate(3.6+(i%4)*0.23-0.35,0.12+Math.floor(i/4)*0.22,-1.2))),logMatsFor('erable')));
+    h.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.08,1.1,0.08).translate(1.6,0.55,6.2),new T.BoxGeometry(0.28,0.25,0.45).translate(1.6,1.2,6.2)]),vmat(0x5a5a5a)));
+    placeB(h,lx,lz);bldCols(lx,lz,3,2.5);colL(lx-3,lz+4.0,0.2);colL(lx+3,lz+4.0,0.2);
   });
-  // Scierie : planches verticales, toit de tôle, grande porte coulissante sur rail, enseigne, appentis
-  const s=new T.Group(),plank=texMat(sidingTex('#8a6440','#5a3e24',true),18,1),tin=texMat(tinTex(),16,1,{shininess:30}),trimS=mat(0x4d3220);
-  s.add(new T.Mesh(new T.BoxGeometry(7,3.4,4).translate(0,1.7,0),plank));
-  s.add(new T.Mesh(mergeGeos([gable(7,4,3.4,1.2,3.5),gable(7,4,3.4,1.2,-3.5)]),texMat(sidingTex('#8a6440','#5a3e24',true),12,1)));
-  roofTex(s,7,4,3.95,tin);
-  s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(2.4,2.6,0.1).translate(-1.6,1.3,2.05),new T.BoxGeometry(2.4,0.1,0.12).rotateZ(0.9).translate(-1.6,1.3,2.11),new T.BoxGeometry(2.4,0.1,0.12).rotateZ(-0.9).translate(-1.6,1.3,2.11)]),mat(0x6b4a2c)));
-  s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(3.0,0.08,0.08).translate(-1.6,2.7,2.12),new T.BoxGeometry(0.2,0.12,0.06).translate(-2.4,2.62,2.14),new T.BoxGeometry(0.2,0.12,0.06).translate(-0.8,2.62,2.14)]),mat(0x2a2a2a)));
-  const sd=doorGeo(0.9,2.0,1.8,2.03);s.add(new T.Mesh(sd.door,mat(0x3b2a1e)),new T.Mesh(sd.frame,trimS),new T.Mesh(sd.knob,mat(0x2a2a2a)));
-  const ssign=new T.Mesh(new T.PlaneGeometry(2.4,0.55),textSign('SCIERIE',2.4,0.55,'#2f4a35','#f1e6c8'));ssign.position.set(1.4,2.72,2.12);s.add(ssign);
-  const paper=new T.MeshBasicMaterial({color:0xf1e6c8});[2.65,3.0].forEach(x=>{const b=new T.Mesh(new T.PlaneGeometry(0.28,0.38),paper);b.position.set(x,1.5,2.06);s.add(b);});
-  // Appentis sur le côté avec une pile de planches
-  s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.12,2.2,0.12).translate(4.9,1.1,1.6),new T.BoxGeometry(0.12,2.2,0.12).translate(4.9,1.1,-1.6)]),trimS));
-  const lr=new T.Mesh(new T.BoxGeometry(1.8,0.1,3.8),tin);lr.position.set(4.3,2.45,0);lr.rotation.z=-0.25;s.add(lr);
-  s.add(new T.Mesh(mergeGeos([0,1,2,3,4].map(k=>new T.BoxGeometry(1.2,0.08,2.6).translate(4.2,0.1+k*0.1,0))),mat(0xc9a679)));
-  const sq=vpos(-12,1);s.position.set(sq.x,VIL_H,sq.z);s.rotation.y=VROT;bakeStatic(s);shadows(s);scene.add(s);bldCols(-12,1,3.5,2);
-  [[-7.4,0.4],[-7.4,1.6]].forEach(([a,b])=>{const q=vpos(a,b);addCol(q.x,q.z,0.7);});
-  label('Scierie',sq.x,VIL_H+6.2,sq.z);
-  label('Village',VILLAGE.x,VIL_H+10,VILLAGE.z,26);
+
+  /* ===== Scierie : grand bâtiment, porte ouverte sur le bois scié, bureau avec les prix, appentis, cheminée, bran de scie ===== */
+  {
+    const s=new T.Group(),W=13,D=8,Hh=5.2,plank=texMat(sidingTex('#8a6440','#5a3e24',true),32,1),tin=texMat(tinTex(),22,1,{shininess:30}),trimS=vmat(0x4d3220);
+    // Murs autour de la grande ouverture (avant, +z)
+    const ox=-1.5,ow=4.6,oh=3.9;
+    const wall=[new T.BoxGeometry(W,Hh,0.2).translate(0,Hh/2,-D/2),new T.BoxGeometry(0.2,Hh,D).translate(-W/2,Hh/2,0),new T.BoxGeometry(0.2,Hh,D).translate(W/2,Hh/2,0),
+      new T.BoxGeometry(ox-ow/2+W/2,Hh,0.2).translate((-W/2+ox-ow/2)/2,Hh/2,D/2),new T.BoxGeometry(W/2-(ox+ow/2),Hh,0.2).translate((W/2+ox+ow/2)/2,Hh/2,D/2),new T.BoxGeometry(ow,Hh-oh,0.2).translate(ox,oh+(Hh-oh)/2,D/2)];
+    s.add(new T.Mesh(mergeGeos(wall),plank));
+    s.add(new T.Mesh(mergeGeos([gable(W,D,Hh,2.0,W/2),gable(W,D,Hh,2.0,-W/2)]),texMat(sidingTex('#8a6440','#5a3e24',true),14,1)));
+    roofTex(s,W,D,Hh+1.0,tin,0.47,0.6);
+    // Intérieur sombre : sol, piles de planches, chariot avec un billot, lampes
+    s.add(new T.Mesh(new T.BoxGeometry(W-0.4,0.06,D-0.4).translate(0,0.03,0),vmat(0x5a4632)));
+    s.add(new T.Mesh(new T.BoxGeometry(W-0.4,Hh-0.2,0.05).translate(0,Hh/2,-D/2+0.13),vmat(0x3a2a1c)));
+    const lum=[];for(let k=0;k<7;k++)lum.push(new T.BoxGeometry(2.6,0.08,1.4).translate(-4.6,0.12+k*0.11,-1.8),new T.BoxGeometry(2.6,0.08,1.4).translate(2.4,0.12+k*0.11,-2.0));
+    for(let k=0;k<5;k++)lum.push(new T.BoxGeometry(0.06,0.05,1.5).translate(-5.7+k*0.55,0.2+((k%3)*0.11),-1.8));
+    s.add(new T.Mesh(mergeGeos(lum),vmat(0xd9b27c)));
+    s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(5,0.12,0.18).translate(ox,0.4,0.2),new T.BoxGeometry(5,0.12,0.18).translate(ox,0.4,1.4),new T.BoxGeometry(1.4,0.5,1.3).translate(ox-1.6,0.55,0.8)]),vmat(0x3d4247)));
+    s.add(new T.Mesh(new T.CylinderGeometry(0.32,0.36,4.2,11).rotateZ(Math.PI/2).translate(ox+0.4,0.95,0.8),logMatsFor('epinette')));
+    s.add(new T.Mesh(mergeGeos([-4,0,4].map(x=>new T.ConeGeometry(0.25,0.18,10,1,true).translate(x,Hh-0.5,0))),vmat(0x2f3a35)));
+    s.add(new T.Mesh(mergeGeos([-4,0,4].map(x=>new T.SphereGeometry(0.09,8,6).translate(x,Hh-0.62,0))),VIL_LAMP));
+    // Grande porte coulissante ouverte sur son rail
+    s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(ow/2+0.2,oh,0.1).translate(ox+ow/2+1.3,oh/2,D/2+0.18),new T.BoxGeometry(ow/2+0.2,0.1,0.12).rotateZ(0.85).translate(ox+ow/2+1.3,oh/2,D/2+0.24),new T.BoxGeometry(ow/2+0.2,0.1,0.12).rotateZ(-0.85).translate(ox+ow/2+1.3,oh/2,D/2+0.24),
+      new T.BoxGeometry(ow/2+0.2,oh,0.1).translate(ox-ow/2-1.3,oh/2,D/2+0.18)]),vmat(0x6b4a2c)));
+    s.add(new T.Mesh(new T.BoxGeometry(ow+5.6,0.1,0.1).translate(ox,oh+0.2,D/2+0.25),black));
+    s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.2,oh,0.25).translate(ox-ow/2,oh/2,D/2+0.05),new T.BoxGeometry(0.2,oh,0.25).translate(ox+ow/2,oh/2,D/2+0.05),new T.BoxGeometry(ow+0.4,0.25,0.25).translate(ox,oh,D/2+0.05)]),trimS));
+    const ss=new T.Mesh(new T.PlaneGeometry(6.2,1.0),textSign('SCIERIE DU VILLAGE',6.2,1.0,'#2f4a35','#f1e6c8'));ss.position.set(ox,oh+0.85,D/2+0.13);s.add(ss);
+    // Petites fenêtres, porte du bureau et tableau des prix sur la façade
+    const wf=[],wg=[];[[-W/2-0.12,-1.8,-Math.PI/2],[-W/2-0.12,1.8,-Math.PI/2],[W/2+0.12,-2.2,Math.PI/2],[W/2+0.12,1.6,Math.PI/2]].forEach(([x,z,ry])=>{const w=windowGeo(1.1,0.9,x,2.6,z,ry);wf.push(w.frame);wg.push(w.glass);});
+    s.add(new T.Mesh(mergeGeos(wf),trim),new T.Mesh(mergeGeos(wg),VIL_WIN));
+    const od=doorGeo(0.9,2.1,4.1,D/2+0.12);s.add(new T.Mesh(od.door,vmat(0x2f4a35)),new T.Mesh(od.frame,trim),new T.Mesh(od.knob,gold));
+    const bs=new T.Mesh(new T.PlaneGeometry(1.3,0.32),textSign('BUREAU',1.3,0.32,'#f6f1e4','#2f4a35',0.6));bs.position.set(4.1,2.45,D/2+0.13);s.add(bs);
+    s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.2,0.08,1.0).translate(4.1,2.75,D/2+0.5),new T.BoxGeometry(0.06,0.4,0.06).translate(3.6,2.5,D/2+0.95),new T.BoxGeometry(0.06,0.4,0.06).translate(4.6,2.5,D/2+0.95)]),trimS));
+    s.add(new T.Mesh(new T.BoxGeometry(1.3,1.1,0.06).translate(5.6,1.5,D/2+0.14),vmat(0x3a2a1c)));
+    const pb=new T.Mesh(new T.PlaneGeometry(1.15,0.25),textSign('PRIX DU BOIS',1.15,0.25,'#3a2a1c','#f1e6c8',0.7));pb.position.set(5.6,1.9,D/2+0.18);s.add(pb);
+    const paper=new T.MeshBasicMaterial({color:0xf1e6c8});[-0.35,0.05,0.42].forEach((x,i)=>{const b=new T.Mesh(new T.PlaneGeometry(0.3,0.42),paper);b.position.set(5.6+x*0.85,1.35,D/2+0.18);b.rotation.z=(i-1)*0.06;s.add(b);});
+    // Appentis à l'arrière-gauche avec planches empilées et lattées
+    const LX=-W/2-2.2,lp=[];[-3.4,0,3.4].forEach(z=>lp.push(new T.BoxGeometry(0.16,3.4,0.16).translate(LX-1.9,1.7,z)));
+    s.add(new T.Mesh(mergeGeos(lp),trimS));
+    const lr=new T.Mesh(new T.BoxGeometry(4.6,0.1,7.8),tin);lr.position.set(LX,3.75,0);lr.rotation.z=0.18;s.add(lr);
+    const pl=[];[-2.2,1.6].forEach(z=>{for(let k=0;k<9;k++)pl.push(new T.BoxGeometry(3.0,0.07,2.2).translate(LX,0.12+k*0.13,z));for(let k=0;k<4;k++)pl.push(new T.BoxGeometry(3.0,0.04,0.06).translate(LX,0.18+k*0.39,z-0.9),new T.BoxGeometry(3.0,0.04,0.06).translate(LX,0.18+k*0.39,z+0.9));});
+    s.add(new T.Mesh(mergeGeos(pl),vmat(0xd9b27c)));
+    // Convoyeur et tas de bran de scie, cheminée de la bouilloire
+    s.add(new T.Mesh(new T.BoxGeometry(0.6,0.12,4.6).rotateX(-0.38).translate(6.6,2.4,-D/2-2.3),vmat(0x3d4247)));
+    s.add(new T.Mesh(new T.ConeGeometry(2.0,1.9,14).translate(7.6,0.95,-D/2-5.0),vmat(0xcaa36e)));
+    s.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.32,0.36,11,12).translate(W/2-1.6,5.5,-D/2+0.9),new T.CylinderGeometry(0.45,0.45,0.25,12).translate(W/2-1.6,11,-D/2+0.9)]),new T.MeshPhongMaterial({color:0x3a3d40,shininess:40})));
+    // Billots en attente devant (à gauche), sur des madriers
+    s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.2,0.2,3.4).translate(-W/2+0.6,0.1,D/2+3.2),new T.BoxGeometry(0.2,0.2,3.4).translate(-W/2+3.4,0.1,D/2+3.2)]),vmat(0x5a4632)));
+    s.add(new T.Mesh(mergeGeos([0,1,2,3,4,5].map(i=>new T.CylinderGeometry(0.28,0.3,4.2,10).rotateZ(Math.PI/2).translate(-W/2+2.0,0.48+(i>3?0.5:0)+(i>2&&i<=3?0:0),D/2+1.8+(i%4)*0.62+(i>3?0.31:0)))),logMatsFor('sapin')));
+    const p=placeB(s,-16,0);
+    bldCols(-16,0,6.5,4);[-3.4,0,3.4].forEach(z=>colL(-16+LX-1.9,z,0.25));bldCols(-16+LX,-0.3,1.5,3.4);
+    colL(-16+7.6,-D/2-5.0,1.9);colL(-16+W/2-1.6,-D/2+0.9,0.45);colL(-16-W/2+2,D/2+2.4,1.2);colL(-16-W/2+2,D/2+3.6,1.2);
+    label('Scierie',p.x,VIL_H+8.5,p.z);
+  }
+
+  /* ===== Lanternes de rue ===== */
+  {const g=new T.Group(),pole=[],glow=[];
+   [[-5,5],[6,5],[-6,14],[10,3]].forEach(([lx,lz])=>{
+     pole.push(new T.CylinderGeometry(0.07,0.09,3.4,8).translate(lx,1.7,lz),new T.BoxGeometry(0.6,0.06,0.06).translate(lx+0.25,3.3,lz),new T.CylinderGeometry(0.16,0.1,0.12,6).translate(lx+0.5,3.42,lz));
+     glow.push(new T.CylinderGeometry(0.11,0.13,0.26,6).translate(lx+0.5,3.2,lz));colL(lx,lz,0.2);});
+   g.add(new T.Mesh(mergeGeos(pole),black),new T.Mesh(mergeGeos(glow),VIL_LAMP));placeB(g,0,0);}
+  label('Village',VILLAGE.x,VIL_H+14,VILLAGE.z,26);
 }
-const MILL_DOOR=vpos(-10.2,3.3);
+const MILL_DOOR=vpos(-10.4,4.9);
 Object.assign(YARD,vpos(-10.5,8.5));
 const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
 // Billots déjà vendus, cordés derrière la scierie
-const YARD_STACK=vpos(-12,-3.6);
+const YARD_STACK=vpos(-16,-7.2);
 const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT;scene.add(yardStack);
 const yardStackCols={};   // collision ajoutée seulement quand une pile a des billots
 
@@ -538,7 +675,7 @@ for(let k=0;k<5200&&treeList.length<900;k++){
 }
 const ORIG_TREE_N=treeList.length;
 // Le nouveau sentier passe dans la forêt de départ : ces arbres-là sont déjà coupés (sans souche)
-treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6||Math.hypot(t.x-CAMP.x,t.z-CAMP.z)<CAMP_FLAT-2||Math.hypot(t.x-VILLAGE.x,t.z-VILLAGE.z)<VIL_FLAT+1){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
 // Forêt de la terre agrandie (son propre hasard : ne change rien à la forêt de départ)
 const rng2=mulberry32(4242);
 for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){

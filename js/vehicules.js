@@ -114,7 +114,9 @@ const PICKUP_GEO=(()=>{
     new T.BoxGeometry(1.98,0.18,0.18).translate(0,0.74,2.8),new T.BoxGeometry(1.94,0.16,0.16).translate(0,0.72,-2.74),
     new T.BoxGeometry(0.06,0.02,0.16).translate(0.97,1.38,0.62),new T.BoxGeometry(0.06,0.02,0.16).translate(-0.97,1.38,0.62),new T.BoxGeometry(0.2,0.04,0.04).translate(0,1.42,-2.71)]);
   const lamps=mergeGeos([new T.BoxGeometry(0.3,0.18,0.05).translate(0.73,1.1,2.72),new T.BoxGeometry(0.3,0.18,0.05).translate(-0.73,1.1,2.72)]);
-  const tails=mergeGeos([new T.BoxGeometry(0.06,0.34,0.14).translate(0.93,1.28,-2.62),new T.BoxGeometry(0.06,0.34,0.14).translate(-0.93,1.28,-2.62)]);
+  // Feux arrière : visibles de côté ET de derrière (enveloppent le coin de la boîte)
+  const tails=mergeGeos([new T.BoxGeometry(0.06,0.34,0.14).translate(0.93,1.28,-2.62),new T.BoxGeometry(0.06,0.34,0.14).translate(-0.93,1.28,-2.62),
+    new T.BoxGeometry(0.2,0.34,0.05).translate(0.86,1.28,-2.72),new T.BoxGeometry(0.2,0.34,0.05).translate(-0.86,1.28,-2.72)]);
   const black=mergeGeos([new T.BoxGeometry(0.06,0.18,0.24).translate(1.03,1.6,1.0),new T.BoxGeometry(0.06,0.18,0.24).translate(-1.03,1.6,1.0),
     new T.BoxGeometry(0.14,0.04,0.04).translate(0.98,1.55,1.0),new T.BoxGeometry(0.14,0.04,0.04).translate(-0.98,1.55,1.0),
     new T.BoxGeometry(0.1,0.1,0.3).translate(0,0.66,-2.88),new T.BoxGeometry(0.02,0.7,0.02).translate(0.97,0.98,0.25),new T.BoxGeometry(0.02,0.7,0.02).translate(-0.97,0.98,0.25)]);

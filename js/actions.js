@@ -127,7 +127,7 @@ function dropLog(){
 let yardCount=0;
 function addYardLog(c,i){
   const stack=Math.floor(i/15)%4,j=i%15,layer=Math.floor(j/5),slot=j%5;
-  if(!yardStackCols[stack]){const p=vpos(-12+stack*2.9-4.3,-3.6);yardStackCols[stack]=addCol(p.x,p.z,1.3);}
+  if(!yardStackCols[stack]){const p=vpos(-16+stack*2.9-4.3,-7.2);yardStackCols[stack]=addCol(p.x,p.z,1.3);}
   const l=makePieceMesh(c);l.rotation.y=Math.PI/2;l.position.set(stack*2.9-4.3,0.22+layer*0.4,(slot-2)*0.46+(layer%2)*0.1);yardStack.add(l);
   if(yardStack.children.length>60)yardStack.remove(yardStack.children[0]);
 }

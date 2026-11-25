@@ -200,3 +200,33 @@ function bbqContext(q){
   }
   return fishAct?{act:fishAct,act2:lid,info}:{act:lid,act2:onOff,info};
 }
+
+/* ---------- Décor en bordure du camp agrandi : bécosse, corde à linge, table à pique-nique, boîte aux lettres ---------- */
+{
+  const put=(g,x,z,ry)=>{g.position.set(x,H(x,z),z);g.rotation.y=ry;bakeStatic(g);shadows(g);scene.add(g);};
+  const plankV=texMat(sidingTex('#7d5a3a','#4e3622',true),5,1),wd=mat(0x7a5232),dk=mat(0x3b2a1e);
+  // Bécosse (porte avec une lune), face au camp
+  {const g=new T.Group();g.add(new T.Mesh(new T.BoxGeometry(1.3,2.1,1.3).translate(0,1.05,0),plankV));
+   const r=new T.Mesh(new T.BoxGeometry(1.6,0.08,1.7),texMat(tinTex(),4,1,{shininess:30}));r.position.set(0,2.22,0);r.rotation.x=-0.18;g.add(r);
+   g.add(new T.Mesh(new T.BoxGeometry(0.8,1.75,0.05).translate(0,0.93,0.66),mat(0x6b4a2c)));
+   const moon=new T.Shape();moon.absarc(0,0,0.11,0.6,Math.PI*2-0.6,false);moon.absarc(0.07,0,0.09,Math.PI*2-0.9,0.9,true);
+   g.add(new T.Mesh(new T.ShapeGeometry(moon).translate(0,1.55,0.69),mat(0x1a1410)));
+   g.add(new T.Mesh(new T.BoxGeometry(0.05,0.05,0.12).translate(0.3,0.95,0.72),dk));
+   put(g,-17,-8,Math.PI/2);addCol(-17,-8,0.95);}
+  // Corde à linge : deux poteaux en T, chemises et une serviette
+  {const g=new T.Group(),L=6;
+   g.add(new T.Mesh(mergeGeos([0,L].map(z=>new T.BoxGeometry(0.12,2.3,0.12).translate(0,1.15,z)).concat([0,L].map(z=>new T.BoxGeometry(1.0,0.1,0.1).translate(0,2.2,z)))),wd));
+   g.add(new T.Mesh(mergeGeos([-0.4,0.4].map(x=>new T.BoxGeometry(0.015,0.015,L).translate(x,2.17,L/2))),mat(0xdddddd)));
+   [[-0.4,1.2,0xb3241f,0.75],[-0.4,2.4,0x2d5b9a,0.75],[0.4,1.8,0xf2f2f2,0.6],[0.4,3.6,0x2f6b3a,0.75],[-0.4,4.4,0xe8c23a,0.5]].forEach(([x,z,c,h])=>{
+     const m=new T.Mesh(new T.BoxGeometry(0.03,h,0.6).translate(x,2.15-h/2,z),new T.MeshLambertMaterial({color:c,side:T.DoubleSide}));m.rotation.z=0;g.add(m);});
+   put(g,-19,1,0.12);addCol(-19,1,0.25);addCol(-19+Math.sin(0.12)*L,1+Math.cos(0.12)*L,0.25);}
+  // Table à pique-nique
+  {const g=new T.Group(),p=[new T.BoxGeometry(1.9,0.07,0.8).translate(0,0.76,0),new T.BoxGeometry(1.9,0.06,0.28).translate(0,0.45,0.62),new T.BoxGeometry(1.9,0.06,0.28).translate(0,0.45,-0.62)];
+   [-0.75,0.75].forEach(x=>{p.push(new T.BoxGeometry(0.08,0.85,0.08).rotateX(0.55).translate(x,0.38,0.28),new T.BoxGeometry(0.08,0.85,0.08).rotateX(-0.55).translate(x,0.38,-0.28),new T.BoxGeometry(0.07,0.07,1.5).translate(x,0.38,0));});
+   g.add(new T.Mesh(mergeGeos(p),mat(0x8a6040)));put(g,14,10,0.5);addCol(14,10,1.1);}
+  // Boîte aux lettres au bord du chemin du village
+  {const g=new T.Group();g.add(new T.Mesh(new T.BoxGeometry(0.1,1.1,0.1).translate(0,0.55,0),wd));
+   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.28,0.22,0.5).translate(0,1.2,0),new T.CylinderGeometry(0.14,0.14,0.5,10,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(-Math.PI/2).translate(0,1.31,0)]),mat(0x4a5a4a)));
+   g.add(new T.Mesh(new T.BoxGeometry(0.03,0.2,0.06).translate(0.16,1.4,-0.1),mat(0xc22a1e)));
+   put(g,-1.2,14.5,0.3);addCol(-1.2,14.5,0.2);}
+}
