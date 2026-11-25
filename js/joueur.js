@@ -44,7 +44,7 @@ function updateFoot(dt){
     else if(TOOL.kind==='shovel')r=u<0.42?lerp(-0.4,-1.5,u/0.42):lerp(-1.5,-0.4,Math.min(1,(u-0.42)/0.33));
     else r=-1.15+Math.sin(u*90)*0.05;
     player.armR.rotation.x=r;player.armL.rotation.x=r;
-    if(u>=0.42&&!P.struck){P.struck=true;if(P.onStrike)P.onStrike();}
+    if(u>=0.42&&!P.struck){P.struck=true;sfxStrike(TOOL.kind,P.x,P.z);if(P.onStrike)P.onStrike();}
     if(u>=0.75)P.swing=0;
   }else if(P.carry){
     player.armR.rotation.x=lerp(player.armR.rotation.x,-2.75,0.3);player.armL.rotation.x=lerp(player.armL.rotation.x,-sw*0.5,0.3);

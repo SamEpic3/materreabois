@@ -82,10 +82,11 @@ function splitContext(){
 function updateSplitters(dt){
   trailers.forEach(t=>{
     const s=t.splitting;if(!s)return;
+    if(!s.snd){s.snd=1;sfxSplitter(t.x,t.z,SPLIT_TIME);}
     s.time+=dt;const k=s.time/SPLIT_TIME,ram=t.mesh.ram;
     const push=k<0.7?k/0.7:Math.max(0,1-(k-0.7)/0.3);
     ram.position.z=0.36-push*0.45;s.mesh.position.z=-0.3-Math.min(push,1)*0.25;
-    if(k>=0.7&&!s.done){s.done=true;s.mesh.geometry=splitGeo(s.c.len,s.c.ra,s.c.rb,2);s.mesh.material=SPLIT_MATS;}
+    if(k>=0.7&&!s.done){s.done=true;sfxCrack(t.x,t.z);s.mesh.geometry=splitGeo(s.c.len,s.c.ra,s.c.rb,2);s.mesh.material=SPLIT_MATS;}
     if(k>=1){
       t.mesh.cargo.remove(s.mesh);t.splitting=null;ram.position.z=0.36;
       const c=Object.assign({},s.c,{split:2});

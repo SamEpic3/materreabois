@@ -19,7 +19,7 @@
 <canvas id="c"></canvas>
 
 <div id="stats" class="panel">
-  💰 <b id="sMoney">35000 $</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span><span id="netStatus" class="hidden"></span>
+  💰 <b id="sMoney">35000 $</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span><span id="netStatus" class="hidden"></span><br><span id="sClock">☀️ 7 h 00</span>
 </div>
 <div id="hint" class="panel"></div>
 <div id="players" class="panel hidden"></div>
@@ -31,6 +31,7 @@
   <button class="sbtn" id="zOut" title="Zoom arrière">－</button>
   <button class="sbtn" id="btnCam" title="Vue rapprochée (V)">🎥</button>
   <button class="sbtn hidden" id="btnChat" title="Clavarder (Entrée ou T)">💬</button>
+  <button class="sbtn" id="btnSound" title="Son (M)">🔊</button>
   <button class="sbtn" id="btnJournal" title="Journal de la terre">📜</button>
   <button class="sbtn" id="btnHelp" title="Aide">?</button>
 </div>
@@ -167,6 +168,8 @@
 <script src="js/joueur.js"></script>
 <script src="js/physique.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/ciel.js"></script>
+<script src="js/sons.js"></script>
 <script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>
 <script src="js/reseau.js"></script>

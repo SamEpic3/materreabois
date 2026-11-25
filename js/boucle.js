@@ -55,7 +55,7 @@ function frame(){
     camera.position.set(camT.x+Math.sin(camAz)*Math.cos(ELEV)*D,camT.y+Math.sin(ELEV)*D,camT.z+Math.cos(camAz)*Math.cos(ELEV)*D);
     camera.lookAt(camT);
   }
-  sun.position.set(camT.x+28,camT.y+50,camT.z+12);sun.target.position.copy(camT);sun.target.updateMatrixWorld();
+  updateSky(dt,camT);updateSound(dt,S.mode==='vtt'?V:P);
   if(window.PHOTO){const f=window.PHOTO;activeCam=pcam;pcam.position.set(...f.pos);pcam.lookAt(...f.at);}   // caméra libre pour les captures de test
   updateFpTool();
   // Vitres du véhicule : invisibles quand on regarde de l'intérieur

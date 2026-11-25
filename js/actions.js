@@ -93,6 +93,7 @@ function context(){
   return {enter,enterVeh,enterCrane,enterSeat,act,act2,full,preview,info,plant};
 }
 function setCarry(c){
+  if(c&&!P.carry)sfxKnock(P.x,P.z,0.6);
   P.carry=c;player.carryLog.visible=!!c;updateToolVisual();
   if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb,c.split);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMatsFor(c.sp);}}
 }
@@ -103,13 +104,13 @@ function putIn(cont){
   const hs=halvesOf(P.carry),left=[];
   hs.forEach(c=>{const i=cont.load.length;if(i>=cont.cap){left.push(c);return;}
     const m=makePieceMesh(c),sl=(cont.slots||TRAILER_SLOTS)[i];m.position.set(sl[0],sl[1],0);m.userData.c=c;cont.cargo.add(m);cont.load.push(m);});
-  setCarry(left[0]||null);
+  setCarry(left[0]||null);sfxKnock(P.x,P.z);
   toast(`Dans la ${cont.name} (${cont.load.length}/${cont.cap})`);
 }
 function dropLog(){
   const r=P.rot+Math.PI/2;
   halvesOf(P.carry).forEach((c,i)=>{const d=0.9+i*0.4;addPiece({cx:P.x+Math.sin(P.rot)*d,cz:P.z+Math.cos(P.rot)*d,rot:r,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,split:c.split,crown:false});});
-  setCarry(null);
+  setCarry(null);sfxKnock(P.x,P.z,0.8);
 }
 let yardCount=0;
 function addYardLog(c,i){
@@ -121,14 +122,14 @@ function addYardLog(c,i){
 function sellPiece(c){
   const pr=priceOf(c);
   addYardLog(c,yardCount++);
-  S.money+=pr;S.delivered++;J.wood(c,pr);
+  S.money+=pr;S.delivered++;J.wood(c,pr);sfxCash();
   toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage${c.split?' fendu':''} (${ftin(c.len)})`);
 }
 function sellLog(){const c=P.carry;setCarry(null);halvesOf(c).forEach(sellPiece);}
 function swing(tx,tz,onStrike){
   if(P.cool>0||P.swing>0)return false;
   P.swing=0.0001;P.swingDur=Math.min(0.75,TOOL.delay*0.92);P.struck=false;P.onStrike=onStrike;P.cool=TOOL.delay;P.target=null;marker.visible=false;
-  P.rot=Math.atan2(tx-P.x,tz-P.z);return true;
+  P.rot=Math.atan2(tx-P.x,tz-P.z);sfxSwing(TOOL.kind,P.x,P.z,P.swingDur);return true;
 }
 function chop(t){swing(t.x,t.z,()=>strikeTree(t));}
 function cutPoint(pc,d){const b=pieceButt(pc);return {x:b.x+Math.sin(pc.rot)*d,z:b.z+Math.cos(pc.rot)*d};}
@@ -214,11 +215,11 @@ function makeCrown(t,x,z,rot){
 }
 function updateFalling(dt){
   for(let i=falling.length-1;i>=0;i--){
-    const f=falling[i];f.time+=dt;
+    const f=falling[i];if(!f.snd){f.snd=1;sfxCreak(f.t.x,f.t.z);}f.time+=dt;
     const k=Math.min(1,f.time/1.6);
     f.g.quaternion.setFromAxisAngle(f.axis,(Math.PI/2-0.06)*k*k);
     if(k>=1){
-      scene.remove(f.g);falling.splice(i,1);
+      scene.remove(f.g);falling.splice(i,1);sfxThud(f.t.x+f.fx*4,f.t.z+f.fz*4);
       if(f.remote)continue;                     // l'autre joueur nous enverra la tige
       const t=f.t,L=(t.type==='bouleau'?0.9:1)*(6+5*(t.s-0.8)),R0=0.13+0.07*t.s,rot=Math.atan2(f.fx,f.fz);
       const bx=t.x+f.fx*0.35,bz=t.z+f.fz*0.35;

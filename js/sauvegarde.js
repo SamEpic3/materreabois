@@ -33,7 +33,7 @@ function flatSnapshot(){
     pails:pails.map(p=>({id:p.id,x:r3(p.x),z:r3(p.z),kind:p.kind,L:p.L})),
     tapsOn:taps.map(tp=>({tree:tp.t.planted?'p'+planted.indexOf(tp.t):treeList.indexOf(tp.t),sap:tp.sap,a:r3(tp.mesh.rotation.y)})),
     planted:planted.map(t=>({id:t.id,type:t.type,x:r3(t.x),z:r3(t.z),s:r3(t.s),rot:r3(t.rot),plantedAt:t.plantedAt,growMs:t.growMs,work:t.work})),
-    camp:S.camp,stove:stove.fuel,
+    camp:S.camp,stove:stove.fuel,wx:{clock:r3(S.wx.clock),type:S.wx.type,left:r3(S.wx.left)},
     builds:S.builds.map(b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):typeof b[k]==='number'?r3(b[k]):b[k];}return o;})
   };
 }
@@ -57,6 +57,7 @@ function loadGame(given){
     d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,tool:me?me.tool:null,seedSel:me?me.seedSel:null});
   }
   S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;
+  if(d.wx)Object.assign(S.wx,d.wx);
   yardCount=d.yardCount||0;for(let i=Math.max(0,yardCount-60);i<yardCount;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},i);
   if(d.mkt){Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.mktPrev||{});S.mktNext=d.mktNext||MKT_PERIOD;}
   owned.clear();(d.owned||['hachette']).forEach(id=>owned.add(id));

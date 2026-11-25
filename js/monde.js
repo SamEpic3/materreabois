@@ -47,22 +47,33 @@ scene.background=new T.Color(0xbcd3e2);
 /* Ciel : un dôme qui suit la caméra, dégradé bleu + nuages qui dérivent (calculés dans le shader, une seule
    petite géométrie, pas de texture). Visible surtout en vue 3e et 1re personne. */
 const SKY_HORIZON=0xd6e6f0;
+const GROUND_U={uSnow:{value:0},uWet:{value:0}};   // neige au sol et sol mouillé (météo)
 const skyMat=new T.ShaderMaterial({
-  uniforms:{uTime:{value:0},uTop:{value:new T.Color(0x2f6fbf)},uMid:{value:new T.Color(0x78acdc)},uHor:{value:new T.Color(SKY_HORIZON)},uSun:{value:new T.Vector3(0.45,0.75,0.2).normalize()}},
+  uniforms:{uTime:{value:0},uTop:{value:new T.Color(0x2f6fbf)},uMid:{value:new T.Color(0x78acdc)},uHor:{value:new T.Color(SKY_HORIZON)},uSun:{value:new T.Vector3(0.45,0.75,0.2).normalize()},
+    uMoon:{value:new T.Vector3(-0.45,0.6,-0.2).normalize()},uNight:{value:0},uCloud:{value:0},uCloudCol:{value:new T.Color(1,1,1)},uSunVis:{value:1}},
   vertexShader:'varying vec3 vDir;void main(){vDir=normalize(position);vec4 p=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*p;gl_Position.z=gl_Position.w*0.9999;}',
-  fragmentShader:`uniform float uTime;uniform vec3 uTop,uMid,uHor,uSun;varying vec3 vDir;
+  fragmentShader:`uniform float uTime,uNight,uCloud,uSunVis;uniform vec3 uTop,uMid,uHor,uSun,uMoon,uCloudCol;varying vec3 vDir;
     float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
     float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
     float fbm(vec2 p){return n(p)*0.55+n(p*2.03+3.1)*0.28+n(p*4.11+7.7)*0.17;}
     void main(){
       vec3 d=normalize(vDir);float y=d.y;
       vec3 c=mix(uHor,uMid,smoothstep(-0.02,0.25,y));c=mix(c,uTop,smoothstep(0.25,0.9,y));
-      float s=max(dot(d,uSun),0.0);c+=vec3(1.0,0.93,0.75)*(pow(s,600.0)*1.6+pow(s,12.0)*0.18);
+      // Étoiles et lune (la nuit)
+      if(uNight>0.01&&y>0.0){
+        vec2 sp=vec2(atan(d.z,d.x)*90.0,asin(y)*90.0),ce=floor(sp);float r=h(ce);
+        float st=step(0.985,r)*smoothstep(0.42,0.0,length(fract(sp)-0.5-(vec2(h(ce+1.3),h(ce+2.7))-0.5)*0.5));
+        c+=vec3(0.9,0.92,1.0)*st*(0.55+0.45*sin(uTime*2.0+r*60.0))*uNight*smoothstep(0.0,0.25,y)*(1.0-uCloud*0.9);
+      }
+      float mo=max(dot(d,uMoon),0.0);
+      c+=vec3(0.92,0.94,1.0)*(smoothstep(0.9990,0.9994,mo)*0.9+pow(mo,60.0)*0.12)*uNight*(1.0-uCloud*0.8);
+      float s=max(dot(d,uSun),0.0);c+=vec3(1.0,0.9,0.7)*(pow(s,600.0)*1.6+pow(s,12.0)*0.22)*uSunVis;
       if(y>0.0){
         vec2 uv=d.xz/(y+0.12)*1.6+vec2(uTime*0.012,uTime*0.004);
-        float k=smoothstep(0.52,0.78,fbm(uv))*smoothstep(0.0,0.18,y);
-        vec3 cc=mix(vec3(0.82,0.85,0.9),vec3(1.0),smoothstep(0.55,0.85,fbm(uv+0.35)));
-        c=mix(c,cc,k*0.85);
+        float f=fbm(uv);
+        float k=smoothstep(0.52-uCloud*0.5,0.78-uCloud*0.38,f)*smoothstep(0.0,0.18,y);
+        vec3 cc=uCloudCol*mix(0.82-uCloud*0.25,1.0,smoothstep(0.55,0.85,fbm(uv+0.35)));
+        c=mix(c,cc,k*(0.85+uCloud*0.13));
       }
       gl_FragColor=vec4(c,1.0);
     }`,
@@ -77,7 +88,7 @@ let camMode='iso',activeCam=camera,camYaw=0,camYawT=0,chaseDist=1,camPitch=-0.1,
 function updateProj(){const a=viewW()/viewH();camera.left=-zoom*a;camera.right=zoom*a;camera.top=zoom;camera.bottom=-zoom;camera.updateProjectionMatrix();pcam.aspect=a;pcam.updateProjectionMatrix();}
 updateProj();
 
-scene.add(new T.HemisphereLight(0xe4ecf2,0x4a4030,0.75));
+const hemi=new T.HemisphereLight(0xe4ecf2,0x4a4030,0.75);scene.add(hemi);
 const sun=new T.DirectionalLight(0xfff0d4,0.85);
 sun.castShadow=true;
 const SM=isTouch?1024:2048;
@@ -207,10 +218,10 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
   dirtTex.repeat.set(SIZE/TILE,SIZE/TILE);
   const tm=new T.MeshLambertMaterial({vertexColors:true,map:grassTex});
   tm.onBeforeCompile=sh=>{
-    sh.uniforms.tDirt={value:dirtTex};
+    sh.uniforms.tDirt={value:dirtTex};sh.uniforms.uSnow=GROUND_U.uSnow;sh.uniforms.uWet=GROUND_U.uWet;
     sh.vertexShader='attribute float aDirt;\nvarying float vDirt;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n  vDirt=aDirt;');
-    sh.fragmentShader='uniform sampler2D tDirt;\nvarying float vDirt;\n'+sh.fragmentShader.replace('#include <map_fragment>',
-      'vec4 tg=texture2D(map,vUv);vec4 td=texture2D(tDirt,vUv*1.3);\n  float m=smoothstep(0.42,0.58,vDirt+(tg.g-0.42)*0.55);\n  diffuseColor*=mix(tg,td,m);');
+    sh.fragmentShader='uniform sampler2D tDirt;\nuniform float uSnow,uWet;\nvarying float vDirt;\n'+sh.fragmentShader.replace('#include <map_fragment>',
+      'vec4 tg=texture2D(map,vUv);vec4 td=texture2D(tDirt,vUv*1.3);\n  float m=smoothstep(0.42,0.58,vDirt+(tg.g-0.42)*0.55);\n  diffuseColor*=mix(tg,td,m);\n  diffuseColor.rgb*=1.0-uWet*0.28;\n  diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.92,0.94,1.0),clamp(uSnow*(1.25+tg.r-tg.g)*(1.0-m*0.35),0.0,1.0));');
   };
   var terrain=new T.Mesh(g,tm);
   terrain.receiveShadow=true;scene.add(terrain);

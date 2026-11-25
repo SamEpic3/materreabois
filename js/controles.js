@@ -20,6 +20,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyC')rotateCam(1);
   if(e.code==='KeyV'&&!e.repeat)toggleCam();
   if(e.code==='KeyJ'&&!e.repeat)openJournal();
+  if(e.code==='KeyM'&&!e.repeat)setSound(!AU.on);
   const dg=/^Digit([1-9])$/.exec(e.code);if(dg&&!e.repeat)selectSlot(+dg[1]-1);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });

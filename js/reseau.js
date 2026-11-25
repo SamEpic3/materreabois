@@ -122,6 +122,8 @@ const COLS=[
    set:(id,d)=>{const e=S.journal.find(e=>e.id===id);if(e)Object.assign(e,d);else{S.journal.push(d);S.journal.sort((a,b)=>a.t-b.t);trimJournal();}
      if(!$('journal').classList.contains('hidden'))renderJournal();},
    del:id=>{const i=S.journal.findIndex(e=>e.id===id);if(i>=0)S.journal.splice(i,1);},get:id=>S.journal.find(e=>e.id===id)},
+  {c:'wx',hostOnly:true,items:()=>[['wx',S.wx]],key:()=>S.wx.type+'|'+Math.floor(S.wx.clock/15),ser:()=>({clock:Math.round(S.wx.clock*10)/10,type:S.wx.type,left:Math.round(S.wx.left)}),
+   set:(id,d)=>{Object.assign(S.wx,d);},del:()=>{},get:()=>S.wx},
   {c:'mk',hostOnly:true,items:()=>[['mkt',S.mkt]],key:()=>JSON.stringify(S.mkt),ser:()=>({mkt:S.mkt,prev:S.mktPrev,next:S.mktNext}),
    set:(id,d)=>{Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.prev);S.mktNext=d.next;if(!$('board').classList.contains('hidden'))renderBoard();},
    del:()=>{},get:()=>S.mkt}
@@ -193,6 +195,11 @@ function onPos(from,p){
   const tool=TOOLS.find(t=>t.id===p.tool),k=tool&&!c&&!p.pl&&!p.v&&p.m==='foot'?tool.kind:null;
   f.axe.visible=k==='axe';f.saw.visible=k==='saw';f.chain.visible=k==='chainsaw';f.shovel.visible=k==='shovel';
   if(k==='axe'){f.axe.scale.setScalar(tool.id==='hachette'?0.78:1);axeColors(f.axe,tool.id);}
+  // Sons de ses outils : la scie pendant le mouvement, la hache ou la pelle à la fin
+  const sw=p.ar!==undefined;
+  if(tool&&sw&&!a.sw)sfxSwing(tool.kind,p.x,p.z,Math.min(0.75,tool.delay*0.92));
+  if(tool&&!sw&&a.sw)sfxStrike(tool.kind,p.x,p.z);
+  a.sw=sw;
   a.ar=p.ar;
 }
 function updateAvatars(dt){

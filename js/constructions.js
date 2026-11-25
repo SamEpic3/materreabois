@@ -61,6 +61,50 @@ function makeBbqModel(){
 }
 // Passage du repère d'une construction au monde
 function lw(b,lx,lz){const c=Math.cos(b.rot||0),s=Math.sin(b.rot||0);return {x:b.x+c*lx+s*lz,z:b.z-s*lx+c*lz};}
+// Garage : grande porte ouverte à l'avant (+z), on y entre en véhicule. Déclin vertical rouge grange, toit de tôle.
+const GAR_W=6.2,GAR_D=8,GAR_H=3.3;
+function makeGarageModel(){
+  const g=new T.Group(),W=GAR_W,D=GAR_D,Hh=GAR_H;
+  const red=texMat(sidingTex('#7d2f26','#4f1c16',true),1,1),trim=mat(0xece6d8),dark=mat(0x2a2a2a);
+  const wall=(w,h,d,x,y,z,rx)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d).translate(x,y,z),red.clone());m.material.map=red.map.clone();m.material.map.needsUpdate=true;m.material.map.repeat.set(rx,1);return m;};
+  g.add(wall(W,Hh,0.15,0,Hh/2,-D/2,16),wall(0.15,Hh,D,W/2,Hh/2,0,20),wall(0.15,Hh,D,-W/2,Hh/2,0,20));
+  g.add(new T.Mesh(mergeGeos([gable(W,D+0.15,Hh,1.35,W/2),gable(W,D+0.15,Hh,1.35,-W/2)]),texMat(sidingTex('#7d2f26','#4f1c16',true),1,1)));
+  // Façade : linteau, poteaux et porte basculante relevée
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(W+0.1,0.4,0.18).translate(0,Hh-0.2,D/2),new T.BoxGeometry(0.28,Hh,0.2).translate(W/2-0.05,Hh/2,D/2),new T.BoxGeometry(0.28,Hh,0.2).translate(-W/2+0.05,Hh/2,D/2),
+    new T.BoxGeometry(0.12,Hh,0.12).translate(W/2+0.02,Hh/2,-D/2),new T.BoxGeometry(0.12,Hh,0.12).translate(-W/2-0.02,Hh/2,-D/2)]),trim));
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(W-0.6,0.06,2.6).translate(0,Hh-0.42,D/2-1.5),new T.BoxGeometry(0.05,0.05,3.2).translate(W/2-0.35,Hh-0.3,D/2-1.6),new T.BoxGeometry(0.05,0.05,3.2).translate(-W/2+0.35,Hh-0.3,D/2-1.6)]),mat(0xd8d2c4)));
+  roofTex(g,W,D,4.05,texMat(tinTex(),18,1,{shininess:30}),0.35,0.55);
+  // Fenêtres des côtés
+  const wf=[],wg=[];[-1.6,1.6].forEach(z=>[1,-1].forEach(sd=>{const w=windowGeo(0.9,0.7,sd*(W/2+0.09),2.0,z,sd*Math.PI/2);wf.push(w.frame);wg.push(w.glass);}));
+  g.add(new T.Mesh(mergeGeos(wf),trim),new T.Mesh(mergeGeos(wg),new T.MeshBasicMaterial({color:0x5c6e7a})));
+  // Intérieur : établi avec outils au mur, baril d'huile, pneus, ampoule
+  const wood=mat(0x9a7448);
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(2.6,0.08,0.7).translate(-1.4,0.92,-D/2+0.45),new T.BoxGeometry(2.5,0.06,0.6).translate(-1.4,0.3,-D/2+0.45),
+    ...[[-2.6,-D/2+0.2],[-2.6,-D/2+0.72],[-0.2,-D/2+0.2],[-0.2,-D/2+0.72]].map(([x,z])=>new T.BoxGeometry(0.08,0.9,0.08).translate(x,0.45,z)),
+    new T.BoxGeometry(2.6,1.2,0.04).translate(-1.4,1.75,-D/2+0.1)]),wood));
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.05,0.5,0.03).translate(-2.2,1.85,-D/2+0.14),new T.BoxGeometry(0.22,0.08,0.03).translate(-2.2,2.1,-D/2+0.14),
+    new T.BoxGeometry(0.04,0.4,0.03).rotateZ(0.3).translate(-1.7,1.8,-D/2+0.14),new T.TorusGeometry(0.18,0.025,5,12).translate(-1.0,1.85,-D/2+0.14),
+    new T.BoxGeometry(0.45,0.25,0.3).translate(-0.7,1.08,-D/2+0.45),new T.CylinderGeometry(0.06,0.06,0.18,8).translate(-2.0,1.05,-D/2+0.4)]),mat(0x3d4247)));
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.3,0.3,0.9,14).translate(2.45,0.45,-D/2+0.45),new T.TorusGeometry(0.29,0.02,4,14).rotateX(Math.PI/2).translate(2.45,0.3,-D/2+0.45),new T.TorusGeometry(0.29,0.02,4,14).rotateX(Math.PI/2).translate(2.45,0.62,-D/2+0.45)]),mat(0x2f5f8e)));
+  g.add(new T.Mesh(mergeGeos([0,1,2].map(k=>new T.TorusGeometry(0.33,0.13,6,14).rotateX(Math.PI/2).translate(2.4,0.13+k*0.26,-D/2+1.5))),mat(0x1d1d1d)));
+  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.01,0.01,0.6,4).translate(0,Hh+0.4,0),new T.ConeGeometry(0.22,0.14,10,1,true).translate(0,Hh+0.07,0)]),dark));
+  const bulb=new T.Mesh(new T.SphereGeometry(0.07,8,6).translate(0,Hh,0),new T.MeshBasicMaterial({color:0xfff2c0}));g.add(bulb);
+  return bakeStatic(g);
+}
+function createGarage(b,o){
+  const g=makeGarageModel();o.add(g);
+  // Plancher de béton qui épouse le terrain
+  const nx=8,nz=10,gy=H(b.x,b.z),geo=new T.PlaneGeometry(GAR_W-0.15,GAR_D,nx,nz).rotateX(-Math.PI/2),pa=geo.attributes.position;
+  for(let i=0;i<pa.count;i++){const p=lw(b,pa.getX(i),pa.getZ(i));pa.setY(i,H(p.x,p.z)-gy+0.035);}
+  geo.computeVertexNormals();
+  const fl=new T.Mesh(geo,texMat(canvasTex(64,64,(c,w,h)=>{c.fillStyle='#a3a097';c.fillRect(0,0,w,h);for(let i=0;i<220;i++){c.fillStyle=`rgba(${Math.random()<0.5?'60,60,55':'255,255,250'},0.12)`;c.fillRect(Math.random()*w,Math.random()*h,2,2);}c.fillStyle='rgba(40,40,36,0.5)';c.fillRect(0,h-1,w,1);}),3,4));
+  fl.receiveShadow=true;g.add(fl);
+  // Murs : une chaîne de petits cercles (on peut entrer par l'avant)
+  for(let z=-GAR_D/2;z<=GAR_D/2+0.01;z+=0.55)[1,-1].forEach(sd=>{const p=lw(b,sd*GAR_W/2,z);o.col(p.x,p.z,0.28);});
+  for(let x=-GAR_W/2+0.55;x<GAR_W/2-0.3;x+=0.55){const p=lw(b,x,-GAR_D/2);o.col(p.x,p.z,0.28);}
+  [[-2.1,-GAR_D/2+0.45,0.4],[-0.8,-GAR_D/2+0.45,0.4],[2.45,-GAR_D/2+0.45,0.36],[2.4,-GAR_D/2+1.5,0.42]].forEach(([x,z,r])=>{const p=lw(b,x,z);o.col(p.x,p.z,r);});
+}
+
 
 /* ----- Création de chaque type ----- */
 function createFeu(b,o){
@@ -92,9 +136,11 @@ const KINDS={
   sucres:{name:'Bouilloire à sirop',art:'la',price:400,icon:'🍁',dist:2.8,foot:[[0,0,1.3]],model:makeSucresModel,create:createSucres,init:()=>({fuel:0,sap:0,syrup:0}),near:b=>b,nearR:2.4,
        desc:'Un foyer avec une bouilloire pour faire bouillir l\'eau d\'érable en sirop.'},
   bbq:{name:'Barbecue',art:'le',price:600,icon:'🍖',dist:2.4,foot:[[0,0,1.0]],model:makeBbqModel,create:createBbq,init:()=>({lit:0}),near:b=>b,nearR:1.7,
-       desc:'Un barbecue au propane. Il ne manque plus que la viande… la chasse s\'en vient !'}
+       desc:'Un barbecue au propane. Il ne manque plus que la viande… la chasse s\'en vient !'},
+  garage:{name:'Garage',art:'le',price:5000,icon:'🛠️',dist:7.5,foot:[[-1.6,-2.1,2.5],[1.6,-2.1,2.5],[-1.6,2.1,2.5],[1.6,2.1,2.5]],model:makeGarageModel,create:createGarage,init:()=>({}),near:b=>b,nearR:0,
+       desc:'Un grand garage avec une porte à l\'avant pour rentrer le pick-up ou la débusqueuse à l\'abri, avec un établi au fond.'}
 };
-const KIND_IDS=['feu','abri','sucres','bbq'];
+const KIND_IDS=['feu','abri','sucres','bbq','garage'];
 
 /* ----- Apparition et retrait ----- */
 function spawnBuild(b){
@@ -196,7 +242,7 @@ function confirmPlace(){
   const kd=KINDS[pl.k],m=pl.moving;
   pl.moving=null;closePlace();
   if(m){Object.assign(m,pos);spawnBuild(m);refreshCampDirt();J.move(kdName(m.k));toast(`${kd.icon} ${kd.name} : déplacé !`);}
-  else{S.money-=kd.price;addBuild(pl.k,pos);J.build(kdName(pl.k));toast(`${kd.icon} ${kd.name} : c'est construit !`);}
+  else{S.money-=kd.price;sfxCash();addBuild(pl.k,pos);J.build(kdName(pl.k));toast(`${kd.icon} ${kd.name} : c'est construit !`);}
 }
 function updatePlacement(){
   const pl=P.placing;if(!pl)return;
