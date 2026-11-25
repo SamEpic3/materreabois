@@ -129,6 +129,25 @@ function sellPiece(c){
   toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage${c.split?' fendu':''} (${ftin(c.len)})`);
 }
 function sellLog(){const c=P.carry;setCarry(null);halvesOf(c).forEach(sellPiece);}
+// Tout billot posé au sol qui touche la cour (en tout ou en partie) est vendu : débusqueuse, grue, déposé…
+// Ce qui est dans une remorque, une boîte de pick-up ou agrippé par la débusqueuse ou la grue n'est pas au sol, donc pas vendu.
+// En multijoueur, seul l'hôte vend (pour ne pas payer deux fois).
+function pieceTouchesYard(pc){
+  const b=pieceButt(pc),fx=Math.sin(pc.rot),fz=Math.cos(pc.rot);
+  const d=clamp((YARD.x-b.x)*fx+(YARD.z-b.z)*fz,0,pc.len);
+  return Math.hypot(YARD.x-(b.x+fx*d),YARD.z-(b.z+fz*d))<YARD.r+Math.max(pc.ra,pc.rb);
+}
+let yardTick=0;
+function updateYardSales(dt){
+  yardTick+=dt;if(yardTick<0.4)return;yardTick=0;
+  if(!leadsWorld())return;
+  pieces.slice().forEach(pc=>{
+    if(!pieceTouchesYard(pc)){pc.yt=0;return;}
+    pc.yt=(pc.yt||0)+1;if(pc.yt<2)return;          // on le laisse se poser un instant
+    removePiece(pc);
+    halvesOf({sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb,split:pc.split}).forEach(sellPiece);
+  });
+}
 function swing(tx,tz,onStrike){
   if(P.cool>0||P.swing>0)return false;
   P.swing=0.0001;P.swingDur=Math.min(0.75,TOOL.delay*0.92);P.struck=false;P.onStrike=onStrike;P.cool=TOOL.delay;P.target=null;marker.visible=false;

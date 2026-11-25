@@ -14,7 +14,7 @@ function frame(){
   if(S.mode==='foot')updateFoot(dt);
   updateMapCursor(dt);updatePlacement();updatePick();
   updateNet(dt);updateVTT(dt);
-  updateFalling(dt);updateSplitters(dt);
+  updateFalling(dt);updateSplitters(dt);updateYardSales(dt);
   updateCamp(dt);updateCabin(dt);tickPlants(dt);
   if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);
   updateSugar(dt);updateMarket(dt);
