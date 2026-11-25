@@ -42,7 +42,7 @@ const snowMat=new T.PointsMaterial({map:flakeTex,size:0.14,transparent:true,opac
 const snow=new T.Points(snowGeo,snowMat);snow.frustumCulled=false;snow.visible=false;snow.renderOrder=20;scene.add(snow);
 const wrapP=(v,c)=>c-PBOX/2+((((v-c+PBOX/2)%PBOX)+PBOX)%PBOX);
 
-function underRoof(x,z){return S.builds.some(b=>{if(b.k!=='garage')return false;const c=Math.cos(b.rot||0),s=Math.sin(b.rot||0),dx=x-b.x,dz=z-b.z,lx=c*dx-s*dz,lz=s*dx+c*dz;return Math.abs(lx)<GAR_W/2&&Math.abs(lz)<GAR_D/2;});}
+function underRoof(x,z){return (S.inside&&inCabin(x,z))||S.builds.some(b=>{if(b.k!=='garage')return false;const c=Math.cos(b.rot||0),s=Math.sin(b.rot||0),dx=x-b.x,dz=z-b.z,lx=c*dx-s*dz,lz=s*dx+c*dz;return Math.abs(lx)<GAR_W/2&&Math.abs(lz)<GAR_D/2;});}
 function updatePrecip(dt,cx,cy,cz){
   const t=S.time,roof=camMode!=='iso'&&underRoof(cx,cz);
   rain.visible=SKY.rain>0.02&&!roof;
@@ -82,7 +82,7 @@ function nearestFire(x,z){
   let best=null,bd=28;
   const tryAt=(px,pz,py)=>{const d=Math.hypot(px-x,pz-z);if(d<bd){bd=d;best=[px,py,pz];}};
   S.builds.forEach(b=>{if((b.k==='feu'||b.k==='sucres')&&b.fuel>0&&b._o)tryAt(b.x,b.z,H(b.x,b.z)+(b.k==='feu'?0.9:0.6));});
-  if(stove.fuel>0)tryAt(CABIN_DOOR.x,CABIN_DOOR.z+0.6,CAMP_H+1.4);
+  if(stove.fuel>0){if(S.inside){const p=cabW(IN_STOVE.x,IN_STOVE.z+0.5);tryAt(p.x,p.z,CAMP_H+0.7);}else tryAt(CABIN_DOOR.x,CABIN_DOOR.z+0.6,CAMP_H+1.4);}
   return best;
 }
 
@@ -136,7 +136,11 @@ function updateSky(dt,focus){
   // Lumières de nuit
   const night=1-dayK*0.85-0.15;
   const f=nearestFire(focus.x,focus.z);
-  if(f){fireLight.position.set(f[0],f[1],f[2]);fireLight.intensity=Math.max(0,night)*(1.6+0.25*Math.sin(S.time*13)+0.15*Math.sin(S.time*7.3));}else fireLight.intensity=0;
+  if(S.inside){   // dedans : le poêle s'il chauffe, sinon la lampe à l'huile sur la table
+    const lit=stove.fuel>0,p=lit?cabW(IN_STOVE.x,IN_STOVE.z+0.6):cabW(IN_TABLE.x+0.25,IN_TABLE.z-0.1);
+    fireLight.position.set(p.x,CAMP_H+(lit?0.8:1.4),p.z);fireLight.color.setHex(lit?0xff9a48:0xffcf80);
+    fireLight.intensity=(lit?1.4+0.2*Math.sin(S.time*13):0.9)*(0.5+0.6*(1-dayK));
+  }else if(f){fireLight.color.setHex(0xff9a48);fireLight.position.set(f[0],f[1],f[2]);fireLight.intensity=Math.max(0,night)*(1.6+0.25*Math.sin(S.time*13)+0.15*Math.sin(S.time*7.3));}else fireLight.intensity=0;
   if(S.mode==='vtt'&&V&&night>0.05){
     const fx=Math.sin(V.th),fz=Math.cos(V.th),y=H(V.x,V.z)+1.1;
     headLight.position.set(V.x+fx*1.6,y,V.z+fz*1.6);headLight.target.position.set(V.x+fx*12,y-1.6,V.z+fz*12);headLight.target.updateMatrixWorld();

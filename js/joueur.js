@@ -23,8 +23,9 @@ function updateFoot(dt){
   const speed=(P.carry?carrySpeed:run?6.5:4.2)*(1-0.4*mudAt(P.x,P.z))*(P.pail?1-0.35*P.pail.L/PAIL_CAP:1);
   if(amt>0.01){
     const p={x:P.x+dx*speed*dt,z:P.z+dz*speed*dt};
-    pushOut(p,0.35);
-    bodyCircles(null).forEach(c=>pushCircle(p,0.35,c[0],c[1],c[2]));
+    if(S.inside)insideMove(p);
+    else{pushOut(p,0.35);
+    bodyCircles(null).forEach(c=>pushCircle(p,0.35,c[0],c[1],c[2]));}
     const B=WORLD-1.5;p.x=clamp(p.x,-B,B);p.z=clamp(p.z,-B,B);
     const moved=Math.hypot(p.x-P.x,p.z-P.z);
     if(P.target&&moved<speed*dt*0.15){P.target=null;marker.visible=false;}
@@ -51,7 +52,7 @@ function updateFoot(dt){
   }else{
     player.armL.rotation.x=lerp(player.armL.rotation.x,-sw*0.8,0.3);player.armR.rotation.x=lerp(player.armR.rotation.x,sw*0.8,0.3);
   }
-  player.g.position.set(P.x,H(P.x,P.z)+P.jumpY+(amt>0.01&&P.jumpY===0?Math.abs(Math.cos(P.phase))*0.05:0),P.z);
+  player.g.position.set(P.x,H(P.x,P.z)+(S.inside?FLOOR_Y:0)+P.jumpY+(amt>0.01&&P.jumpY===0?Math.abs(Math.cos(P.phase))*0.05:0),P.z);
   if(P.jumpY>0){player.legL.rotation.x=-0.5;player.legR.rotation.x=0.3;}
   player.g.rotation.y=P.rot;
   if(marker.visible){marker.material.opacity=0.5+0.3*Math.sin(S.time*6);}

@@ -230,7 +230,8 @@ function updateAvatars(dt){
     if(a.inVeh){a.inVeh.mesh.g.remove(f.g);scene.add(f.g);a.inVeh=null;legPose(f,'stand');f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);a.x=a.tx;a.z=a.tz;}
     const ox=a.x,oz=a.z;a.x+=(a.tx-a.x)*k;a.z+=(a.tz-a.z)*k;a.rot+=wrapAng(a.trot-a.rot)*k;
     const spd=Math.hypot(a.x-ox,a.z-oz)/Math.max(dt,1e-3);
-    a.jy=lerp(a.jy||0,p.j||0,k);f.g.visible=true;f.g.position.set(a.x,H(a.x,a.z)+a.jy,a.z);f.g.rotation.y=a.rot;
+    a.jy=lerp(a.jy||0,p.j||0,k);f.g.visible=true;f.g.position.set(a.x,H(a.x,a.z)+a.jy+(inCabin(a.x,a.z)?FLOOR_Y:0),a.z);f.g.rotation.set(0,a.rot,0);
+    if(p.m==='sleep'){const q=cabW(SLEEP_POS.x,SLEEP_POS.z);f.g.position.set(q.x,CAMP_H+SLEEP_POS.y,q.z);f.g.quaternion.copy(SLEEP_Q);a.l.position.set(q.x,CAMP_H+1.6,q.z);continue;}
     if(p.m==='sit'){legPose(f,'sit');f.g.position.y-=0.45;}
     else{a.phase+=dt*spd*3.2;const sw=Math.min(1,spd/2)*0.6*Math.sin(a.phase);f.legL.rotation.x=sw;f.legR.rotation.x=-sw;f.armL.rotation.x=-sw*0.8;f.armR.rotation.x=p.c?-2.6:sw*0.8;
       if(a.ar!==undefined){f.armR.rotation.x=a.ar;f.armL.rotation.x=a.ar;}}

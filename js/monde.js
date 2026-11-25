@@ -293,21 +293,24 @@ const STONE_M=new T.MeshPhongMaterial({color:0x8d8a84,flatShading:true,vertexCol
 const CABIN_LOG=new T.MeshPhongMaterial({map:barkTex('#8a6a48','#5a4128'),flatShading:true,shininess:4});
 const CABIN_WIN=new T.MeshBasicMaterial({color:0x8fa3ad});   // fenêtres de la cabane (s'allument quand le poêle chauffe)
 /* ---------- Camp : cabane, cour à bois, souches ---------- */
+const CABIN_ROOF=new T.Group();
 {
   // Cabane en rondins : murs empilés, pignons en planches, toit de bardeaux, porte, fenêtres à carreaux, cheminée de pierres
-  const g=new T.Group(),W=6,D=4.5,Hh=2.7;
+  // Le toit, les pignons et la cheminée sont à part (CABIN_ROOF) : on les cache pour voir l'intérieur d'en haut.
+  const g=new T.Group(),W=6,D=4.5,Hh=2.7,rg=CABIN_ROOF;
   g.add(new T.Mesh(logWalls(W,D,Hh),[CABIN_LOG,RING_M,RING_M]));
   const plank=texMat(sidingTex('#7a5232','#4d3220',true),1,1);plank.map.repeat.set(8,1);
-  g.add(new T.Mesh(mergeGeos([gable(W,D+0.2,Hh+0.1,1.3,W/2),gable(W,D+0.2,Hh+0.1,1.3,-W/2)]),plank));
-  const sh=texMat(shingleTex('#5a2a22','#3e1c17'),9,8);roofTex(g,W,D,3.42,sh);
+  rg.add(new T.Mesh(mergeGeos([gable(W,D+0.2,Hh+0.1,1.3,W/2),gable(W,D+0.2,Hh+0.1,1.3,-W/2),
+    new T.BoxGeometry(0.24,0.36,D+0.2).translate(W/2,Hh-0.02,0),new T.BoxGeometry(0.24,0.36,D+0.2).translate(-W/2,Hh-0.02,0)]),plank));   // planche qui ferme le haut des murs de côté
+  const sh=texMat(shingleTex('#5a2a22','#3e1c17'),9,8);roofTex(rg,W,D,3.42,sh);
   const dg=doorGeo(0.95,1.9,1.2,D/2+0.17);const dark=mat(0x4d3220);
   g.add(new T.Mesh(dg.door,mat(0x6a4426)),new T.Mesh(dg.frame,dark),new T.Mesh(dg.knob,mat(0x2a2a2a)));
   const wf=[],wg=[];[[-1.4,D/2+0.17,0],[ -W/2-0.17,0.4,-Math.PI/2],[W/2+0.17,-0.3,Math.PI/2]].forEach(([x,z,ry],i)=>{const w=i?0.7:1.0,ww=windowGeo(w,0.75,i?x:x,1.5,i?z:z,ry);wf.push(ww.frame);wg.push(ww.glass);});
   g.add(new T.Mesh(mergeGeos(wf),mat(0xe8e0cc)),new T.Mesh(mergeGeos(wg),CABIN_WIN));
-  g.add(new T.Mesh(stoneStack(0.62,0.62,4.4,2.1,0,-0.8,9),new T.MeshPhongMaterial({color:0x8d8a84,flatShading:true,vertexColors:true,shininess:3})));
+  rg.add(new T.Mesh(stoneStack(0.62,0.62,4.4,2.1,0,-0.8,9),new T.MeshPhongMaterial({color:0x8d8a84,flatShading:true,vertexColors:true,shininess:3})));
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(W+0.3,0.18,D+0.3).translate(0,0.02,0),new T.BoxGeometry(1.3,0.16,0.5).translate(1.2,0.08,D/2+0.45)]),mat(0x7a756c)));
   g.position.set(CABIN.x,CAMP_H,CABIN.z);
-  bakeStatic(g);shadows(g);scene.add(g);
+  bakeStatic(g);g.add(rg);shadows(g);scene.add(g);
   [[-1.6,-1.1],[1.6,-1.1],[-1.6,1.1],[1.6,1.1]].forEach(([a,b])=>addCol(CABIN.x+a,CABIN.z+b,1.55));
 }
 // Cour à bois : anneau au sol

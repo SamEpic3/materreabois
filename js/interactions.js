@@ -1,6 +1,9 @@
 /* Embarquer, débarquer, opérer la grue, boutons d'action */
 function doEnter(){
   const c=context();if(!c.enter)return;
+  if(c.wake){wakeUp();return;}
+  if(c.exitCabin){exitCabin();return;}
+  if(c.enterCabin){enterCabin();return;}
   if(S.mode==='crane'){S.mode='foot';updateToolVisual();return;}
   if(S.mode==='sit'){standUp();return;}
   if(S.mode==='place'){cancelPlace();return;}

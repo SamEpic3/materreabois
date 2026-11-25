@@ -23,7 +23,7 @@ function flatSnapshot(){
     money:S.money,delivered:S.delivered,yardCount,taps:S.taps,
     mkt:S.mkt,mktPrev:S.mktPrev,mktNext:S.mktNext,
     owned:[...owned],tool:TOOL?TOOL.id:null,seeds:S.seeds,seedSel:S.seedSel,
-    player:{x:r3(P.x),z:r3(P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:P.pail?{kind:P.pail.kind,L:P.pail.L}:null},
+    player:{x:r3(S.inside?CABIN_DOOR.x:P.x),z:r3(S.inside?CABIN_DOOR.z+0.5:P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:P.pail?{kind:P.pail.kind,L:P.pail.L}:null},
     trees:treeList.map((t,i)=>!t.alive?[i,1,t.stumpGone?1:0]:t.work>0?[i,0,r3(t.work)]:null).filter(Boolean),
     campStumps:campStumps.map((s,i)=>s.gone?[i,1]:s.work>0?[i,0,r3(s.work)]:null).filter(Boolean),
     extraStumps:stumpList.filter(s=>s.tree&&s.tree.planted).map(s=>({id:s.id,x:s.x,z:s.z,s:s.size,type:s.tree.type,work:r3(s.work)})),

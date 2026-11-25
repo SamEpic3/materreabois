@@ -74,3 +74,6 @@ function updateHUD(){
   $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=V?Math.round(Math.abs(V.v)*3.6):0;
   $('hint').textContent=hint;
 }
+
+// Bouton de test : ajoute de l'argent (à retirer plus tard)
+$('btnCash').addEventListener('click',()=>{S.money+=10000;sfxCash();toast('💵 +10 000 $ (test)');});

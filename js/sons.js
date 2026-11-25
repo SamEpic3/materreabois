@@ -105,18 +105,50 @@ function sfxSplitter(x,z,dur){
 }
 function sfxCrack(x,z){if(!ready())return;const sp=spatial(x,z);if(sp.g<0.01)return;const t=AU.ctx.currentTime,o=out(sp.g,sp.pan);burst(o,t,0.12,'highpass',1500,0.8,0.45,0.002);tone(o,t,0.12,'sine',260,120,0.25);}
 
-/* ----- Oiseaux, hibou ----- */
-function bird(){
-  const t=AU.ctx.currentTime,a=Math.random()*6.28,o=out(0.08+Math.random()*0.08,Math.cos(a)*0.8),kind=Math.floor(Math.random()*3);
-  if(kind===0){   // mésange : « ti-dou »
-    tone(o,t,0.16,'sine',4100,3900,0.5,0.01);tone(o,t+0.22,0.26,'sine',3100,3000,0.5,0.01);
-  }else if(kind===1){   // trille
-    const n=5+Math.floor(Math.random()*6);for(let i=0;i<n;i++)tone(o,t+i*0.07,0.06,'sine',3300+Math.random()*900,4300,0.35,0.005);
-  }else{   // petit sifflet montant
-    tone(o,t,0.35,'sine',2400,3600,0.4,0.03);tone(o,t+0.45,0.2,'sine',3600,3400,0.3,0.02);
-  }
+/* ----- Cris des oiseaux qui passent (oiseaux.js) ----- */
+let _shaper=null;
+function harsh(){   // distorsion douce pour un son rauque
+  if(_shaper)return _shaper;const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*4);}
+  _shaper=c;return c;
 }
-function owl(){const t=AU.ctx.currentTime,o=out(0.12,(Math.random()-0.5)*1.2);[0,0.45,0.75].forEach((dt,i)=>tone(o,t+dt,i?0.28:0.4,'sine',i?360:390,i?330:370,0.5,0.06));}
+// Corneille : « croâ » rauque, une voyelle nasillarde qui descend
+function sfxCrow(x,z){
+  if(!ready())return;const sp=spatial(x,z,90);if(sp.g<0.01)return;
+  const ctx=AU.ctx,t=ctx.currentTime,o=out(sp.g*0.9,sp.pan),d=0.3+Math.random()*0.12,f0=520+Math.random()*80;
+  const os=ctx.createOscillator();os.type='sawtooth';os.frequency.setValueAtTime(f0*0.85,t);os.frequency.linearRampToValueAtTime(f0,t+0.05);os.frequency.linearRampToValueAtTime(f0*0.78,t+d);
+  const ws=ctx.createWaveShaper();ws.curve=harsh();
+  const pre=ctx.createGain();pre.gain.value=0.6;
+  const rough=ctx.createOscillator();rough.type='sine';rough.frequency.value=48+Math.random()*12;const rg=ctx.createGain();rg.gain.value=0.35;rough.connect(rg);rg.connect(pre.gain);
+  const f1=ctx.createBiquadFilter();f1.type='bandpass';f1.frequency.value=1150;f1.Q.value=1.3;
+  const f2=ctx.createBiquadFilter();f2.type='bandpass';f2.frequency.value=2300;f2.Q.value=2.2;const g2=ctx.createGain();g2.gain.value=0.5;
+  const env=ctx.createGain();env.gain.setValueAtTime(0.0001,t);env.gain.exponentialRampToValueAtTime(0.45,t+0.025);env.gain.setValueAtTime(0.4,t+d*0.6);env.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  os.connect(pre);pre.connect(ws);ws.connect(f1);ws.connect(f2);f2.connect(g2);f1.connect(env);g2.connect(env);env.connect(o);
+  os.start(t);rough.start(t);os.stop(t+d+0.05);rough.stop(t+d+0.05);
+  burst(o,t,d,'bandpass',1500,0.9,0.08,0.02);
+}
+// Aigle (buse à queue rousse, le cri des films) : « kiiiii-arrr » rauque qui descend
+function sfxEagle(x,z){
+  if(!ready())return;const sp=spatial(x,z,120);if(sp.g<0.01)return;
+  const ctx=AU.ctx,t=ctx.currentTime,o=out(sp.g*0.7,sp.pan),d=1.5+Math.random()*0.4;
+  const os=ctx.createOscillator();os.type='sawtooth';os.frequency.setValueAtTime(2300,t);os.frequency.linearRampToValueAtTime(2700,t+0.12);os.frequency.exponentialRampToValueAtTime(1700,t+d);
+  const vib=ctx.createOscillator();vib.frequency.value=38;const vg=ctx.createGain();vg.gain.value=90;vib.connect(vg);vg.connect(os.frequency);
+  const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=3;f.frequency.setValueAtTime(2700,t);f.frequency.exponentialRampToValueAtTime(1900,t+d);
+  const env=ctx.createGain();env.gain.setValueAtTime(0.0001,t);env.gain.exponentialRampToValueAtTime(0.3,t+0.1);env.gain.setValueAtTime(0.26,t+d*0.55);env.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  os.connect(f);f.connect(env);env.connect(o);os.start(t);vib.start(t);os.stop(t+d+0.05);vib.stop(t+d+0.05);
+  const n=burst(o,t,d,'bandpass',2600,5,0.12,0.1);n.frequency.setValueAtTime(2800,t);n.frequency.exponentialRampToValueAtTime(1800,t+d);
+}
+// Grand-duc : « hou, hou-hou, houuu, hou, hou » grave et soufflé
+function sfxOwl(x,z){
+  if(!ready())return;const sp=spatial(x,z,90);if(sp.g<0.01)return;
+  const ctx=AU.ctx,t=ctx.currentTime,o=out(sp.g*0.9,sp.pan);
+  [[0,0.32],[0.55,0.16],[0.75,0.16],[1.05,0.6],[1.85,0.26],[2.25,0.3]].forEach(([dt,d])=>{
+    const s=t+dt,os=ctx.createOscillator();os.type='sine';os.frequency.setValueAtTime(300,s);os.frequency.linearRampToValueAtTime(330,s+d*0.3);os.frequency.linearRampToValueAtTime(285,s+d);
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=700;
+    const g=ctx.createGain();g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(0.4,s+0.06);g.gain.exponentialRampToValueAtTime(0.0001,s+d+0.08);
+    os.connect(lp);lp.connect(g);g.connect(o);os.start(s);os.stop(s+d+0.15);
+    burst(o,s,d+0.06,'bandpass',420,2.5,0.05,0.05);
+  });
+}
 
 /* ----- Moteurs : un son par véhicule conduit (le mien ou celui de l'autre joueur) ----- */
 const ENG_BASE={vtt:[58,1.6],pickup:[42,1.0],skid:[34,0.9]};
@@ -148,16 +180,13 @@ function updateEngines(){
 function updateSound(dt,focus){
   AU.listener.x=focus.x;AU.listener.z=focus.z;
   if(!AU.ctx||AU.ctx.state!=='running')return;
-  const t=AU.ctx.currentTime,a=AU.amb,day=SKY.day;
+  const t=AU.ctx.currentTime,a=AU.amb,day=SKY.day,ins=S.inside?0.35:1;
   const gust=0.5+0.5*Math.sin(S.time*0.23)*Math.sin(S.time*0.071+1);
-  a.wind.g.gain.setTargetAtTime(0.035+0.05*gust*(0.6+SKY.cloud)+0.05*SKY.snow,t,0.5);a.wind.f.frequency.setTargetAtTime(260+260*gust,t,0.5);
-  a.rain.g.gain.setTargetAtTime(0.11*SKY.rain,t,0.4);a.rainLow.g.gain.setTargetAtTime(0.08*SKY.rain,t,0.4);
+  a.wind.g.gain.setTargetAtTime((0.035+0.05*gust*(0.6+SKY.cloud)+0.05*SKY.snow)*ins,t,0.5);a.wind.f.frequency.setTargetAtTime(260+260*gust,t,0.5);
+  a.rain.g.gain.setTargetAtTime(0.11*SKY.rain*ins*ins,t,0.4);a.rainLow.g.gain.setTargetAtTime(0.1*SKY.rain,t,0.4);
   const fr=nearestFire(focus.x,focus.z);let fg=0;
   if(fr){fg=spatial(fr[0],fr[2],14).g*0.1;if(Math.random()<dt*7*(fg>0.01?1:0)){const o=out(fg*3,0);burst(o,t,0.03,'highpass',2000+Math.random()*3000,1,0.4,0.001);}}
   a.fire.g.gain.setTargetAtTime(fg,t,0.3);
-  a.crick.g.gain.setTargetAtTime(0.012*(1-day)*(1-SKY.rain)*(1-SKY.snow),t,1);
-  // Oiseaux le jour quand il fait beau; hibou la nuit
-  AU.birdT-=dt;if(AU.birdT<=0){AU.birdT=2+Math.random()*7;if(day>0.6&&SKY.rain<0.3&&SKY.snow<0.3)bird();}
-  AU.owlT-=dt;if(AU.owlT<=0){AU.owlT=35+Math.random()*50;if(day<0.3)owl();}
+  a.crick.g.gain.setTargetAtTime(0.012*(1-day)*(1-SKY.rain)*(1-SKY.snow)*ins,t,1);
   updateEngines();
 }

@@ -15,13 +15,13 @@ function frame(){
   updateMapCursor(dt);updatePlacement();updatePick();
   updateNet(dt);updateVTT(dt);
   updateFalling(dt);updateSplitters(dt);
-  updateCamp(dt);tickPlants(dt);
+  updateCamp(dt);updateCabin(dt);tickPlants(dt);
   if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);
   updateSugar(dt);updateMarket(dt);
   updateArrow();updateHUD();
   let gx,gz;
   const mc=mapCursor();
-  if(mc){gx=mc.cx;gz=mc.cz;}else if(S.mode==='foot'||S.mode==='sit'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{gx=V.x+Math.sin(V.th)*V.v*0.35;gz=V.z+Math.cos(V.th)*V.v*0.35;}
+  if(mc){gx=mc.cx;gz=mc.cz;}else if(S.mode==='foot'||S.mode==='sit'||S.mode==='sleep'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{gx=V.x+Math.sin(V.th)*V.v*0.35;gz=V.z+Math.cos(V.th)*V.v*0.35;}
   if(camMode!=='iso'&&S.mode!=='crane'){gx=S.mode==='vtt'?V.x:P.x;gz=S.mode==='vtt'?V.z:P.z;}
   const goal=new T.Vector3(gx,H(gx,gz),gz);
   camT.lerp(goal,1-Math.exp(-(camMode!=='iso'?14:6)*dt));
@@ -36,7 +36,7 @@ function frame(){
       const cp=Math.cos(camPitch+0.075);
       pcam.lookAt(vg.localToWorld(_v.set(e[0]+Math.sin(camVehOff)*cp*12,e[1]+Math.sin(camPitch+0.075)*12-0.3,e[2]+Math.cos(camVehOff)*cp*12)));
     }else{
-      const ey=H(P.x,P.z)+1.68+P.jumpY;pcam.position.set(P.x,ey,P.z);
+      const ey=H(P.x,P.z)+1.68+P.jumpY+(S.inside?FLOOR_Y:0);pcam.position.set(P.x,ey,P.z);
       const cp=Math.cos(camPitch);
       pcam.lookAt(P.x+Math.sin(camYaw)*cp,ey+Math.sin(camPitch),P.z+Math.cos(camYaw)*cp);
     }
@@ -45,7 +45,8 @@ function frame(){
     // Hauteur de la caméra réglable (glisser de haut en bas) : on tourne autour du joueur ou du véhicule
     const R=Math.hypot(dist0,ht0),ang=clamp(Math.atan2(ht0,dist0)+camTpTilt,0.03,1.35),dist=R*Math.cos(ang),ht=R*Math.sin(ang);
     let cx=camT.x-camFwd.x*dist,cz=camT.z-camFwd.z*dist;
-    const cy=Math.max(camT.y+ht,H(cx,cz)+1.2);
+    let cy=Math.max(camT.y+ht,H(cx,cz)+1.2);
+    if(S.inside){const l=cabL(cx,cz),w=cabW(clamp(l.x,-2.7,2.7),clamp(l.z,-2.0,2.0));cx=w.x;cz=w.z;cy=Math.min(cy,CAMP_H+2.45);}   // la caméra reste dans la cabane
     pcam.position.set(cx,cy,cz);
     // Vue basse : on regarde un peu devant; plus la caméra monte, plus elle vise le joueur lui-même (pivot autour de lui)
     const ahead=2*(1-smoothstep(0.35,1.0,ang));
@@ -55,7 +56,7 @@ function frame(){
     camera.position.set(camT.x+Math.sin(camAz)*Math.cos(ELEV)*D,camT.y+Math.sin(ELEV)*D,camT.z+Math.cos(camAz)*Math.cos(ELEV)*D);
     camera.lookAt(camT);
   }
-  updateSky(dt,camT);updateSound(dt,S.mode==='vtt'?V:P);
+  updateSky(dt,camT);updateBirds(dt,S.mode==='vtt'?V:P);updateSound(dt,S.mode==='vtt'?V:P);
   if(window.PHOTO){const f=window.PHOTO;activeCam=pcam;pcam.position.set(...f.pos);pcam.lookAt(...f.at);}   // caméra libre pour les captures de test
   updateFpTool();
   // Vitres du véhicule : invisibles quand on regarde de l'intérieur

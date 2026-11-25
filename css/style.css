@@ -100,3 +100,6 @@
   #joyKnob.run{background:#ffb02e}
   .item .thumb.emoji{display:flex;align-items:center;justify-content:center;font-size:36px}
   #help button.reset{background:#8a4a32;font-size:13px;padding:8px;margin-top:8px}
+
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+#fade.on{opacity:1}
