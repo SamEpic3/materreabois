@@ -26,7 +26,12 @@ const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même 
 const CABIN={x:-7,z:2};
 const VILLAGE={x:-50,z:46,r:13};
 // Zones aplanies (plus grandes que les rayons d'origine, qui servent encore à générer la forêt d'origine)
-const CAMP_FLAT=24,VIL_FLAT=27;
+const CAMP_FLAT=24;
+// Village le long d'une rue : repère local (lx vers la droite, lz vers le camp) et rectangle aplani
+const VIL_A=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z),VIL_S=Math.sin(VIL_A),VIL_C=Math.cos(VIL_A);
+function vilLocal(x,z){const dx=x-VILLAGE.x,dz=z-VILLAGE.z;return [dx*VIL_C-dz*VIL_S,dx*VIL_S+dz*VIL_C];}
+const VIL_RECT={x0:-28,x1:29,z0:-23,z1:34};
+function vilOut(x,z){const [a,b]=vilLocal(x,z);return Math.hypot(Math.max(VIL_RECT.x0-a,0,a-VIL_RECT.x1),Math.max(VIL_RECT.z0-b,0,b-VIL_RECT.z1));}
 const CAP=6;
 
 const SEGS=[];
@@ -71,7 +76,7 @@ function H(x,z){
   let h=baseH(x,z);
   const tc=smoothstep(CAMP_FLAT+8,CAMP_FLAT,Math.hypot(x-CAMP.x,z-CAMP.z));
   const tt=smoothstep(4,1.8,trailDist(x,z));
-  const tv=smoothstep(VIL_FLAT+8,VIL_FLAT,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
+  const tv=smoothstep(8,0,vilOut(x,z));
   h+=detailH(x,z)*(1-Math.max(tc,tt,tv));
   h+=hillH(x,z);
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
@@ -265,8 +270,8 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const n=0.5+0.5*Math.sin(x*0.21+Math.cos(z*0.17)*2)*Math.cos(z*0.13);
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP_FLAT-1,CAMP_FLAT-7,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
-    const vilF=smoothstep(VIL_FLAT-2,VIL_FLAT-8,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
-    const patch=vilF*(0.38+0.25*Math.sin(x*0.55+1.7)*Math.cos(z*0.47));
+    const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-26,-22,vl[1])*smoothstep(37,33,vl[1]);
+    const patch=Math.max(road*0.95,smoothstep(6,3.5,Math.hypot(vl[0]+8.5,vl[1]-20))*0.6);
     const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
     dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);
@@ -416,14 +421,20 @@ const VF={x:Math.sin(VROT),z:Math.cos(VROT)},VR={x:Math.cos(VROT),z:-Math.sin(VR
 function vpos(lx,lz){return {x:VILLAGE.x+VR.x*lx+VF.x*lz,z:VILLAGE.z+VR.z*lx+VF.z*lz};}
 function bldCols(lx,lz,hw,hd){for(let a=-hw+1.4;a<=hw-1.39;a+=Math.max(0.01,(2*hw-2.8)/Math.max(1,Math.round((2*hw-2.8)/2.4))))for(let b=-hd+1.4;b<=hd-1.39;b+=Math.max(0.01,(2*hd-2.8)/Math.max(1,Math.round((2*hd-2.8)/2.4)))){const p=vpos(lx+a,lz+b);addCol(p.x,p.z,1.55);}}
 function gableRoof(g,w,d,y,m){const r1=box(w+0.6,0.18,d/2+0.5,m,0,y,d/4+0.1,g);r1.rotation.x=0.62;const r2=box(w+0.6,0.18,d/2+0.5,m,0,y,-d/4-0.1,g);r2.rotation.x=-0.62;}
-let STORE_DOOR;
+let STORE_DOOR,MILL_DOOR;
 const VIL_WIN=new T.MeshBasicMaterial({color:0x9fb8c8});        // vitres du village
 const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de rue
+const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,214,140,1)');g.addColorStop(0.5,'rgba(255,190,110,0.35)');g.addColorStop(1,'rgba(255,170,90,0)');c.fillStyle=g;c.fillRect(0,0,w,h);}),transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending});
 {
   const VMC={},vmat=c=>VMC[c]||(VMC[c]=mat(c));
   const textSign=(txt,w,h,bg,fg,font)=>{const t=canvasTex(512,Math.max(32,Math.round(512*h/w)),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=Math.max(3,H*0.06);c.strokeRect(H*0.08,H*0.08,W-H*0.16,H-H*0.16);c.fillStyle=fg;c.font=`bold ${Math.round(H*(font||0.46))}px Georgia,serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(txt,W/2,H/2+2);});return new T.MeshBasicMaterial({map:t});};
-  const placeB=(g,lx,lz)=>{const p=vpos(lx,lz);g.position.set(p.x,VIL_H,p.z);g.rotation.y=VROT;bakeStatic(g);shadows(g);g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});scene.add(g);return p;};
+  // r : rotation en plus (π/2 = façade vers +lx, -π/2 = façade vers -lx, c.-à-d. vers la rue)
+  const placeB=(g,lx,lz,r=0)=>{const p=vpos(lx,lz);g.position.set(p.x,VIL_H,p.z);g.rotation.y=VROT+r;bakeStatic(g);shadows(g);g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});scene.add(g);return p;};
   const colL=(lx,lz,r)=>{const p=vpos(lx,lz);addCol(p.x,p.z,r);};
+  // Repère local d'un bâtiment (x, z) -> repère du village (lx, lz)
+  const BL=(lx,lz,r)=>{const c=Math.round(Math.cos(r)),s=Math.round(Math.sin(r));const at=(x,z)=>[lx+x*c+z*s,lz-x*s+z*c];
+    return {at,c:(x,z,rad)=>{const q=at(x,z);colL(q[0],q[1],rad);},b:(x,z,hw,hd)=>{const q=at(x,z);s?bldCols(q[0],q[1],hd,hw):bldCols(q[0],q[1],hw,hd);}};};
+  const LEFT=Math.PI/2,RIGHT=-Math.PI/2;
   const wood=vmat(0x7a5232),trim=vmat(0xf6f1e4),dark=vmat(0x3b2a1e),gold=vmat(0xc9a84a),black=vmat(0x222222);
 
   /* ===== Magasin général : deux étages, fausse façade, grande galerie, vitrines ===== */
@@ -481,10 +492,10 @@ const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de 
     g.add(new T.Mesh(new T.BoxGeometry(1.2,0.12,1.0).translate(7.9,0.06,D/2+3.2),vmat(0x8a857c)));
     // Cheminée de briques sur le côté
     g.add(new T.Mesh(stoneStack(0.7,0.7,Hh+3.3,-W/2+1.4,0,-2,31),new T.MeshPhongMaterial({color:0x9a5a46,flatShading:true,vertexColors:true,shininess:3})));
-    const p=placeB(g,0,-5);
-    // Collisions : bâtiment, poteaux de la galerie, pompe
-    bldCols(0,-5,6,4.5);[-6.3,-3.3,-1.4,1.4,3.3,6.3].forEach(x=>colL(x,-5+D/2+2.65,0.2));colL(7.9,-5+D/2+3.2,0.5);colL(-6,-5+D/2+1.55,0.4);
-    STORE_DOOR=vpos(0,1.9);
+    const SX=-13.5,SZ=2,p=placeB(g,SX,SZ,LEFT),bl=BL(SX,SZ,LEFT);
+    // Collisions : bâtiment, poteaux de la galerie, pompe, barils
+    bl.b(0,0,6,4.5);[-6.3,-3.3,-1.4,1.4,3.3,6.3].forEach(x=>bl.c(x,D/2+2.65,0.2));bl.c(7.9,D/2+3.2,0.5);bl.c(-6,D/2+1.55,0.4);
+    STORE_DOOR=vpos(...bl.at(0,D/2+2.4));
     label('Magasin général',p.x,VIL_H+10.6,p.z);
   }
 
@@ -527,7 +538,7 @@ const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de 
     const arch=new T.Shape();arch.moveTo(-1.05,0);arch.lineTo(1.05,0);arch.lineTo(0,0.8);arch.lineTo(-1.05,0);c.add(new T.Mesh(new T.ShapeGeometry(arch).translate(0,2.85,tz+TW/2+0.04),vmat(0xffffff)));
     c.add(new T.Mesh(mergeGeos([new T.BoxGeometry(4.2,0.18,1.6).translate(0,0.09,tz+TW/2+0.8),new T.BoxGeometry(3.4,0.18,1.1).translate(0,0.27,tz+TW/2+0.55),new T.BoxGeometry(2.6,0.18,0.6).translate(0,0.45,tz+TW/2+0.3)]),vmat(0x9a958c)));
     // Petit cimetière derrière : clôture blanche, croix et pierres tombales
-    const cx0=7.5,cz=8,cf=[],cr=[];
+    const cx0=-8.5,cz=-1,cf=[],cr=[];
     for(let x=-3;x<=3.01;x+=0.35){cf.push(new T.BoxGeometry(0.06,0.7,0.04).translate(cx0+x,0.35,cz-2.5));if(Math.abs(x)>0.7)cf.push(new T.BoxGeometry(0.06,0.7,0.04).translate(cx0+x,0.35,cz+2.5));}
     for(let z=-2.5;z<=2.5;z+=0.35){cf.push(new T.BoxGeometry(0.04,0.7,0.06).translate(cx0-3,0.35,cz+z),new T.BoxGeometry(0.04,0.7,0.06).translate(cx0+3,0.35,cz+z));}
     cf.push(new T.BoxGeometry(6,0.06,0.05).translate(cx0,0.55,cz-2.5),new T.BoxGeometry(2.3,0.06,0.05).translate(cx0-1.85,0.55,cz+2.5),new T.BoxGeometry(2.3,0.06,0.05).translate(cx0+1.85,0.55,cz+2.5),new T.BoxGeometry(0.05,0.06,5).translate(cx0-3,0.55,cz),new T.BoxGeometry(0.05,0.06,5).translate(cx0+3,0.55,cz));
@@ -536,15 +547,15 @@ const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de 
       if(i%3===0)cr.push(new T.BoxGeometry(0.1,0.9,0.08).translate(x,0.45,cz+z),new T.BoxGeometry(0.5,0.08,0.08).translate(x,0.65,cz+z));
       else cr.push(new T.BoxGeometry(0.55,0.7,0.14).translate(x,0.35,cz+z),new T.CylinderGeometry(0.275,0.275,0.14,10,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(Math.PI/2).translate(x,0.7,cz+z));});
     c.add(new T.Mesh(mergeGeos(cr),vmat(0x9a9890)));
-    const p=placeB(c,16,-4);
-    bldCols(16,-4,4,7);bldCols(16,-4+tz,1.7,1.7);bldCols(16,-12.5,2,1.5);
-    for(let x=-3;x<=3.01;x+=1){colL(16+cx0+x,-4+cz-2.5,0.25);if(Math.abs(x)>0.7)colL(16+cx0+x,-4+cz+2.5,0.25);}
-    for(let z=-1.5;z<=1.51;z+=1){colL(16+cx0-3,-4+cz+z,0.25);colL(16+cx0+3,-4+cz+z,0.25);}
+    const p=placeB(c,17,6,RIGHT),bl=BL(17,6,RIGHT);
+    bl.b(0,0,4,7);bl.b(0,tz,1.7,1.7);bl.b(0,-8.5,2,1.5);
+    for(let x=-3;x<=3.01;x+=1){bl.c(cx0+x,cz-2.5,0.25);if(Math.abs(x)>0.7)bl.c(cx0+x,cz+2.5,0.25);}
+    for(let z=-1.5;z<=1.51;z+=1){bl.c(cx0-3,cz+z,0.25);bl.c(cx0+3,cz+z,0.25);}
     label('Église',p.x,VIL_H+12,p.z);
   }
 
   /* ===== Maisons : déclin coloré, volets, galerie, cheminée ===== */
-  [[-8,-16,'#4f6f8f','#2e4458','#8e2b22',0],[6,-17,'#d8b84a','#9a7a2a','#2f5a3a',1]].forEach(([lx,lz,wc,lc,dc,k])=>{
+  [[-12,-14,'#4f6f8f','#2e4458','#8e2b22',0,LEFT],[12,-14,'#efe9dc','#c9c0ae','#8e2b22',2,RIGHT],[12,22,'#d8b84a','#9a7a2a','#2f5a3a',1,RIGHT]].forEach(([lx,lz,wc,lc,dc,k,r])=>{
     const h=new T.Group();h.add(new T.Mesh(new T.BoxGeometry(6,3.0,5).translate(0,1.5,0),texMat(sidingTex(wc,lc),1,14)));
     h.add(new T.Mesh(mergeGeos([gable(6,5,3.0,1.6,3),gable(6,5,3.0,1.6,-3)]),texMat(sidingTex(wc,lc),1,7)));
     roofTex(h,6,5,3.6,texMat(shingleTex('#3a3430','#262220'),9,7),0.6,0.45);
@@ -560,10 +571,10 @@ const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de 
     // Corde à bois et boîte aux lettres
     h.add(new T.Mesh(mergeGeos([0,1,2,3,4,5,6,7].map(i=>new T.CylinderGeometry(0.11,0.11,0.5,7).rotateX(Math.PI/2).translate(3.6+(i%4)*0.23-0.35,0.12+Math.floor(i/4)*0.22,-1.2))),logMatsFor('erable')));
     h.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.08,1.1,0.08).translate(1.6,0.55,6.2),new T.BoxGeometry(0.28,0.25,0.45).translate(1.6,1.2,6.2)]),vmat(0x5a5a5a)));
-    placeB(h,lx,lz);bldCols(lx,lz,3,2.5);colL(lx-3,lz+4.0,0.2);colL(lx+3,lz+4.0,0.2);
+    placeB(h,lx,lz,r);const bl=BL(lx,lz,r);bl.b(0,0,3,2.5);bl.c(-3,4.0,0.2);bl.c(3,4.0,0.2);bl.c(1.6,6.2,0.15);
   });
 
-  /* ===== Scierie : grand bâtiment, porte ouverte sur le bois scié, bureau avec les prix, appentis, cheminée, bran de scie ===== */
+  /* ===== Scierie : grand bâtiment, porte ouverte sur le bois scié, bureau avec les prix, appentis, cheminée ===== */
   {
     const s=new T.Group(),W=13,D=8,Hh=5.2,plank=texMat(sidingTex('#8a6440','#5a3e24',true),32,1),tin=texMat(tinTex(),22,1,{shininess:30}),trimS=vmat(0x4d3220);
     // Murs autour de la grande ouverture (avant, +z)
@@ -604,33 +615,33 @@ const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de 
     const lr=new T.Mesh(new T.BoxGeometry(4.6,0.1,7.8),tin);lr.position.set(LX,3.75,0);lr.rotation.z=0.18;s.add(lr);
     const pl=[];[-2.2,1.6].forEach(z=>{for(let k=0;k<9;k++)pl.push(new T.BoxGeometry(3.0,0.07,2.2).translate(LX,0.12+k*0.13,z));for(let k=0;k<4;k++)pl.push(new T.BoxGeometry(3.0,0.04,0.06).translate(LX,0.18+k*0.39,z-0.9),new T.BoxGeometry(3.0,0.04,0.06).translate(LX,0.18+k*0.39,z+0.9));});
     s.add(new T.Mesh(mergeGeos(pl),vmat(0xd9b27c)));
-    // Convoyeur et tas de bran de scie, cheminée de la bouilloire
-    s.add(new T.Mesh(new T.BoxGeometry(0.6,0.12,4.6).rotateX(-0.38).translate(6.6,2.4,-D/2-2.3),vmat(0x3d4247)));
-    s.add(new T.Mesh(new T.ConeGeometry(2.0,1.9,14).translate(7.6,0.95,-D/2-5.0),vmat(0xcaa36e)));
+    // Cheminée de la bouilloire
     s.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.32,0.36,11,12).translate(W/2-1.6,5.5,-D/2+0.9),new T.CylinderGeometry(0.45,0.45,0.25,12).translate(W/2-1.6,11,-D/2+0.9)]),new T.MeshPhongMaterial({color:0x3a3d40,shininess:40})));
-    // Billots en attente devant (à gauche), sur des madriers
-    s.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.2,0.2,3.4).translate(-W/2+0.6,0.1,D/2+3.2),new T.BoxGeometry(0.2,0.2,3.4).translate(-W/2+3.4,0.1,D/2+3.2)]),vmat(0x5a4632)));
-    s.add(new T.Mesh(mergeGeos([0,1,2,3,4,5].map(i=>new T.CylinderGeometry(0.28,0.3,4.2,10).rotateZ(Math.PI/2).translate(-W/2+2.0,0.48+(i>3?0.5:0)+(i>2&&i<=3?0:0),D/2+1.8+(i%4)*0.62+(i>3?0.31:0)))),logMatsFor('sapin')));
-    const p=placeB(s,-16,0);
-    bldCols(-16,0,6.5,4);[-3.4,0,3.4].forEach(z=>colL(-16+LX-1.9,z,0.25));bldCols(-16+LX,-0.3,1.5,3.4);
-    colL(-16+7.6,-D/2-5.0,1.9);colL(-16+W/2-1.6,-D/2+0.9,0.45);colL(-16-W/2+2,D/2+2.4,1.2);colL(-16-W/2+2,D/2+3.6,1.2);
+    const p=placeB(s,-17,20,LEFT),bl=BL(-17,20,LEFT);
+    bl.b(0,0,6.5,4);[-3.4,0,3.4].forEach(z=>bl.c(LX-1.9,z,0.25));bl.b(LX,-0.3,1.5,3.4);bl.c(W/2-1.6,-D/2+0.9,0.45);
+    MILL_DOOR=vpos(...bl.at(5.6,D/2+0.9));
     label('Scierie',p.x,VIL_H+8.5,p.z);
   }
 
-  /* ===== Lanternes de rue ===== */
+  /* ===== Grands lampadaires de chaque côté de la rue ===== */
   {const g=new T.Group(),pole=[],glow=[];
-   [[-5,5],[6,5],[-6,14],[10,3]].forEach(([lx,lz])=>{
-     pole.push(new T.CylinderGeometry(0.07,0.09,3.4,8).translate(lx,1.7,lz),new T.BoxGeometry(0.6,0.06,0.06).translate(lx+0.25,3.3,lz),new T.CylinderGeometry(0.16,0.1,0.12,6).translate(lx+0.5,3.42,lz));
-     glow.push(new T.CylinderGeometry(0.11,0.13,0.26,6).translate(lx+0.5,3.2,lz));colL(lx,lz,0.2);});
-   g.add(new T.Mesh(mergeGeos(pole),black),new T.Mesh(mergeGeos(glow),VIL_LAMP));placeB(g,0,0);}
-  label('Village',VILLAGE.x,VIL_H+14,VILLAGE.z,26);
+   [[-5.2,-20],[-5.2,-8],[-5.2,11],[-5.2,30],[5.2,-20],[5.2,-8],[5.2,14],[5.2,30]].forEach(([lx,lz])=>{
+     const s=lx<0?1:-1;            // le bras s'avance au-dessus de la rue
+     pole.push(new T.CylinderGeometry(0.1,0.16,6.2,8).translate(lx,3.1,lz),new T.CylinderGeometry(0.22,0.26,0.5,8).translate(lx,0.25,lz),
+       new T.BoxGeometry(1.7,0.08,0.08).translate(lx+s*0.8,6.0,lz),new T.BoxGeometry(0.9,0.06,0.06).rotateZ(s*0.6).translate(lx+s*0.38,5.7,lz),
+       new T.CylinderGeometry(0.05,0.32,0.28,10).translate(lx+s*1.6,5.86,lz));
+     glow.push(new T.CylinderGeometry(0.2,0.24,0.12,10).translate(lx+s*1.6,5.68,lz));colL(lx,lz,0.25);});
+   g.add(new T.Mesh(mergeGeos(pole),vmat(0x2b2f33)),new T.Mesh(mergeGeos(glow),VIL_LAMP));placeB(g,0,0);
+   // Flaques de lumière au sol (une seule géométrie, additive) ; l'opacité suit la nuit (ciel.js)
+   const pools=[];[[-5.2,-20],[-5.2,-8],[-5.2,11],[-5.2,30],[5.2,-20],[5.2,-8],[5.2,14],[5.2,30]].forEach(([lx,lz])=>pools.push(new T.PlaneGeometry(9,9).rotateX(-Math.PI/2).translate(lx+(lx<0?1.6:-1.6),0.06,lz)));
+   const pm=new T.Mesh(mergeGeos(pools),VIL_POOL);const q=vpos(0,0);pm.position.set(q.x,VIL_H,q.z);pm.rotation.y=VROT;pm.renderOrder=2;scene.add(pm);}
+  {const q=vpos(0,6);label('Village',q.x,VIL_H+14,q.z,30);}
 }
-const MILL_DOOR=vpos(-10.4,4.9);
-Object.assign(YARD,vpos(-10.5,8.5));
+Object.assign(YARD,vpos(-8.5,20));
 const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
 // Billots déjà vendus, cordés derrière la scierie
-const YARD_STACK=vpos(-16,-7.2);
-const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT;scene.add(yardStack);
+const YARD_STACK=vpos(-25,20);
+const yardStack=new T.Group();yardStack.position.set(YARD_STACK.x,H(YARD_STACK.x,YARD_STACK.z),YARD_STACK.z);yardStack.rotation.y=VROT+Math.PI/2;scene.add(yardStack);
 const yardStackCols={};   // collision ajoutée seulement quand une pile a des billots
 
 /* ---------- Billots ---------- */
@@ -675,7 +686,7 @@ for(let k=0;k<5200&&treeList.length<900;k++){
 }
 const ORIG_TREE_N=treeList.length;
 // Le nouveau sentier passe dans la forêt de départ : ces arbres-là sont déjà coupés (sans souche)
-treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6||Math.hypot(t.x-CAMP.x,t.z-CAMP.z)<CAMP_FLAT-2||Math.hypot(t.x-VILLAGE.x,t.z-VILLAGE.z)<VIL_FLAT+1){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6||Math.hypot(t.x-CAMP.x,t.z-CAMP.z)<CAMP_FLAT-2||vilOut(t.x,t.z)<1.5){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
 // Forêt de la terre agrandie (son propre hasard : ne change rien à la forêt de départ)
 const rng2=mulberry32(4242);
 for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){

@@ -34,7 +34,7 @@ function flatSnapshot(){
     pails:pails.map(p=>({id:p.id,x:r3(p.x),z:r3(p.z),kind:p.kind,L:p.L})),
     tapsOn:taps.map(tp=>({tree:tp.t.planted?'p'+planted.indexOf(tp.t):treeList.indexOf(tp.t),sap:tp.sap,a:r3(tp.mesh.rotation.y)})),
     planted:planted.map(t=>({id:t.id,type:t.type,x:r3(t.x),z:r3(t.z),s:r3(t.s),rot:r3(t.rot),plantedAt:t.plantedAt,growMs:t.growMs,work:t.work})),
-    lands:S.lands,order:S.order,ordGot:S.ordGot,ordNext:r3(S.ordNext),
+    lands:S.lands,order:S.order,ordGot:S.ordGot,ordNext:r3(S.ordNext),becInit:!!S.becInit,
     camp:S.camp,stove:stove.fuel,wx:{clock:r3(S.wx.clock),type:S.wx.type,left:r3(S.wx.left)},
     builds:S.builds.map(b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):typeof b[k]==='number'?r3(b[k]):b[k];}return o;})
   };
@@ -61,7 +61,7 @@ function loadGame(given){
   S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;
   if(d.wx)Object.assign(S.wx,d.wx);
   if(d.lands)Object.assign(S.lands,d.lands);refreshLands();
-  S.order=d.order||null;S.ordGot=d.ordGot||0;if(d.ordNext!==undefined)S.ordNext=d.ordNext;
+  S.order=d.order||null;S.ordGot=d.ordGot||0;if(d.ordNext!==undefined)S.ordNext=d.ordNext;S.becInit=!!d.becInit;
   yardCount=d.yardCount||0;for(let i=Math.max(0,yardCount-60);i<yardCount;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},i);
   if(d.mkt){Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.mktPrev||{});S.mktNext=d.mktNext||MKT_PERIOD;}
   if(d.inv){INV.fill(null);d.inv.forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined};});}

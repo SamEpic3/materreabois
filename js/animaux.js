@@ -49,7 +49,7 @@ function scarers(){
   vehicles.forEach(v=>{if(v.driver||Math.abs(v.v)>0.5)a.push({x:v.x,z:v.z,k:1.6});});
   return a;
 }
-function okGround(x,z){return !outW(x,z,3)&&waterDepth(x,z)<0&&!onDock(x,z)&&Math.hypot(x-CAMP.x,z-CAMP.z)>CAMP_FLAT+2&&Math.hypot(x-VILLAGE.x,z-VILLAGE.z)>VIL_FLAT+3&&canWalkLand(x,z);}
+function okGround(x,z){return !outW(x,z,3)&&waterDepth(x,z)<0&&!onDock(x,z)&&Math.hypot(x-CAMP.x,z-CAMP.z)>CAMP_FLAT+2&&vilOut(x,z)>3&&canWalkLand(x,z);}
 function canWalkLand(x,z){return typeof landBlocked!=='function'||!landBlocked(x,z);}
 function spawnAnimal(kind,f){
   for(let k=0;k<12;k++){

@@ -138,6 +138,8 @@ function updateSky(dt,focus){
   sun.position.set(focus.x+L.x*60,focus.y+L.y*60,focus.z+L.z*60);sun.target.position.copy(focus);sun.target.updateMatrixWorld();
   // Lumières de nuit
   const night=1-dayK*0.85-0.15;
+  // Lampadaires et fenêtres du village : s'allument à la brunante
+  {const k=smoothstep(0.25,0.6,night);VIL_LAMP.color.setRGB(0.42+0.58*k,0.39+0.5*k,0.31+0.27*k);VIL_WIN.color.setRGB(0.62+0.38*k*0.9,0.72+0.1*k,0.78-0.3*k);VIL_POOL.opacity=0.55*k;VIL_POOL.visible=k>0.01;}
   const f=nearestFire(focus.x,focus.z);
   if(S.inside){   // dedans : le poêle s'il chauffe, sinon la lampe à l'huile sur la table
     const lit=stove.fuel>0,p=lit?cabW(IN_STOVE.x,IN_STOVE.z+0.6):cabW(IN_TABLE.x+0.25,IN_TABLE.z-0.1);

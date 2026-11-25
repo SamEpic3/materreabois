@@ -142,3 +142,16 @@ body.touch #order{top:calc(170px + var(--pad-t))}
 .lookOpt.on{border-color:#d08a1e;background:#f6dcac}
 .lookOpt .sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.3);display:inline-block}
 .lookBtn{float:right;margin-right:34px;font-size:13px;padding:5px 10px;border:0;border-radius:9px;background:#3d6b3a;color:#fff;font-weight:700;vertical-align:middle}
+
+/* Barre du haut : ne jamais dépasser l'écran ; sur écran étroit, boutons secondaires dans le menu ☰ */
+#camBtns{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 20px - var(--pad-l) - var(--pad-r))}
+#btnMenu{display:none}
+@media (max-width:700px){
+  #btnMenu{display:flex}
+  #camBtns:not(.open) .more{display:none}
+  #camBtns.open{max-width:186px}
+  #camBtns.open #btnMenu{background:rgba(200,129,31,.9)}
+}
+#btnOrder.pulse{box-shadow:0 0 0 2px #ffd27a inset}
+#actions{max-width:calc(100vw - 28px - var(--pad-l) - var(--pad-r))}
+.abtn{max-width:100%;white-space:normal}

@@ -135,3 +135,5 @@ $('btnHelp').addEventListener('click',()=>{$('helpBody').classList.remove('hidde
 $('helpClose').addEventListener('click',()=>$('help').classList.add('hidden'));
 $('btnStart').addEventListener('click',()=>{if(started){$('help').classList.add('hidden');return;}startClicked();});
 const ELEV=0.6155; // 35,26° : vraie isométrique
+// Menu ☰ (écrans étroits) : montre/cache les boutons secondaires
+$('btnMenu').addEventListener('click',()=>$('camBtns').classList.toggle('open'));

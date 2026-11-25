@@ -140,6 +140,19 @@ function refreshShed(b){
     const m=makePieceMesh(c);m.position.set((col-(SHED_COLS-1)/2)*0.4+(layer%2)*0.1,0.2+layer*0.36,row===0?-0.55:0.48);st.add(m);
   });
 }
+// Bécosse (porte avec une lune) : déjà là au départ, mais déplaçable comme les autres constructions
+function makeBecosseModel(){
+  const g=new T.Group(),plankV=texMat(sidingTex('#7d5a3a','#4e3622',true),5,1);
+  g.add(new T.Mesh(new T.BoxGeometry(1.3,2.1,1.3).translate(0,1.05,0),plankV));
+  const r=new T.Mesh(new T.BoxGeometry(1.6,0.08,1.7),texMat(tinTex(),4,1,{shininess:30}));r.position.set(0,2.22,0);r.rotation.x=-0.18;g.add(r);
+  g.add(new T.Mesh(new T.BoxGeometry(0.8,1.75,0.05).translate(0,0.93,0.66),mat(0x6b4a2c)));
+  const moon=new T.Shape();moon.absarc(0,0,0.11,0.6,Math.PI*2-0.6,false);moon.absarc(0.07,0,0.09,Math.PI*2-0.9,0.9,true);
+  g.add(new T.Mesh(new T.ShapeGeometry(moon).translate(0,1.55,0.69),mat(0x1a1410)));
+  g.add(new T.Mesh(new T.BoxGeometry(0.05,0.05,0.12).translate(0.3,0.95,0.72),mat(0x3b2a1e)));
+  return g;
+}
+function createBecosse(b,o){o.add(makeBecosseModel());o.col(b.x,b.z,0.95);}
+const BECOSSE_START={x:-17,z:-8,rot:Math.PI/2};
 const KINDS={
   feu:{name:'Feu de camp',art:'le',price:250,icon:'🔥',dist:4.3,foot:[[0,0,2.7]],model:makeFeuModel,create:createFeu,init:()=>({fuel:0}),near:b=>b,nearR:2.2,
        desc:'Un rond de pierres et trois bûches pour s\'asseoir. On y fait brûler du bois de chauffage.'},
@@ -150,9 +163,11 @@ const KINDS={
   bbq:{name:'Barbecue',art:'le',price:600,icon:'🍖',dist:2.4,foot:[[0,0,1.0]],model:makeBbqModel,create:createBbq,init:()=>({on:false,open:false,fish:[null,null,null,null]}),near:b=>b,nearR:1.7,
        desc:'Un barbecue au propane : ouvre le couvercle, allume-le et mets-y jusqu\'à 4 poissons. Ils cuisent en 2 minutes.'},
   garage:{name:'Garage',art:'le',price:5000,icon:'🛠️',dist:7.5,foot:[[-1.6,-2.1,2.5],[1.6,-2.1,2.5],[-1.6,2.1,2.5],[1.6,2.1,2.5]],model:makeGarageModel,create:createGarage,init:()=>({}),near:b=>b,nearR:0,
-       desc:'Un grand garage avec une porte à l\'avant pour rentrer le pick-up ou la débusqueuse à l\'abri, avec un établi au fond.'}
+       desc:'Un grand garage avec une porte à l\'avant pour rentrer le pick-up ou la débusqueuse à l\'abri, avec un établi au fond.'},
+  becosse:{name:'Bécosse',art:'la',price:300,icon:'🚽',dist:2.6,foot:[[0,0,1.0]],model:makeBecosseModel,create:createBecosse,init:()=>({}),near:b=>b,nearR:0,
+       desc:'Une bécosse en planches avec une lune dans la porte. Indispensable au camp!'}
 };
-const KIND_IDS=['feu','abri','sucres','bbq','garage'];
+const KIND_IDS=['feu','abri','sucres','bbq','garage','becosse'];
 
 /* ----- Apparition et retrait ----- */
 function spawnBuild(b){
@@ -236,7 +251,7 @@ function placeProblem(k,pos,moving){
     if(waterDepth(c.x,c.z)>-0.15||onDock(c.x,c.z))return 'Pas dans l\'eau';
     if(isPublic(c.x,c.z))return 'Pas sur le territoire public';
     if(landBlocked(c.x,c.z))return 'Cette terre n\'est pas à vous';
-    if(Math.hypot(c.x-VILLAGE.x,c.z-VILLAGE.z)<VILLAGE.r+r||inSale(c.x,c.z))return 'Pas au village';
+    if(vilOut(c.x,c.z)<r||inSale(c.x,c.z))return 'Pas au village';
     if(Math.hypot(c.x-YARD.x,c.z-YARD.z)<YARD.r+r)return 'Pas dans la cour à bois';
     if(trailDist(c.x,c.z)<r*0.5+1.4)return 'Pas sur un chemin';
     if(others.some(o=>Math.hypot(o[0]-c.x,o[1]-c.z)<r+o[2]))return 'Un véhicule ou une remorque est dans le chemin';

@@ -35,7 +35,7 @@ function newOrder(){
 function announceOrder(o){
   sfxBell();
   toast(`📋 Nouvelle commande — ${o.who} : ${orderText(o,true)} (prime ${o.reward} $)`);
-  renderOrder();
+  showOrderPanel(12);
 }
 // Avancement : appelé là où on vend ou livre
 function orderProgress(kind,n,info){
@@ -46,6 +46,8 @@ function orderProgress(kind,n,info){
 }
 let ordTick=0;
 function updateOrders(dt){
+  // La bécosse de départ : posée une seule fois par celui qui mène le monde (ensuite, déplaçable)
+  if(started&&!S.becInit&&leadsWorld()){S.becInit=true;if(!S.builds.some(b=>b.k==='becosse'))addBuild('becosse',BECOSSE_START);}
   const o=S.order;
   if(leadsWorld()){
     if(!o){S.ordNext-=dt;if(S.ordNext<=0)newOrder();}
@@ -64,16 +66,25 @@ function orderChanged(prev,o){
   renderOrder();
 }
 
-/* ----- Affichage : petit panneau sous l'argent ----- */
+/* ----- Affichage : petit panneau sous l'argent, montré seulement quelques secondes
+   (nouvelle commande, progrès, fin) ou quand on touche le bouton 📋 ----- */
+let ordShowUntil=0,ordLastKey='';
+function showOrderPanel(sec){ordShowUntil=performance.now()+sec*1000;renderOrder();}
 function renderOrder(){
-  const el=$('order'),o=S.order;
-  if(!o){el.classList.add('hidden');return;}
+  const el=$('order'),o=S.order,btn=$('btnOrder');
+  if(!o){el.classList.add('hidden');btn.classList.add('hidden');return;}
+  btn.classList.remove('hidden');
+  const key=o.id+'|'+S.ordGot+'|'+(o.done?1:0)+(o.expired?1:0);
+  if(key!==ordLastKey){if(ordLastKey)ordShowUntil=Math.max(ordShowUntil,performance.now()+8000);ordLastKey=key;}
+  btn.classList.toggle('pulse',!o.done&&!o.expired);
+  if(performance.now()>ordShowUntil){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
   const st=o.done?'✅ remplie !':o.expired?'⌛ expirée':`${Math.min(S.ordGot,o.n)}/${o.n} · ${fmtLeft(o.left)}`;
   const txt=`📋 ${o.who} : ${orderText(o,true)} — ${st}`;
   if(el.textContent!==txt)el.textContent=txt;
 }
-$('order').addEventListener('click',()=>{const o=S.order;if(o)toast(`${o.who} veut ${orderText(o)}. Prime : ${o.reward} $ · il reste ${fmtLeft(o.left)}`);});
+$('order').addEventListener('click',()=>{ordShowUntil=0;renderOrder();});
+$('btnOrder').addEventListener('click',()=>{if(performance.now()<ordShowUntil)ordShowUntil=0;else ordShowUntil=performance.now()+12000;renderOrder();});
 
 /* ----- Livrer du poisson au magasin ----- */
 function orderFishMatch(s){const o=S.order;if(!o||o.kind!=='poisson'||!s)return false;const d=itemDef(s.id);
