@@ -12,6 +12,7 @@ function frame(){
     camRight.set(Math.cos(camAz),0,-Math.sin(camAz));camFwd.set(-Math.sin(camAz),0,-Math.cos(camAz));
   }
   if(S.mode==='foot')updateFoot(dt);
+  updateFishing(dt);updateDrops(dt);
   updateMapCursor(dt);updatePlacement();updatePick();
   updateNet(dt);updateVTT(dt);
   updateFalling(dt);updateSplitters(dt);updateYardSales(dt);
@@ -23,7 +24,7 @@ function frame(){
   const mc=mapCursor();
   if(mc){gx=mc.cx;gz=mc.cz;}else if(S.mode==='foot'||S.mode==='sit'||S.mode==='sleep'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{gx=V.x+Math.sin(V.th)*V.v*0.35;gz=V.z+Math.cos(V.th)*V.v*0.35;}
   if(camMode!=='iso'&&S.mode!=='crane'){gx=S.mode==='vtt'?V.x:P.x;gz=S.mode==='vtt'?V.z:P.z;}
-  const goal=new T.Vector3(gx,H(gx,gz),gz);
+  const goal=new T.Vector3(gx,walkH(gx,gz),gz);
   camT.lerp(goal,1-Math.exp(-(camMode!=='iso'?14:6)*dt));
   if(camMode!=='iso'&&S.mode==='crane'){
     const g=gripWorld(P.crTr),ey=H(P.x,P.z)+1.68;
@@ -36,7 +37,7 @@ function frame(){
       const cp=Math.cos(camPitch+0.075);
       pcam.lookAt(vg.localToWorld(_v.set(e[0]+Math.sin(camVehOff)*cp*12,e[1]+Math.sin(camPitch+0.075)*12-0.3,e[2]+Math.cos(camVehOff)*cp*12)));
     }else{
-      const ey=H(P.x,P.z)+1.68+P.jumpY+(S.inside?FLOOR_Y:0);pcam.position.set(P.x,ey,P.z);
+      const ey=walkH(P.x,P.z)+1.68+P.jumpY+(S.inside?FLOOR_Y:0);pcam.position.set(P.x,ey,P.z);
       const cp=Math.cos(camPitch);
       pcam.lookAt(P.x+Math.sin(camYaw)*cp,ey+Math.sin(camPitch),P.z+Math.cos(camYaw)*cp);
     }

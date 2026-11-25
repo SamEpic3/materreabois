@@ -2,7 +2,6 @@
 const SEED_TYPES=['erable','epinette','sapin','bouleau'];
 const SEED_PACK=5,SEED_PRICE={erable:40,epinette:30,sapin:25,bouleau:35};
 const GROW_MIN=3*3600e3,GROW_MAX=5*3600e3;       // durée de pousse, en millisecondes
-S.seeds={erable:0,epinette:0,sapin:0,bouleau:0};
 S.seedSel='erable';
 const PLANT_TOOL={id:'plants',name:'Plants',kind:'plant',delay:0.5};
 const planted=[];
@@ -15,9 +14,8 @@ const planted=[];
   const pot=new T.Mesh(new T.CylinderGeometry(0.08,0.06,0.1,8),mat(0x9a5a32));pot.position.set(0,-0.2,0.25);g.add(pot);
   g.position.set(0,-0.68,0);g.visible=false;player.armR.add(g);player.plant=g;
 }
-function seedCount(){return SEED_TYPES.reduce((a,k)=>a+S.seeds[k],0);}
+function seedCount(){return SEED_TYPES.reduce((a,k)=>a+invCount('plant:'+k),0);}
 function seedName(k){return SPECIES[k].n.toLowerCase();}
-function nextSeedType(){const i=SEED_TYPES.indexOf(S.seedSel);for(let k=1;k<=4;k++){const t=SEED_TYPES[(i+k)%4];if(S.seeds[t]>0)return t;}return S.seedSel;}
 
 /* Un arbre planté : mêmes pièces que la forêt, mais son propre groupe qui grandit */
 function addPlanted(o){
@@ -36,8 +34,9 @@ function updateGrowth(t){
 function plantSpot(){return {x:P.x+Math.sin(P.rot)*1.0,z:P.z+Math.cos(P.rot)*1.0};}
 // Raison pour laquelle on ne peut pas planter ici, ou null si c'est correct
 function plantProblem(x,z){
-  if(S.seeds[S.seedSel]<=0)return `Plus de plants d'${seedName(S.seedSel)} : achètes-en au magasin`;
-  if(Math.abs(x)>WORLD-3||Math.abs(z)>WORLD-3)return 'Trop près du bout de la terre';
+  const it=heldItem();if(!it||!it.id.startsWith('plant:'))return 'Prends des plants en main';
+  if(outW(x,z,3))return 'Trop près du bout de la terre';
+  if(waterDepth(x,z)>-0.15||onDock(x,z))return 'Pas dans l\'eau';
   if(trailDist(x,z)<3)return 'Pas sur un chemin';
   if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP.r)return 'Pas dans le camp';
   if(Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)return 'Pas au village';
@@ -49,18 +48,16 @@ function plantProblem(x,z){
 }
 function plantHere(){
   const p=plantSpot();if(plantProblem(p.x,p.z))return;
-  const type=S.seedSel;S.seeds[type]--;J.plant();
+  const type=itemDef(heldItem().id).sp;invTake(S.hot,1);J.plant();
   addPlanted({x:p.x,z:p.z,type,s:0.8+Math.random()*0.5,rot:Math.random()*6.28,plantedAt:Date.now(),growMs:GROW_MIN+Math.random()*(GROW_MAX-GROW_MIN)});
-  toast(`🌱 ${SPECIES[type].n} planté (il t'en reste ${S.seeds[type]})`);
-  if(S.seeds[type]<=0)S.seedSel=nextSeedType();
-  if(seedCount()<=0){setTool(null);}
-  renderHotbar();
+  const left=heldItem()?heldItem().n:0;
+  toast(`🌱 ${SPECIES[type].n} planté (il t'en reste ${left})`);
 }
 function plantContext(){
   const p=plantSpot(),pb=plantProblem(p.x,p.z);
-  const act=pb?null:{label:`Planter un ${seedName(S.seedSel)} (${S.seeds[S.seedSel]})`,fn:plantHere};
-  const others=SEED_TYPES.filter(k=>k!==S.seedSel&&S.seeds[k]>0);
-  const act2=others.length?{label:`Changer d'espèce (${SPECIES[nextSeedType()].n})`,fn:()=>{S.seedSel=nextSeedType();}}:null;
+  const it=heldItem();
+  const act=pb?null:{label:`Planter un ${seedName(S.seedSel)} (${it?it.n:0})`,fn:plantHere};
+  const act2=null;
   return {act,act2,info:pb||'',spot:p,ok:!pb};
 }
 function fmtDur(ms){const m=Math.max(1,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`:`${m} min`;}

@@ -35,6 +35,7 @@ function findSpawn(cols,th,pref){
 }
 function toolThumbModel(t){
   const g=new T.Group();let m;
+  if(t.kind==='rod'){const r=makeRodModel();r.rotation.z=-0.9;g.add(r);return g;}
   if(t.kind==='axe'){m=makeAxeModel();axeColors(m,t.id);}else if(t.kind==='saw')m=makeSawModel();else if(t.kind==='shovel')m=makeShovelModel();else m=makeChainModel(t.id==='scie-usagee');
   // De profil : le manche en diagonale, la tête ou la lame en haut à droite
   const w=new T.Group();w.add(m);if(t.kind==='shovel')m.rotation.z=1.25;   // la palette de face
@@ -48,11 +49,11 @@ function renderShop(){
   sec('Outils');
   TOOLS.forEach(t=>{
     const d=document.createElement('div');d.className='item';
-    const stats=t.kind==='shovel'?`Une souche : ≈ ${secs(12*t.delay)}`:`Arbre moyen : ≈ ${secs(Math.max(1,Math.ceil(9*t.fell))*t.delay)} · Une coupe : ≈ ${secs(t.cut*t.delay)}`;
+    const stats=t.kind==='rod'?'Pour pêcher au lac, du bord ou du quai':t.kind==='shovel'?`Une souche : ≈ ${secs(12*t.delay)}`:`Arbre moyen : ≈ ${secs(Math.max(1,Math.ceil(9*t.fell))*t.delay)} · Une coupe : ≈ ${secs(t.cut*t.delay)}`;
     d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t),true))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
-    if(owned.has(t.id)){b.textContent='À toi';b.disabled=true;}
-    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;owned.add(t.id);setTool(t);J.buy(t.name.toLowerCase(),t.price);toast(`${t.name} : dans ton inventaire et en main !`);renderShop();};}
+    if(!t.price){b.textContent='Gratuite';b.disabled=invCount(t.id)>0;b.onclick=()=>{giveItem({id:t.id,n:1});renderShop();};}
+    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;giveItem({id:t.id,n:1});J.buy(t.name.toLowerCase(),t.price);toast(`${t.name} : dans ton inventaire !`);sfxCash();renderShop();};}
     d.appendChild(b);L.appendChild(d);
   });
   sec('Érablière');
@@ -75,9 +76,9 @@ function renderShop(){
   sec('Plantation');
   SEED_TYPES.forEach(k=>{
     const d=document.createElement('div'),pr=SEED_PRICE[k];d.className='item';
-    d.innerHTML=`<div class="thumb emoji">🌱</div><div class="txt"><b>Plants ${/^[aeéiouy]/.test(seedName(k))?'d\'':'de '}${seedName(k)} (×${SEED_PACK})</b> — ${pr} $<p>À planter n'importe où de libre. Ils poussent en 3 à 5 heures.</p><p class="stats">Tu en as ${S.seeds[k]}</p></div>`;
+    d.innerHTML=`<div class="thumb emoji">🌱</div><div class="txt"><b>Plants ${/^[aeéiouy]/.test(seedName(k))?'d\'':'de '}${seedName(k)} (×${SEED_PACK})</b> — ${pr} $<p>À planter n'importe où de libre. Ils poussent en 3 à 5 heures.</p><p class="stats">Tu en as ${invCount('plant:'+k)}</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<pr;
-    b.onclick=()=>{if(S.money<pr)return;S.money-=pr;S.seeds[k]+=SEED_PACK;J.buy(`${SEED_PACK} plants de ${SPECIES[k].n.toLowerCase()}`,pr);S.seedSel=k;renderHotbar();toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
+    b.onclick=()=>{if(S.money<pr)return;S.money-=pr;giveItem({id:'plant:'+k,n:SEED_PACK});J.buy(`${SEED_PACK} plants de ${SPECIES[k].n.toLowerCase()}`,pr);toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
     d.appendChild(b);L.appendChild(d);
   });
   sec('Véhicules et remorques');

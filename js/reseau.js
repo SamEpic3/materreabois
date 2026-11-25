@@ -116,8 +116,16 @@ const COLS=[
    ser:()=>({camp:Object.assign({},S.camp),stove:stove.fuel}),
    set:(id,d)=>{Object.keys(d.camp||{}).forEach(u=>{if(d.camp[u])buildUpgrade(u);});stove.fuel=d.stove||0;},
    del:()=>{},get:()=>S.camp},
-  {c:'ow',items:()=>[...owned].map(id=>[id,id]),key:()=>'1',ser:()=>1,
-   set:id=>{if(!owned.has(id)){owned.add(id);renderHotbar();}},del:()=>{},get:id=>owned.has(id)?id:null},
+  // Inventaire de chacun (personnel) : gardé sur le serveur pour le retrouver en revenant
+  {c:'iv',items:()=>{const a=[[ME.id,{inv:INV,hot:S.hot}]];for(const id in S.others)if(S.others[id].inv)a.push([id,{inv:S.others[id].inv,hot:S.others[id].hot||0}]);return a;},
+   key:o=>JSON.stringify(o.inv)+'|'+o.hot,ser:o=>({inv:o.inv.map(s=>s?{id:s.id,n:s.n,w:s.w}:null),hot:o.hot}),
+   set:(id,d)=>{if(id===ME.id){INV.fill(null);(d.inv||[]).forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined};});S.hot=d.hot||0;syncTool();renderInv();}
+     else S.others[id]=Object.assign(S.others[id]||{},{inv:d.inv,hot:d.hot});},
+   del:()=>{},get:id=>id===ME.id?{inv:INV,hot:S.hot}:(S.others[id]&&S.others[id].inv?{inv:S.others[id].inv,hot:S.others[id].hot||0}:null)},
+  // Objets par terre
+  {c:'dr',items:()=>S.drops.map(d=>[d.id,d]),key:d=>JSON.stringify(d.it)+'|'+Math.round(d.x*10)+'|'+Math.round(d.z*10),ser:d=>({it:d.it,x:d.x,z:d.z}),
+   set:(id,o)=>{const d=S.drops.find(d=>d.id===id);if(d)removeDrop(d);dropItem(o.it,o.x,o.z,id);},
+   del:id=>{const d=S.drops.find(d=>d.id===id);if(d)removeDrop(d);},get:id=>S.drops.find(d=>d.id===id)},
   {c:'jo',items:()=>S.journal.map(e=>[e.id,e]),key:e=>`${e.n||''}|${e.m||''}|${e.txt}`,ser:e=>Object.assign({},e),
    set:(id,d)=>{const e=S.journal.find(e=>e.id===id);if(e)Object.assign(e,d);else{S.journal.push(d);S.journal.sort((a,b)=>a.t-b.t);trimJournal();}
      if(!$('journal').classList.contains('hidden'))renderJournal();},
@@ -137,7 +145,6 @@ const SCAL={
   taps:[()=>S.taps,d=>{S.taps+=d;}],
   yard:[()=>yardCount,d=>{for(let i=0;i<d;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},yardCount++);}]
 };
-Object.keys(S.seeds).forEach(k=>{SCAL['seed_'+k]=[()=>S.seeds[k],d=>{S.seeds[k]+=d;renderHotbar();}];});
 
 function resetBase(){
   NET.base={};COLS.forEach(C=>{const m={};C.items().forEach(([id,...o])=>{m[id]=colKey(C,o.length>1?o:o[0]);});NET.base[C.c]=m;});
@@ -178,7 +185,7 @@ function avatarOf(id){
   a=NET.avatars[id]={f,l:label(name,0,0,0,14),x:0,z:0,rot:0,tx:0,tz:0,trot:0,phase:0,p:null,inVeh:null,first:true};
   return a;
 }
-function dropAvatar(id){const a=NET.avatars[id];if(!a)return;if(a.f.g.parent)a.f.g.parent.remove(a.f.g);scene.remove(a.l);const i=labels.indexOf(a.l);if(i>=0)labels.splice(i,1);delete NET.avatars[id];}
+function dropAvatar(id){const a=NET.avatars[id];if(!a)return;if(a.bob){scene.remove(a.bob);scene.remove(a.line);}if(a.f.g.parent)a.f.g.parent.remove(a.f.g);scene.remove(a.l);const i=labels.indexOf(a.l);if(i>=0)labels.splice(i,1);delete NET.avatars[id];}
 function onPos(from,p){
   const a=avatarOf(from);a.p=p;a.tx=p.x;a.tz=p.z;a.trot=p.rot;
   if(a.first){a.x=p.x;a.z=p.z;a.rot=p.rot;a.first=false;}
@@ -230,11 +237,12 @@ function updateAvatars(dt){
     if(a.inVeh){a.inVeh.mesh.g.remove(f.g);scene.add(f.g);a.inVeh=null;legPose(f,'stand');f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);a.x=a.tx;a.z=a.tz;}
     const ox=a.x,oz=a.z;a.x+=(a.tx-a.x)*k;a.z+=(a.tz-a.z)*k;a.rot+=wrapAng(a.trot-a.rot)*k;
     const spd=Math.hypot(a.x-ox,a.z-oz)/Math.max(dt,1e-3);
-    a.jy=lerp(a.jy||0,p.j||0,k);f.g.visible=true;f.g.position.set(a.x,H(a.x,a.z)+a.jy+(inCabin(a.x,a.z)?FLOOR_Y:0),a.z);f.g.rotation.set(0,a.rot,0);
+    a.jy=lerp(a.jy||0,p.j||0,k);f.g.visible=true;f.g.position.set(a.x,walkH(a.x,a.z)+a.jy+(inCabin(a.x,a.z)?FLOOR_Y:0),a.z);f.g.rotation.set(0,a.rot,0);
     if(p.m==='sleep'){const q=cabW(SLEEP_POS.x,SLEEP_POS.z);f.g.position.set(q.x,CAMP_H+SLEEP_POS.y,q.z);f.g.quaternion.copy(SLEEP_Q);a.l.position.set(q.x,CAMP_H+1.6,q.z);continue;}
     if(p.m==='sit'){legPose(f,'sit');f.g.position.y-=0.45;}
     else{a.phase+=dt*spd*3.2;const sw=Math.min(1,spd/2)*0.6*Math.sin(a.phase);f.legL.rotation.x=sw;f.legR.rotation.x=-sw;f.armL.rotation.x=-sw*0.8;f.armR.rotation.x=p.c?-2.6:sw*0.8;
       if(a.ar!==undefined){f.armR.rotation.x=a.ar;f.armL.rotation.x=a.ar;}}
+    avatarFishing(a,p,f);
     a.l.position.set(a.x,H(a.x,a.z)+2.6,a.z);
   }
   // Véhicules et remorques conduits par les autres : on glisse vers la dernière position reçue
@@ -246,7 +254,7 @@ function updateAvatars(dt){
   });
 }
 function posPacket(){
-  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);
+  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);if(P.fishing&&P.fishing.state!=='cast')p.fb=[rd(P.fishing.x,100),rd(P.fishing.z,100),P.fishing.state==='bite'?1:0];
   if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0,sp:P.carry.sp};
   if(P.pail)p.pl=1;
   if(S.mode==='vtt'&&V){p.v={id:V.id,x:rd(V.x,100),z:rd(V.z,100),th:rd(V.th,1000),sp:rd(V.v,10)};const tw=towed(V);if(tw)p.v.tw={id:tw.id,x:rd(tw.x,100),z:rd(tw.z,100),th:rd(tw.th,1000)};}

@@ -26,7 +26,8 @@ function updateFoot(dt){
     if(S.inside)insideMove(p);
     else{pushOut(p,0.35);
     bodyCircles(null).forEach(c=>pushCircle(p,0.35,c[0],c[1],c[2]));}
-    const B=WORLD-1.5;p.x=clamp(p.x,-B,B);p.z=clamp(p.z,-B,B);
+    clampW(p,1.5);
+    if(!S.inside&&waterDepth(p.x,p.z)>0.45&&!onDock(p.x,p.z)){p.x=P.x;p.z=P.z;}   // trop creux : on ne marche pas dans le lac
     const moved=Math.hypot(p.x-P.x,p.z-P.z);
     if(P.target&&moved<speed*dt*0.15){P.target=null;marker.visible=false;}
     P.x=p.x;P.z=p.z;
@@ -52,7 +53,7 @@ function updateFoot(dt){
   }else{
     player.armL.rotation.x=lerp(player.armL.rotation.x,-sw*0.8,0.3);player.armR.rotation.x=lerp(player.armR.rotation.x,sw*0.8,0.3);
   }
-  player.g.position.set(P.x,H(P.x,P.z)+(S.inside?FLOOR_Y:0)+P.jumpY+(amt>0.01&&P.jumpY===0?Math.abs(Math.cos(P.phase))*0.05:0),P.z);
+  player.g.position.set(P.x,walkH(P.x,P.z)+(S.inside?FLOOR_Y:0)+P.jumpY+(amt>0.01&&P.jumpY===0?Math.abs(Math.cos(P.phase))*0.05:0),P.z);
   if(P.jumpY>0){player.legL.rotation.x=-0.5;player.legR.rotation.x=0.3;}
   player.g.rotation.y=P.rot;
   if(marker.visible){marker.material.opacity=0.5+0.3*Math.sin(S.time*6);}

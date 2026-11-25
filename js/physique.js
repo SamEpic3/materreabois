@@ -7,7 +7,7 @@ function bodyCircles(except){
   trailers.forEach(t=>{if(!except||t.hitch!==except)a.push(...trCircles(t,t.x,t.z,t.th));});
   return a;
 }
-function circlesHit(list,others){for(const c of list){if(hits(c[0],c[1],c[2]))return true;for(const o of others){const dx=c[0]-o[0],dz=c[1]-o[1],rr=c[2]+o[2];if(dx*dx+dz*dz<rr*rr)return true;}}return false;}
+function circlesHit(list,others){for(const c of list){if(waterDepth(c[0],c[1])>0.35)return true;if(hits(c[0],c[1],c[2]))return true;for(const o of others){const dx=c[0]-o[0],dz=c[1]-o[1],rr=c[2]+o[2];if(dx*dx+dz*dz<rr*rr)return true;}}return false;}
 function trailerFollow(t,hx,hz,th){
   let dx=hx-t.x,dz=hz-t.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;
   const tth=Math.atan2(dx,dz);
@@ -39,8 +39,7 @@ function updateVehicle(v,dt){
   const maxSt=sp.steer*(1-0.45*Math.min(1,Math.abs(v.v)/sp.maxF));
   v.steer=lerp(v.steer,steerIn*maxSt,1-Math.exp(-(sp.steerRate||8)*dt));
   if(v.v!==0){
-    const B=WORLD-3;
-    const step=vv=>{const nth=v.th+vv*Math.tan(v.steer)/sp.wb*dt;const nx=clamp(v.x+Math.sin(nth)*vv*dt,-B,B),nz=clamp(v.z+Math.cos(nth)*vv*dt,-B,B);
+    const step=vv=>{const nth=v.th+vv*Math.tan(v.steer)/sp.wb*dt;const nx=clamp(v.x+Math.sin(nth)*vv*dt,WB.x0+3,WB.x1-3),nz=clamp(v.z+Math.cos(nth)*vv*dt,WB.z0+3,WB.z1-3);
       return {nth,nx,nz,tr:tw?trailerFollow(tw,nx-Math.sin(nth)*sp.hitch,nz-Math.cos(nth)*sp.hitch,nth):null};};
     let st=step(v.v);
     if(st.tr&&Math.abs(st.tr.rel)>JACK){

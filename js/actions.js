@@ -45,7 +45,9 @@ function context(){
   const cont=nearestContainer();
   const extra=(!P.carry&&!P.pail)?footExtras():null;
   if(P.pail){const r=pailContext();act=r.act;act2=r.act2;info=r.info||'';}
+  else if(!P.carry&&nearestDrop()){const dr=nearestDrop();act={label:`Ramasser : ${itemLabel(dr.it)}`,fn:()=>pickUpDrop(dr)};}
   else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
+  else if(!P.carry&&TOOL&&TOOL.kind==='rod'&&(P.fishing||castTarget()||!extra)){const r=fishContext();act=r.act||null;info=r.info||'';}
   else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}
   else if(P.carry&&carryExtras()){const r=carryExtras();act=r.act||null;info=r.info||'';}
   else if(P.carry){
@@ -204,7 +206,6 @@ function removeStump(st,silent){
   if(st.tree)st.tree.stumpGone=true;else st.gone=true;
   if(!silent)toast('Souche arrachée !');
 }
-function removeCol(c){const a=grid.get(gk(Math.floor(c.x/CELL),Math.floor(c.z/CELL)));if(a){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}}
 function fell(t){
   hideTree(t);
   const g=treeGroupFromParts(t.parts);g.position.set(t.x,t.y,t.z);scene.add(g);

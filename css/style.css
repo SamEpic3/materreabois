@@ -103,3 +103,22 @@
 
 #fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
 #fade.on{opacity:1}
+
+/* Inventaire */
+#inv{position:fixed;inset:0;background:rgba(20,18,14,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
+#inv .card{background:#f6efe0;color:#2b2418;border-radius:16px;max-width:440px;width:100%;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-height:88vh;overflow:auto;user-select:none;-webkit-user-select:none}
+#inv h1{margin:0;font-size:21px}
+#inv .money{font-size:14px;margin:2px 0 10px;color:#7a4a18;font-weight:600;min-height:2.6em}
+.invLbl{font-size:12px;font-weight:700;color:#7a6a50;text-transform:uppercase;letter-spacing:.04em;margin:8px 0 4px}
+.invGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.islot{position:relative;aspect-ratio:1;border-radius:10px;background:#e2d6bd;border:2px solid #cbbd9f;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:pointer}
+.islot.on{border-color:#d08a1e;background:#f0dcb0}
+.islot img,#invCursor img{width:88%;height:88%;object-fit:contain;pointer-events:none}
+.islot .emo,#invCursor .emo,.slot .emo,#toolBtn .emo{font-size:26px;line-height:1;pointer-events:none}
+.islot .n,.slot .n,#toolBtn .n,#invCursor .n{position:absolute;right:4px;bottom:2px;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;pointer-events:none}
+.invBtns{display:flex;gap:8px;margin-top:12px}
+.invBtns button{flex:1;padding:10px;border:0;border-radius:10px;background:#3d6b3a;color:#fff;font-weight:700;font-size:14px}
+.invBtns button:disabled{background:#b9b0a0}
+#invCursor{position:fixed;width:52px;height:52px;margin:-26px 0 0 -26px;pointer-events:none;z-index:60;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
+#toolBtn{position:fixed}
+.slot{position:relative}

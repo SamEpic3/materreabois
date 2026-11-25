@@ -126,6 +126,7 @@ function updateSky(dt,focus){
   const fogC=_gc.copy(_c.hor);
   FOG.color.copy(fogC);FOG.near=30*SKY.fog;FOG.far=110*(0.35+0.65*SKY.fog);
   scene.background.copy(_c.bg);
+  WATER_U.uTime.value=S.time;WATER_MAT.color.setRGB(0.1,0.27,0.34);WATER_MAT.emissive.copy(_c.hor).multiplyScalar(0.3).add(_gc.copy(_c.mid).multiplyScalar(0.18));WATER_MAT.specular.copy(sun.color).multiplyScalar(0.6*(1-cl*0.7));
   hemi.color.copy(_c.hs);hemi.groundColor.copy(_c.hg);hemi.intensity=0.5+0.25*dayK+0.18*cl*dayK;
   sun.color.copy(_c.sun);
   const sunI=day?0.85*smoothstep(-0.02,0.2,el):0.32*smoothstep(0,0.3,el);

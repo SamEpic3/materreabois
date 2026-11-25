@@ -2,14 +2,14 @@
    (chaudières, bouilloire, feux, arbres plantés) continue pendant l'absence. */
 const SAVE_VER=2;   // v2 : monde et joueurs séparés (v1 encore lue)
 // Signature de la forêt de départ : si le code du monde change, on ne réapplique pas l'état des arbres.
-const WORLD_SIG=`${treeList.length}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[treeList.length-1].z*1000)}`;
+const WORLD_SIG=`${ORIG_TREE_N}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[ORIG_TREE_N-1].z*1000)}`;   // forêt de départ seulement
 let saveOff=false;
 const r3=v=>Math.round(v*1000)/1000;
 function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=c.split;return o;}
 function contSnap(c){return {logs:c.load.map(m=>cOf(m.userData.c)),pails:(c.pails||[]).map(p=>({kind:p.kind,L:p.L}))};}
 function snapshot(){
-  const f=flatSnapshot(),me={name:ME.name,player:f.player,tool:f.tool,seedSel:f.seedSel,t:f.t};
-  delete f.player;delete f.tool;delete f.seedSel;delete f.ver;delete f.sig;
+  const f=flatSnapshot(),me={name:ME.name,player:f.player,inv:f.inv,hot:f.hot,t:f.t};
+  delete f.player;delete f.inv;delete f.hot;delete f.ver;delete f.sig;
   return {ver:SAVE_VER,sig:WORLD_SIG,t:me.t,world:f,players:Object.assign({},S.others,{[ME.id]:me}),journal:S.journal};
 }
 // Ancienne forme « tout à plat » : sert aussi à lire les sauvegardes v1
@@ -22,7 +22,8 @@ function flatSnapshot(){
     ver:SAVE_VER,sig:WORLD_SIG,t:Date.now(),
     money:S.money,delivered:S.delivered,yardCount,taps:S.taps,
     mkt:S.mkt,mktPrev:S.mktPrev,mktNext:S.mktNext,
-    owned:[...owned],tool:TOOL?TOOL.id:null,seeds:S.seeds,seedSel:S.seedSel,
+    inv:INV.map(s=>s?{id:s.id,n:s.n,w:s.w?s.w.map(r3):undefined}:null),hot:S.hot,
+    drops:S.drops.map(d=>({id:d.id,it:d.it,x:r3(d.x),z:r3(d.z)})),
     player:{x:r3(S.inside?CABIN_DOOR.x:P.x),z:r3(S.inside?CABIN_DOOR.z+0.5:P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:P.pail?{kind:P.pail.kind,L:P.pail.L}:null},
     trees:treeList.map((t,i)=>!t.alive?[i,1,t.stumpGone?1:0]:t.work>0?[i,0,r3(t.work)]:null).filter(Boolean),
     campStumps:campStumps.map((s,i)=>s.gone?[i,1]:s.work>0?[i,0,r3(s.work)]:null).filter(Boolean),
@@ -54,14 +55,15 @@ function loadGame(given){
     const me=(d.players||{})[ME.id]||null;
     S.others={};for(const id in d.players||{})if(id!==ME.id)S.others[id]=d.players[id];
     S.journal=d.journal||[];compactJournal();
-    d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,tool:me?me.tool:null,seedSel:me?me.seedSel:null});
+    d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,inv:me?me.inv:null,hot:me?me.hot:0});
   }
   S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;
   if(d.wx)Object.assign(S.wx,d.wx);
   yardCount=d.yardCount||0;for(let i=Math.max(0,yardCount-60);i<yardCount;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},i);
   if(d.mkt){Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.mktPrev||{});S.mktNext=d.mktNext||MKT_PERIOD;}
-  owned.clear();(d.owned||['hachette']).forEach(id=>owned.add(id));
-  if(d.seeds)Object.assign(S.seeds,d.seeds);if(d.seedSel&&S.seeds[d.seedSel]>0)S.seedSel=d.seedSel;
+  if(d.inv){INV.fill(null);d.inv.forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined};});}
+  else invFromOld(d.owned,d.seeds);           // vieille sauvegarde : outils et plants deviennent des objets
+  S.drops.slice().forEach(removeDrop);(d.drops||[]).forEach(o=>dropItem(o.it,o.x,o.z,o.id));
   const same=d.sig===WORLD_SIG;
   if(same){
     (d.trees||[]).forEach(([i,f,x])=>{const t=treeList[i];if(!t)return;if(f){hideTree(t);if(x)t.stumpGone=true;else makeStump(t);}else t.work=x;});
@@ -87,8 +89,7 @@ function loadGame(given){
   }
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
   showOthers();
-  TOOL=d.tool==='plants'?(seedCount()>0?PLANT_TOOL:null):(TOOLS.find(t=>t.id===d.tool&&owned.has(t.id))||null);
-  updateToolVisual();renderHotbar();
+  S.hot=clamp(d.hot||0,0,HOT_N-1);syncTool();
   // Ce qui a avancé pendant l'absence (48 h maximum)
   const away=clamp((Date.now()-d.t)/1000,0,48*3600);
   let sap=0;taps.forEach(tp=>{const add=Math.min(TAP_CAP-tp.sap,SAP_RATE*away);tp.sap+=add;sap+=add;});

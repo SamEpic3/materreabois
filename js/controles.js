@@ -6,6 +6,7 @@ const pedal={gas:false,brake:false};
 addEventListener('keydown',e=>{
   if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;   // on écrit (nom, code, clavardage)
   if((e.code==='Enter'||e.code==='KeyT')&&!e.repeat&&typeof NET!=='undefined'&&NET.on&&NET.ready&&$('help').classList.contains('hidden')&&!CHAT.open){e.preventDefault();openChat();return;}
+  if(invOpen()){if(e.code==='Escape'||e.code==='KeyI'||e.code==='Tab'||e.code==='KeyE'){closeInv();e.preventDefault();}return;}
   if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
   if(!$('journal').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space'||e.code==='KeyJ')closeJournal();e.preventDefault();return;}
   if(!$('proj').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeProjects();e.preventDefault();return;}
@@ -21,6 +22,8 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyV'&&!e.repeat)toggleCam();
   if(e.code==='KeyJ'&&!e.repeat)openJournal();
   if(e.code==='KeyM'&&!e.repeat)setSound(!AU.on);
+  if((e.code==='KeyI'||e.code==='Tab')&&!e.repeat){e.preventDefault();openInv();}
+  if(e.code==='KeyQ'&&!e.repeat)dropHeld();
   const dg=/^Digit([1-9])$/.exec(e.code);if(dg&&!e.repeat)selectSlot(+dg[1]-1);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });

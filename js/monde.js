@@ -1,6 +1,9 @@
 /* Le monde : relief, chemins, rendu, terrain, collisions, camp, village, billots et forêt */
 /* ---------- Monde ---------- */
-const WORLD=80;
+const WORLD=80;                                     // terre d'origine : -80..80 (la forêt de départ)
+const WB={x0:-80,x1:140,z0:-80,z1:80};              // la terre agrandie vers l'est, jusqu'au lac
+function clampW(p,m){p.x=clamp(p.x,WB.x0+m,WB.x1-m);p.z=clamp(p.z,WB.z0+m,WB.z1-m);return p;}
+function outW(x,z,m){return x<WB.x0+m||x>WB.x1-m||z<WB.z0+m||z>WB.z1-m;}
 const CAMP={x:0,z:0,r:14};
 const TRAILS=[
   [[0,0],[8,-14],[22,-28],[30,-46],[18,-62]],
@@ -18,12 +21,21 @@ const CAP=6;
 
 const SEGS=[];
 TRAILS.forEach(tr=>{for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1]]);});
+const SEGS0=SEGS.slice();   // sentiers d'origine : servent à générer la forêt de départ (sauvegardes compatibles)
+// Nouveau sentier vers le lac
+const LAKE_TRAIL=[[58,-6],[68,-5],[78,-2],[87,2]];
+for(let i=0;i<LAKE_TRAIL.length-1;i++)SEGS.push([LAKE_TRAIL[i][0],LAKE_TRAIL[i][1],LAKE_TRAIL[i+1][0],LAKE_TRAIL[i+1][1]]);
 function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;t=clamp(t,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
 function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
+function trailDist0(x,z){let m=1e9;for(const s of SEGS0){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function mudAt(x,z){let m=0;for(const p of MUD){m=Math.max(m,smoothstep(p.r,p.r*0.55,Math.hypot(x-p.x,z-p.z)));}return m;}
 function baseH(x,z){return 1.7*Math.sin(x*0.045+0.5)*Math.cos(z*0.038)+0.8*Math.sin(x*0.1+1.3)*Math.sin(z*0.085+0.7);}
 function detailH(x,z){return 0.32*Math.sin(x*0.33)*Math.cos(z*0.29)+0.15*Math.sin(x*0.7+z*0.5);}
 const CAMP_H=baseH(CAMP.x,CAMP.z),VIL_H=baseH(VILLAGE.x,VILLAGE.z);
+/* ---------- Le lac (au bout est de la terre) ---------- */
+const LAKE={x:113,z:2,rx:23,rz:33};
+function lakeE(x,z){const dx=(x-LAKE.x)/LAKE.rx,dz=(z-LAKE.z)/LAKE.rz,a=Math.atan2(dz,dx);return Math.hypot(dx,dz)/(1+0.07*Math.sin(3*a+1)+0.05*Math.sin(5*a+2));}
+const LAKE_Y=(()=>{let s=0;for(let i=0;i<32;i++){const a=i/32*Math.PI*2;s+=baseH(LAKE.x+Math.cos(a)*LAKE.rx*1.45,LAKE.z+Math.sin(a)*LAKE.rz*1.45);}return s/32-0.25;})();
 function H(x,z){
   let h=baseH(x,z);
   const tc=smoothstep(CAMP.r+8,CAMP.r,Math.hypot(x-CAMP.x,z-CAMP.z));
@@ -32,8 +44,15 @@ function H(x,z){
   h+=detailH(x,z)*(1-Math.max(tc,tt,tv));
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
   h-=0.18*mudAt(x,z);
+  if(x>60){const e=lakeE(x,z);if(e<2.0){h=lerp(h,LAKE_Y+0.35,smoothstep(2.0,1.1,e));h-=3.2*smoothstep(1.0,0.5,e);}}
   return h;
 }
+// Profondeur d'eau (négatif : pas d'eau)
+function waterDepth(x,z){return x>60&&lakeE(x,z)<1.15?LAKE_Y-H(x,z):-1;}
+// Le quai : on y marche au-dessus de l'eau
+const DOCK=(()=>{let sx=88;for(let x=86;x<LAKE.x;x+=0.1){if(H(x,LAKE.z)<LAKE_Y){sx=x;break;}}return {x0:sx-2.6,x1:sx+6.5,z0:LAKE.z-0.85,z1:LAKE.z+0.85,y:LAKE_Y+0.48};})();
+function onDock(x,z){return x>DOCK.x0&&x<DOCK.x1&&z>DOCK.z0&&z<DOCK.z1;}
+function walkH(x,z){const h=H(x,z);return onDock(x,z)?Math.max(h,DOCK.y):h;}
 
 /* ---------- Rendu ---------- */
 const canvas=$('c');
@@ -194,8 +213,8 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
   }
 },23);
 {
-  const SIZE=WORLD*2,SEG=SIZE*1.5,TILE=4;
-  const g=new T.PlaneGeometry(SIZE,SIZE,SEG,SEG);g.rotateX(-Math.PI/2);
+  const SX=WB.x1-WB.x0,SZ=WB.z1-WB.z0,TILE=4;
+  const g=new T.PlaneGeometry(SX,SZ,Math.round(SX*1.3),Math.round(SZ*1.3));g.rotateX(-Math.PI/2);g.translate((WB.x0+WB.x1)/2,0,(WB.z0+WB.z1)/2);
   const pos=g.attributes.position,cols=new Float32Array(pos.count*3),dirt=new Float32Array(pos.count);
   for(let i=0;i<pos.count;i++){
     const x=pos.getX(i),z=pos.getZ(i);
@@ -205,17 +224,19 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
     const vilF=smoothstep(VILLAGE.r+2,VILLAGE.r-4,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
     const patch=vilF*(0.38+0.25*Math.sin(x*0.55+1.7)*Math.cos(z*0.47));
-    dirt[i]=Math.max(tr,mud,patch);
+    const le=x>60?lakeE(x,z):9,beach=smoothstep(1.22,1.02,le);
+    dirt[i]=Math.max(tr,mud,patch,beach*0.9);
     let r=0.88+0.22*n,gg=0.88+0.2*n,b=0.86+0.18*n;
     r*=1+0.06*campF;b*=1-0.08*campF;
     r=lerp(r,0.55,mud);gg=lerp(gg,0.48,mud);b=lerp(b,0.42,mud);
+    if(beach>0){const wet=smoothstep(1.0,0.85,le);r=lerp(r,1.12,beach*0.5)*(1-0.45*wet);gg=lerp(gg,1.05,beach*0.5)*(1-0.4*wet);b=lerp(b,0.9,beach*0.5)*(1-0.3*wet);}
     cols[i*3]=r;cols[i*3+1]=gg;cols[i*3+2]=b;
   }
   g.setAttribute('color',new T.BufferAttribute(cols,3));
   g.setAttribute('aDirt',new T.BufferAttribute(dirt,1));
   g.computeVertexNormals();
-  grassTex.repeat.set(SIZE/TILE,SIZE/TILE);
-  dirtTex.repeat.set(SIZE/TILE,SIZE/TILE);
+  grassTex.repeat.set(SX/TILE,SZ/TILE);
+  dirtTex.repeat.set(SX/TILE,SZ/TILE);
   const tm=new T.MeshLambertMaterial({vertexColors:true,map:grassTex});
   tm.onBeforeCompile=sh=>{
     sh.uniforms.tDirt={value:dirtTex};sh.uniforms.uSnow=GROUND_U.uSnow;sh.uniforms.uWet=GROUND_U.uWet;
@@ -231,6 +252,7 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
 const CELL=5,grid=new Map();
 const gk=(ix,iz)=>ix*1000+iz;
 function addCol(x,z,r){const c={x,z,r},k=gk(Math.floor(x/CELL),Math.floor(z/CELL));if(!grid.has(k))grid.set(k,[]);grid.get(k).push(c);return c;}
+function removeCol(c){const a=grid.get(gk(Math.floor(c.x/CELL),Math.floor(c.z/CELL)));if(a){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}}
 function eachNear(x,z,fn){const ix=Math.floor(x/CELL),iz=Math.floor(z/CELL);for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const arr=grid.get(gk(ix+a,iz+b));if(arr)for(const c of arr)if(fn(c))return true;}return false;}
 function hits(x,z,r){return eachNear(x,z,c=>{const dx=x-c.x,dz=z-c.z,rr=r+c.r;return dx*dx+dz*dz<rr*rr;});}
 function pushCircle(p,r,cx,cz,cr){const dx=p.x-cx,dz=p.z-cz,rr=r+cr,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);p.x=cx+dx/d*rr;p.z=cz+dz/d*rr;}}
@@ -455,7 +477,7 @@ for(let k=0;k<5200&&treeList.length<900;k++){
   const dc=Math.hypot(x-CAMP.x,z-CAMP.z);
   if(dc<CAMP.r+1.5)continue;
   if(Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+4)continue;
-  if(trailDist(x,z)<3.4)continue;
+  if(trailDist0(x,z)<3.4)continue;
   if(Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<9)continue;
   const p=0.1+0.85*smoothstep(CAMP.r+2,CAMP.r+28,dc);
   if(rnd()>p)continue;
@@ -464,6 +486,24 @@ for(let k=0;k<5200&&treeList.length<900;k++){
   const type=r<0.33?'epinette':r<0.52?'sapin':r<0.82?'erable':'bouleau';
   const s=0.8+rnd()*0.5;
   const t={x,z,y:H(x,z),type,s,rot:rnd()*6.28,alive:true,work:0,base:Math.round(5+s*5)};
+  t.col=addCol(x,z,0.32*s);t.col.tree=t;
+  treeList.push(t);
+}
+const ORIG_TREE_N=treeList.length;
+// Le nouveau sentier passe dans la forêt de départ : ces arbres-là sont déjà coupés (sans souche)
+treeList.forEach(t=>{if(trailDist(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+// Forêt de la terre agrandie (son propre hasard : ne change rien à la forêt de départ)
+const rng2=mulberry32(4242);
+for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){
+  const x=81+rng2()*(WB.x1-82),z=WB.z0+1+rng2()*(WB.z1-WB.z0-2);
+  const e=lakeE(x,z);if(e<1.28)continue;
+  if(trailDist(x,z)<3.4||(x<DOCK.x1+4&&Math.abs(z-LAKE.z)<5&&x>DOCK.x0-6))continue;
+  if(rng2()>0.9)continue;
+  if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2.3))continue;
+  const r=rng2(),near=e<1.8;
+  const type=near?(r<0.35?'epinette':r<0.6?'sapin':r<0.72?'erable':'bouleau'):(r<0.3?'epinette':r<0.48?'sapin':r<0.8?'erable':'bouleau');
+  const s=0.8+rng2()*0.5;
+  const t={x,z,y:H(x,z),type,s,rot:rng2()*6.28,alive:true,work:0,base:Math.round(5+s*5),ext:true};
   t.col=addCol(x,z,0.32*s);t.col.tree=t;
   treeList.push(t);
 }
@@ -531,7 +571,7 @@ function makeTreeParts(t,rf){
 function treeGroupFromParts(parts){const g=new T.Group();parts.forEach(pp=>{const m=new T.Mesh(TREE_GEO[pp.g],treeMat(pp.c));m.position.set(pp.dx,pp.dy,pp.dz);m.scale.set(pp.sx,pp.sy,pp.sz);m.rotation.y=pp.rot;g.add(m);});shadows(g);return g;}
 const ZERO_M=new T.Matrix4().makeScale(0,0,0);
 {
-  treeList.forEach(t=>{t.parts=makeTreeParts(t,rnd);});
+  treeList.forEach(t=>{t.parts=makeTreeParts(t,t.ext?rng2:rnd);});
   const counts={};
   treeList.forEach(t=>t.parts.forEach(pp=>{pp.idx=counts[pp.g]=(counts[pp.g]||0);counts[pp.g]++;}));
   var ph=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,shininess:3});
@@ -539,17 +579,17 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   var put=function(mesh,i,x,y,z,sx,sy,sz,rot,c){q.setFromAxisAngle(UP,rot);m4.compose(p.set(x,y,z),q,sc.set(sx,sy,sz));mesh.setMatrixAt(i,m4);mesh.setColorAt(i,col.set(c));};
   const phT=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,shininess:3,vertexColors:true});
   for(const k in counts)TREE_INST[k]=new T.InstancedMesh(TREE_GEO[k],phT,counts[k]);
-  treeList.forEach(t=>t.parts.forEach(pp=>put(TREE_INST[pp.g],pp.idx,t.x+pp.dx,t.y+pp.dy,t.z+pp.dz,pp.sx,pp.sy,pp.sz,pp.rot,pp.c)));
+  treeList.forEach(t=>t.parts.forEach(pp=>{put(TREE_INST[pp.g],pp.idx,t.x+pp.dx,t.y+pp.dy,t.z+pp.dz,pp.sx,pp.sy,pp.sz,pp.rot,pp.c);if(t.cleared)TREE_INST[pp.g].setMatrixAt(pp.idx,ZERO_M);}));
   Object.values(TREE_INST).forEach(m=>{m.castShadow=true;m.receiveShadow=true;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;scene.add(m);});
 
   // Roches
   const rocks=[];
   for(let k=0;k<400&&rocks.length<55;k++){
     const x=(rnd()*2-1)*(WORLD-2),z=(rnd()*2-1)*(WORLD-2);
-    if(Math.hypot(x,z)<CAMP.r+3||trailDist(x,z)<3.5||Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)continue;
+    if(Math.hypot(x,z)<CAMP.r+3||trailDist0(x,z)<3.5||Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)continue;
     if(PILE_DEF.some(pp=>Math.hypot(x-pp.x,z-pp.z)<6))continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2))continue;
-    const s=0.4+rnd()*0.6;addCol(x,z,0.85*s);rocks.push({x,z,s});
+    const s=0.4+rnd()*0.6;rocks.push({x,z,s,col:addCol(x,z,0.85*s)});
   }
   // Deux formes de roches bosselées, mousse sur le dessus (couleurs par sommet)
   const rockGeo=sd=>{const g=new T.IcosahedronGeometry(1,1),pa=g.attributes.position,v=new T.Vector3();
@@ -558,7 +598,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const rockMat=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,vertexColors:true,shininess:4});
   const rockMs=[rockGeo(3),rockGeo(17)].map((gg,j)=>new T.InstancedMesh(gg,rockMat,rocks.filter((r,i)=>i%2===j).length));
   const cnt=[0,0];
-  rocks.forEach((r,i)=>{q.setFromEuler(new T.Euler(rnd(),rnd()*6,rnd()));m4.compose(p.set(r.x,H(r.x,r.z)+0.1*r.s,r.z),q,sc.set(r.s,r.s*0.7,r.s));const rm=rockMs[i%2],n=cnt[i%2]++;rm.setMatrixAt(n,m4);rm.setColorAt(n,col.set(rnd()<0.5?0x8a8780:0x76736c));});
+  rocks.forEach((r,i)=>{q.setFromEuler(new T.Euler(rnd(),rnd()*6,rnd()));m4.compose(p.set(r.x,H(r.x,r.z)+0.1*r.s,r.z),q,sc.set(r.s,r.s*0.7,r.s));const rm=rockMs[i%2],n=cnt[i%2]++;const gone=trailDist(r.x,r.z)<2.5;if(gone)removeCol(r.col);rm.setMatrixAt(n,gone?ZERO_M:m4);rm.setColorAt(n,col.set(rnd()<0.5?0x8a8780:0x76736c));});
   rockMs.forEach(rm=>{rm.castShadow=true;rm.receiveShadow=true;scene.add(rm);});
 
   // Souches autour du camp (on a déjà bûché ici)
@@ -566,7 +606,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const stumps=[];
   for(let k=0;k<200&&stumps.length<16;k++){
     const a=rnd()*6.28,d=CAMP.r-1+rnd()*9,x=CAMP.x+Math.cos(a)*d,z=CAMP.z+Math.sin(a)*d;
-    if(trailDist(x,z)<3||Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<8||Math.hypot(x-CABIN.x,z-CABIN.z)<5)continue;
+    if(trailDist0(x,z)<3||Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<8||Math.hypot(x-CABIN.x,z-CABIN.z)<5)continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<1.8))continue;
     const c=addCol(x,z,0.4);stumps.push({x,z,c});
   }
@@ -574,4 +614,55 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   stumps.forEach((s,i)=>put(stM,i,s.x,H(s.x,s.z)-0.05,s.z,1.2,0.8+rnd()*0.6,1.2,rnd()*6,0xe8e0d4));
   stumps.forEach((s,i)=>{const e={x:s.x,z:s.z,col:s.c,inst:stM,idx:i,size:1,work:0};stumpList.push(e);campStumps.push(e);});
   stM.castShadow=true;stM.receiveShadow=true;scene.add(stM);
+}
+
+/* ---------- Le lac : eau animée, quai, quenouilles, nénuphars, roches de la rive ---------- */
+const WATER_U={uTime:{value:0}};
+const WATER_MAT=new T.MeshPhongMaterial({color:0x3d6f86,specular:0x8899aa,shininess:90,transparent:true,opacity:0.86});
+WATER_MAT.onBeforeCompile=sh=>{
+  sh.uniforms.uTime=WATER_U.uTime;
+  sh.vertexShader='varying vec3 vWp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n  vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  sh.fragmentShader='uniform float uTime;\nvarying vec3 vWp;\n'+sh.fragmentShader.replace('#include <normal_fragment_begin>',`#include <normal_fragment_begin>
+    vec2 q=vWp.xz;float t=uTime;
+    vec2 w=vec2(sin(q.x*1.3+t*1.1)+sin(q.x*2.7-q.y*1.9+t*1.7)*0.5+sin(q.y*0.7+t*0.6)*0.6,
+                cos(q.y*1.5+t*1.3)+cos(q.y*3.1+q.x*2.3-t*1.9)*0.5+cos(q.x*0.8-t*0.5)*0.6);
+    normal=normalize(normal+(viewMatrix*vec4(w.x*0.07,0.0,w.y*0.07,0.0)).xyz);`);
+};
+{
+  // Surface : l'ellipse ondulée du lac, un peu plus grande que la rive (la terre la cache au bord)
+  const wg=new T.CircleGeometry(1,96).rotateX(-Math.PI/2),wp=wg.attributes.position;
+  for(let i=0;i<wp.count;i++){const x=wp.getX(i),z=wp.getZ(i),a=Math.atan2(z,x),w=(1+0.07*Math.sin(3*a+1)+0.05*Math.sin(5*a+2))*1.06;wp.setXYZ(i,x*w*LAKE.rx,0,z*w*LAKE.rz);}
+  const water=new T.Mesh(wg,WATER_MAT);
+  water.position.set(LAKE.x,LAKE_Y,LAKE.z);water.receiveShadow=true;water.renderOrder=2;scene.add(water);
+  const r=mulberry32(909);
+  // Quai : planches, longerons, pieux qui entrent dans l'eau, bollards
+  const g=new T.Group(),D=DOCK,len=D.x1-D.x0,wd=D.z1-D.z0,y=D.y-LAKE_Y;
+  const deck=texMat(sidingTex('#9a7a55','#5e4632',true),1,1);deck.map.repeat.set(1,len*3);deck.map.rotation=Math.PI/2;
+  g.add(new T.Mesh(new T.BoxGeometry(len,0.08,wd).translate(len/2,y-0.04,0),deck));
+  const posts=[];for(let k=0;k<=Math.floor(len/1.6);k++){const x=0.2+k*1.6;[-1,1].forEach(sd=>posts.push(new T.CylinderGeometry(0.09,0.1,2.6,7).translate(x,y-1.25,sd*(wd/2-0.06))));}
+  g.add(new T.Mesh(mergeGeos(posts),new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3})));
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(len,0.12,0.1).translate(len/2,y-0.14,wd/2-0.05),new T.BoxGeometry(len,0.12,0.1).translate(len/2,y-0.14,-wd/2+0.05),
+    new T.CylinderGeometry(0.07,0.07,0.25,8).translate(len-0.3,y+0.12,wd/2-0.15),new T.CylinderGeometry(0.07,0.07,0.25,8).translate(len-0.3,y+0.12,-wd/2+0.15)]),mat(0x5e4632)));
+  // Une chaudière renversée et un coffre à appâts au bout du quai
+  g.add(new T.Mesh(new T.BoxGeometry(0.5,0.3,0.35).translate(len-1.0,y+0.15,-0.4),mat(0x6e8a5a)));
+  g.position.set(D.x0,LAKE_Y,LAKE.z);shadows(g);g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});scene.add(g);
+  // Quenouilles en touffes au bord de l'eau
+  const reeds=[],pads=[],srocks=[];
+  for(let k=0;k<1400&&reeds.length<260;k++){
+    const a=r()*Math.PI*2,e=0.86+r()*0.1,x=LAKE.x+Math.cos(a)*LAKE.rx*e*1.06,z=LAKE.z+Math.sin(a)*LAKE.rz*e*1.06;
+    const le=lakeE(x,z);if(le<0.84||le>0.98||(x<DOCK.x1+1.5&&Math.abs(z-LAKE.z)<2.5))continue;
+    for(let j=0;j<4;j++)reeds.push({x:x+(r()-0.5)*0.8,z:z+(r()-0.5)*0.8,h:0.9+r()*0.8,cat:r()<0.35});
+  }
+  for(let k=0;k<400&&pads.length<45;k++){const x=LAKE.x+(r()*2-1)*LAKE.rx,z=LAKE.z+(r()*2-1)*LAKE.rz,le=lakeE(x,z);if(le<0.55||le>0.82)continue;pads.push({x,z,s:0.25+r()*0.3,a:r()*6});}
+  for(let k=0;k<600&&srocks.length<40;k++){const a=r()*Math.PI*2,x=LAKE.x+Math.cos(a)*LAKE.rx*1.05,z=LAKE.z+Math.sin(a)*LAKE.rz*1.05,le=lakeE(x,z);if(le<0.95||le>1.15||onDock(x,z)||Math.abs(z-LAKE.z)<3&&x<LAKE.x)continue;srocks.push({x,z,s:0.25+r()*0.55});}
+  const m4=new T.Matrix4(),q=new T.Quaternion(),p=new T.Vector3(),sc=new T.Vector3(),col=new T.Color();
+  const stem=new T.InstancedMesh(new T.CylinderGeometry(0.012,0.02,1,4).translate(0,0.5,0),new T.MeshLambertMaterial({color:0x6d8a3e}),reeds.length);
+  const cats=reeds.filter(o=>o.cat),head=new T.InstancedMesh(new T.CylinderGeometry(0.035,0.035,0.18,6),new T.MeshLambertMaterial({color:0x5a3a22}),cats.length);
+  reeds.forEach((o,i)=>{const lean=(r()-0.5)*0.25;q.setFromEuler(new T.Euler(lean,0,(r()-0.5)*0.25));m4.compose(p.set(o.x,H(o.x,o.z)-0.05,o.z),q,sc.set(1,o.h,1));stem.setMatrixAt(i,m4);});
+  cats.forEach((o,i)=>{m4.compose(p.set(o.x,H(o.x,o.z)-0.05+o.h*0.9,o.z),q.identity(),sc.set(1,1,1));head.setMatrixAt(i,m4);});
+  const pad=new T.InstancedMesh(new T.CircleGeometry(1,10,0.3,Math.PI*2-0.6).rotateX(-Math.PI/2),new T.MeshLambertMaterial({color:0x4f7d3a,side:T.DoubleSide}),pads.length);
+  pads.forEach((o,i)=>{q.setFromAxisAngle(new T.Vector3(0,1,0),o.a);m4.compose(p.set(o.x,LAKE_Y+0.02,o.z),q,sc.set(o.s,1,o.s));pad.setMatrixAt(i,m4);});
+  const rg=new T.IcosahedronGeometry(1,0);const rk=new T.InstancedMesh(rg,new T.MeshPhongMaterial({color:0x8a8780,flatShading:true,shininess:4}),srocks.length);
+  srocks.forEach((o,i)=>{q.setFromEuler(new T.Euler(r(),r()*6,r()));m4.compose(p.set(o.x,H(o.x,o.z)+0.05,o.z),q,sc.set(o.s*1.3,o.s*0.7,o.s));rk.setMatrixAt(i,m4);rk.setColorAt(i,col.setHSL(0.08,0.04,0.45+r()*0.15));if(o.s>0.45)addCol(o.x,o.z,o.s*1.1);});
+  [stem,head,pad,rk].forEach(m=>{m.castShadow=m!==pad;m.receiveShadow=true;scene.add(m);});
 }

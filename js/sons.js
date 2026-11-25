@@ -190,3 +190,12 @@ function updateSound(dt,focus){
   a.crick.g.gain.setTargetAtTime(0.012*(1-day)*(1-SKY.rain)*(1-SKY.snow)*ins,t,1);
   updateEngines();
 }
+
+/* ----- Pêche ----- */
+function sfxCast(x,z){if(!ready())return;const sp=spatial(x,z);const t=AU.ctx.currentTime,o=out(sp.g*0.8,sp.pan);const f=burst(o,t,0.35,'bandpass',900,2,0.25,0.06);f.frequency.setValueAtTime(600,t);f.frequency.exponentialRampToValueAtTime(3000,t+0.3);
+  for(let i=0;i<8;i++)tone(o,t+0.05+i*0.03,0.02,'square',2400+i*80,0,0.03,0.002);}
+function sfxSplash(x,z,big){if(!ready())return;const sp=spatial(x,z,40);if(sp.g<0.01)return;const t=AU.ctx.currentTime,o=out(sp.g*(0.4+big*0.6),sp.pan);
+  burst(o,t,0.25+big*0.4,'lowpass',1400,0.7,0.5,0.005);burst(o,t+0.02,0.18+big*0.3,'bandpass',3200,1,0.15,0.01);tone(o,t,0.12,'sine',500,180,0.15);}
+function sfxPlop(x,z){if(!ready())return;const sp=spatial(x,z,40);const t=AU.ctx.currentTime,o=out(Math.max(0.3,sp.g),sp.pan);
+  tone(o,t,0.14,'sine',620,160,0.5,0.003);tone(o,t+0.16,0.1,'sine',520,200,0.25,0.003);burst(o,t,0.12,'lowpass',900,1,0.25,0.002);}
+function sfxReel(x,z){if(!ready())return;const sp=spatial(x,z);const t=AU.ctx.currentTime,o=out(sp.g*0.6,sp.pan);for(let i=0;i<14;i++)tone(o,t+i*0.045,0.015,'square',1800+(i%2)*300,0,0.05,0.001);}

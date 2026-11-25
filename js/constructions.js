@@ -192,7 +192,7 @@ function updateMapCursor(dt){
   const c=mapCursor();if(!c)return;
   const inp=readInput(true),sp=9;
   c.cx+=(camRight.x*inp.x+camFwd.x*inp.y)*sp*dt;c.cz+=(camRight.z*inp.x+camFwd.z*inp.y)*sp*dt;
-  const B=WORLD-3;c.cx=clamp(c.cx,-B,B);c.cz=clamp(c.cz,-B,B);
+  c.cx=clamp(c.cx,WB.x0+3,WB.x1-3);c.cz=clamp(c.cz,WB.z0+3,WB.z1-3);
 }
 // Glisser sur l'écran déplace la vue (et le curseur au centre)
 function mapPan(dx,dy){
@@ -221,7 +221,8 @@ function placeProblem(k,pos,moving){
   const others=bodyCircles(null);
   for(const [lx,lz,r] of kd.foot){
     const c=lw(pos,lx,lz);
-    if(Math.abs(c.x)>WORLD-r-2||Math.abs(c.z)>WORLD-r-2)return 'Trop près du bout de la terre';
+    if(outW(c.x,c.z,r+2))return 'Trop près du bout de la terre';
+    if(waterDepth(c.x,c.z)>-0.15||onDock(c.x,c.z))return 'Pas dans l\'eau';
     if(Math.hypot(c.x-VILLAGE.x,c.z-VILLAGE.z)<VILLAGE.r+r||inSale(c.x,c.z))return 'Pas au village';
     if(Math.hypot(c.x-YARD.x,c.z-YARD.z)<YARD.r+r)return 'Pas dans la cour à bois';
     if(trailDist(c.x,c.z)<r*0.5+1.4)return 'Pas sur un chemin';

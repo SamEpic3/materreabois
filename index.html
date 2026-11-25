@@ -31,6 +31,7 @@
   <button class="sbtn" id="zOut" title="Zoom arrière">－</button>
   <button class="sbtn" id="btnCam" title="Vue rapprochée (V)">🎥</button>
   <button class="sbtn hidden" id="btnChat" title="Clavarder (Entrée ou T)">💬</button>
+  <button class="sbtn" id="btnInv" title="Inventaire (I)">🎒</button>
   <button class="sbtn" id="btnCash" title="Ajouter 10 000 $ (pour tester)">💵</button>
   <button class="sbtn" id="btnSound" title="Son (M)">🔊</button>
   <button class="sbtn" id="btnJournal" title="Journal de la terre">📜</button>
@@ -69,7 +70,7 @@
     <ul>
       <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou les flèches : marcher, ou conduire (gaz, frein et recul, direction)</li>
       <li>Clic sur le terrain : marcher jusque-là · <kbd>Maj</kbd> : courir</li>
-      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>9</kbd> : choisir un outil ou les mains vides · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
+      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>6</kbd> : choisir une case de la barre · <kbd>I</kbd> ou 🎒 : inventaire · <kbd>Q</kbd> : jeter l'objet tenu · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
       <li>Grue : <kbd>E</kbd> près de la grue pour l'opérer · <kbd>W</kbd>/<kbd>S</kbd> portée · <kbd>A</kbd>/<kbd>D</kbd> pivot · <kbd>Espace</kbd> prendre ou déposer · <kbd>Q</kbd>/<kbd>R</kbd> tourner le billot</li>
       <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (iso, 3e personne, 1re personne), glisser la souris pour tourner autour</li>
     </ul>
@@ -95,6 +96,8 @@
       <li><b>Camp :</b> à la porte de la cabane, « Projets du camp » : feu de camp, abri à bois et bouilloire à sirop (que tu places où tu veux : marche pour choisir l'endroit, F ou R pour tourner, Espace pour construire, E pour annuler), galerie avec chaises berçantes, poêle à bois, nouvelle pièce. E pour t'asseoir sur une chaise ou une bûche. Le bois de chauffage alimente le feu et le poêle, et se corde dans l'abri.</li>
       <li><b>Plantation :</b> achète des plants au magasin, prends-les dans la barre d'outils (🌱) et plante-les n'importe où de libre. Ils poussent en 3 à 5 heures, même quand le jeu est fermé.</li>
       <li><b>Sauvegarde :</b> la partie se sauvegarde toute seule dans ce navigateur.</li>
+      <li><b>Inventaire (🎒 ou <kbd>I</kbd>) :</b> 6 cases en main et 12 de rangement. Touche ou glisse un objet pour le déplacer ; « Déposer par terre » pour le laisser au sol (ton partenaire peut le ramasser).</li>
+      <li><b>Pêche :</b> achète une canne au magasin et suis le chemin vers l'est jusqu'au lac. Lance la ligne du bord ou du quai, attends que le flotteur cale et ferre aussitôt (<kbd>Espace</kbd>). Le doré mord mieux au lever et au coucher du soleil, le brochet en eau creuse.</li>
       <li><b>Journal (📜 ou <kbd>J</kbd>) :</b> tout ce que chacun fait sur la terre y est noté.</li>
       <li><b>Clavardage (💬, <kbd>Entrée</kbd> ou <kbd>T</kbd>) :</b> en partie à plusieurs, écris à ton partenaire. Son message apparaît aussi au-dessus de sa tête.</li>
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
@@ -166,6 +169,7 @@
 <script src="js/constructions.js"></script>
 <script src="js/camp.js"></script>
 <script src="js/cabane.js"></script>
+<script src="js/peche.js"></script>
 <script src="js/plantation.js"></script>
 <script src="js/joueur.js"></script>
 <script src="js/physique.js"></script>

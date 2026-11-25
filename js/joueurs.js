@@ -30,7 +30,8 @@ const JFMT={
   chauffage:(n,m)=>`a vendu ${n} ${pl(n,'bûche','bûches')} de chauffage (+${m} $)`,
   sirop:(n,m)=>`a vendu ${fmtL(n)} de sirop (+${m} $)`,
   plant:n=>`a planté ${n} ${pl(n,'arbre','arbres')}`,
-  fendre:n=>`a fendu ${n} ${pl(n,'bûche','bûches')}`
+  fendre:n=>`a fendu ${n} ${pl(n,'bûche','bûches')}`,
+  peche:n=>`a pêché ${n} ${pl(n,'poisson','poissons')}`
 };
 // Regroupe avec la dernière ligne de la même sorte du même joueur (même s'il y a eu d'autres lignes entre les deux)
 function jcount(k,n,m){
@@ -58,6 +59,7 @@ const J={
   syrup:(L,pr)=>jcount('sirop',L,pr),
   plant:()=>jcount('plant',1,0),
   split:()=>jcount('fendre',1,0),
+  fish:()=>jcount('peche',1,0),
   buy:(what,pr)=>jlog(`a acheté ${what} (${pr} $)`),
   sell:(what,pr)=>jlog(`a vendu ${what} (+${pr} $)`),
   build:(what)=>jlog(`a construit ${what}`),
