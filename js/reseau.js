@@ -103,7 +103,7 @@ const COLS=[
    set:(id,d)=>{const c=contOf(id);if(!c)return;c.load.forEach(m=>c.cargo.remove(m));c.load.length=0;(c.pails||[]).forEach(p=>c.cargo.remove(p.mesh));if(c.pails)c.pails.length=0;fillCont(c,d);},
    del:()=>{},get:id=>contOf(id)},
   {c:'bu',items:()=>S.builds.map(b=>[b.id,b]),
-   key:b=>`${b.k},${rd(b.x,50)},${rd(b.z,50)},${rd(b.rot,50)}|${b.fuel!==undefined?Math.round(b.fuel/15):''},${b.sap!==undefined?rd(b.sap,2):''},${b.syrup!==undefined?rd(b.syrup,20):''},${b.logs?b.logs.length:''},${b.lit!==undefined?Math.round(b.lit/30):''}`,
+   key:b=>`${b.k},${rd(b.x,50)},${rd(b.z,50)},${rd(b.rot,50)}|${b.fuel!==undefined?Math.round(b.fuel/15):''},${b.sap!==undefined?rd(b.sap,2):''},${b.syrup!==undefined?rd(b.syrup,20):''},${b.logs?b.logs.length:''},${b.lit!==undefined?Math.round(b.lit/30):''}|${b.on?1:0}${b.open?1:0}|${b.fish?b.fish.map(f=>f?f.k+Math.floor(f.c/10):'-').join(','):''}`,
    ser:b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):b[k];}return o;},
    set:(id,d)=>{const b=S.builds.find(b=>b.id===id);
      if(!b){const st=Object.assign({},d);delete st.k;delete st.x;delete st.z;delete st.rot;addBuild(d.k,{x:d.x,z:d.z,rot:d.rot},st);return;}
@@ -212,9 +212,11 @@ function onPos(from,p){
 function updateAvatars(dt){
   const k=1-Math.exp(-10*dt);
   seats.forEach(s=>{s.netSit=false;});
+  vehicles.forEach(v=>{if(v.passenger&&v.passenger!==ME.id)v.passenger=null;});
   for(const id in NET.avatars){
     const a=NET.avatars[id],p=a.p;if(!p)continue;
-    const f=a.f,v=p.v&&vehicles.find(v=>v.id===p.v.id);
+    const f=a.f,pv=p.pv&&vehicles.find(v=>v.id===p.pv),v=pv||(p.v&&vehicles.find(v=>v.id===p.v.id));
+    if(pv)pv.passenger=id;
     // Assis : sur le même siège que chez lui (la chaise berçante bouge avec lui)
     const st=p.m==='sit'?seats.find(s=>Math.hypot(s.x-p.x,s.z-p.z)<0.3):null;
     if(st){
@@ -229,7 +231,7 @@ function updateAvatars(dt){
     }
     if(a.sitOn){scene.add(f.g);a.sitOn=null;legPose(f,'stand');f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);}
     if(v){
-      if(a.inVeh!==v){v.mesh.g.add(f.g);f.g.position.set(...v.spec.seat);f.g.rotation.set(0,0,0);a.inVeh=v;
+      if(a.inVeh!==v||a.inPass!==!!pv){v.mesh.g.add(f.g);f.g.position.set(...(pv?v.spec.pass:v.spec.seat));f.g.rotation.set(0,0,0);a.inVeh=v;a.inPass=!!pv;
         legPose(f,v.spec.ride?'ride':'drive');f.armL.rotation.x=f.armR.rotation.x=-1.05;}
       f.g.visible=!v.spec.hide;a.l.position.set(v.x,H(v.x,v.z)+3,v.z);a.x=v.x;a.z=v.z;
       continue;
@@ -254,7 +256,7 @@ function updateAvatars(dt){
   });
 }
 function posPacket(){
-  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);if(P.fishing&&P.fishing.state!=='cast')p.fb=[rd(P.fishing.x,100),rd(P.fishing.z,100),P.fishing.state==='bite'?1:0];
+  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);if(S.mode==='pass'&&P.ride)p.pv=P.ride.id;if(P.fishing&&P.fishing.state!=='cast')p.fb=[rd(P.fishing.x,100),rd(P.fishing.z,100),P.fishing.state==='bite'?1:0];
   if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0,sp:P.carry.sp};
   if(P.pail)p.pl=1;
   if(S.mode==='vtt'&&V){p.v={id:V.id,x:rd(V.x,100),z:rd(V.z,100),th:rd(V.th,1000),sp:rd(V.v,10)};const tw=towed(V);if(tw)p.v.tw={id:tw.id,x:rd(tw.x,100),z:rd(tw.z,100),th:rd(tw.th,1000)};}

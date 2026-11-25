@@ -116,8 +116,7 @@ function campExtras(){
   if(nearDoor())return {act:{label:'Projets du camp',fn:openProjects},info:S.camp.poele?`Poêle à bois : ${fmtFire(stove.fuel)} · apporte une bûche pour le chauffer`:''};
   const fd=nearestSplitter();if(fd)return {info:fd.splitting?'La fendeuse travaille…':`Fendeuse : apporte une bûche de ${Math.round(SPLIT_MAX/INCH)} po maximum pour la fendre`};
   const a=buildNear('abri');if(a&&a.logs.length)return {act:{label:`Prendre une bûche dans l'abri (${a.logs.length})`,fn:()=>{const c=a.logs.pop();refreshShed(a);setCarry(c);}}};
-  const q=buildNear('bbq');
-  if(q)return q.lit>0?{info:'Le barbecue est chaud ! Il ne manque que la viande… la chasse s\'en vient 😉'}:{act:{label:'Allumer le barbecue',fn:()=>{q.lit=BBQ_TIME;toast('🍖 Le barbecue chauffe');}}};
+  const q=buildNear('bbq');if(q)return bbqContext(q);
   const f=buildNear('feu');if(f)return {info:`Feu de camp : ${fmtFire(f.fuel)} · apporte du bois de chauffage`};
   return null;
 }
@@ -151,12 +150,53 @@ function updateCamp(dt){
       b.fuel=Math.max(0,b.fuel-dt);const o=b._o;if(!o)return;const on=b.fuel>0;o.fl.visible=on;
       if(on){o.fl.children.forEach((c,i)=>{c.scale.y=0.8+0.4*Math.abs(Math.sin(S.time*(6+i)+i));});if(puff)spawnPuffAt(b.x,H(b.x,b.z)+0.8,b.z,false);}
     }else if(b.k==='bbq'){
-      b.lit=Math.max(0,b.lit-dt);const o=b._o;if(!o)return;
-      o.glow.material.color.set(b.lit>0?(Math.sin(S.time*9)>0?0xff7a1a:0xffa13d):0x3a2a20);
-      if(b.lit>0&&puff){const p=lw(b,0,0);spawnPuffAt(p.x,H(p.x,p.z)+1.45,p.z,true);}
+      updateBbq(b,dt,puff);
     }
   });
   CABIN_WIN.color.set(stove.fuel>0?cabinWinLit:cabinWinOff);
   if(stove.fuel>0&&puff)spawnPuffAt(chimney.x,chimney.y,chimney.z,false);
   seats.forEach(s=>{if(!s.grp)return;const on=(S.mode==='sit'&&P.seat===s)||s.netSit;s.grp.rotation.x=on?Math.sin(S.time*1.8)*0.09:s.grp.rotation.x*0.95;});
+}
+
+/* ----- Barbecue : couvercle, allumer/éteindre, jusqu'à 4 poissons qui cuisent en 2 minutes ----- */
+const BBQ_COOK=120;
+const BBQ_SLOTS=[-0.3,-0.1,0.1,0.3];
+const _raw=new T.Color(1,1,1),_done=new T.Color(0.62,0.4,0.22),_fc=new T.Color();
+function updateBbq(b,dt,puff){
+  if(!b.fish)b.fish=[null,null,null,null];
+  if(b.on)b.fish.forEach(f=>{if(f)f.c=Math.min(BBQ_COOK,(f.c||0)+dt);});
+  const o=b._o;if(!o||!o.lid)return;
+  // Couvercle qui s'ouvre doucement
+  const tgt=b.open?-1.55:0;o.lidA+= (tgt-o.lidA)*(1-Math.exp(-6*dt));o.lid.rotation.x=o.lidA;
+  o.flames.visible=b.on;if(b.on)o.flames.children.forEach((c,i)=>{c.scale.y=0.7+0.5*Math.abs(Math.sin(S.time*(9+i)+i));});
+  o.glow.material.color.set(b.on?(Math.sin(S.time*9)>0?0xff7a1a:0xffa13d):0x3a2a20);
+  o.burn.material.color.set(b.on?0xc2401a:0x2a2420);
+  // Poissons sur la grille : refaits seulement quand la liste change
+  const key=b.fish.map(f=>f?f.k+f.w:'-').join(',');
+  if(key!==o.fishKey){o.fishKey=key;while(o.fishG.children.length)o.fishG.remove(o.fishG.children[0]);
+    b.fish.forEach((f,i)=>{if(!f)return;const m=makeFishModel(f.k,f.w);const bb=new T.Box3().setFromObject(m),len=bb.getSize(new T.Vector3()).z;m.scale.multiplyScalar(Math.min(1,0.4/len));
+      m.rotation.z=Math.PI/2;m.position.set(BBQ_SLOTS[i],1.175,0);o.fishG.add(m);});}
+  o.fishG.children.forEach((m,i)=>{const f=b.fish.filter(Boolean)[i];if(!f)return;const k=f.c/BBQ_COOK;_fc.copy(_raw).lerp(_done,k);m.traverse(x=>{if(x.isMesh&&x.material.color)x.material.color.copy(_fc);});});
+  if(b.on&&puff&&Math.random()<(b.open?0.35:0.7)){const p=lw(b,0,0);spawnPuffAt(p.x,H(p.x,p.z)+(b.open?1.3:1.45),p.z,b.fish.some(Boolean));}
+}
+function fishTxt(k,cooked){const F=FISH[k];return cooked?`${F.n}${F.fem?' cuite':' cuit'}`:F.n;}
+function bbqContext(q){
+  if(!q.fish)q.fish=[null,null,null,null];
+  const onOff={label:q.on?'Éteindre le barbecue':'Allumer le barbecue',fn:()=>{q.on=!q.on;toast(q.on?'🔥 Le barbecue chauffe':'Barbecue éteint');sfxKnock(q.x,q.z,0.4);}};
+  const lid={label:q.open?'Fermer le couvercle':'Ouvrir le couvercle',fn:()=>{q.open=!q.open;sfxKnock(q.x,q.z,0.5);}};
+  const n=q.fish.filter(Boolean).length,done=q.fish.filter(f=>f&&f.c>=BBQ_COOK).length;
+  let info=q.on?'🔥 Allumé':'Éteint';
+  if(n)info+=` · ${n}/4 poisson${n>1?'s':''} : `+q.fish.filter(Boolean).map(f=>f.c>=BBQ_COOK?'✅ cuit':`${Math.round(f.c/BBQ_COOK*100)} %`).join(', ');
+  else info+=' · la grille est vide';
+  if(!q.open)return {act:lid,act2:onOff,info};
+  const it=heldItem(),raw=it&&it.id.startsWith('poisson:');
+  let fishAct=null;
+  if(raw&&n<4){const k=it.id.slice(8);fishAct={label:`Mettre ${FISH[k].fem?'la':'le'} ${FISH[k].n.toLowerCase()} sur la grille (${n}/4)`,fn:()=>{const o=invTake(S.hot,1);const i=q.fish.indexOf(null);q.fish[i]={k,w:o.w?o.w[0]:1,c:0};if(!q.on)toast('Pense à allumer le barbecue !');}};}
+  else{
+    const i=q.fish.findIndex(f=>f&&f.c>=BBQ_COOK),j=i>=0?i:q.fish.findIndex(Boolean);
+    if(j>=0){const f=q.fish[j],cooked=f.c>=BBQ_COOK;
+      fishAct={label:cooked?`Prendre ${FISH[f.k].fem?'la':'le'} ${fishTxt(f.k,true).toLowerCase()}`:`Retirer ${FISH[f.k].fem?'la':'le'} ${FISH[f.k].n.toLowerCase()} (pas encore ${FISH[f.k].fem?'cuite':'cuit'})`,
+        fn:()=>{q.fish[j]=null;giveItem({id:(cooked?'cuit:':'poisson:')+f.k,n:1,w:[f.w]});if(cooked)toast(`🍽️ ${fishTxt(f.k,true)} (${kg(f.w)})`);}};}
+  }
+  return fishAct?{act:fishAct,act2:lid,info}:{act:lid,act2:onOff,info};
 }

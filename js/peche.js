@@ -1,16 +1,16 @@
 /* Pêche au lac : canne à pêche (magasin), on lance la ligne vers l'eau, on attend que le flotteur cale
    et on ferre au bon moment. Les poissons vont dans l'inventaire. */
 const FISH={
-  perchaude:{n:'Perchaude',w:[0.1,0.45],top:0x8a8a2e,side:0xd8c04a,belly:0xf0e6c0,bars:true},
+  perchaude:{n:'Perchaude',fem:true,w:[0.1,0.45],top:0x8a8a2e,side:0xd8c04a,belly:0xf0e6c0,bars:true},
   achigan:{n:'Achigan',w:[0.4,2.3],top:0x3f5a2a,side:0x7a9050,belly:0xe8e4c8},
-  truite:{n:'Truite mouchetée',w:[0.25,1.6],top:0x3d4a3a,side:0x7a8466,belly:0xe8a070,spots:true},
+  truite:{n:'Truite mouchetée',fem:true,w:[0.25,1.6],top:0x3d4a3a,side:0x7a8466,belly:0xe8a070,spots:true},
   dore:{n:'Doré',w:[0.7,3.6],top:0x6a5a2a,side:0xc9a84a,belly:0xf2ead0},
   brochet:{n:'Brochet',w:[1.5,6.5],top:0x3a4a2a,side:0x6b7d42,belly:0xe8e6cc,long:true}
 };
 const FISH_IDS=Object.keys(FISH);
 
 /* ----- Modèle de poisson (corps, queue, nageoires, œil) ----- */
-function makeFishModel(k,w){
+function makeFishModel(k,w,cooked){
   const F=FISH[k],g=new T.Group(),L=(F.long?0.55:0.4)*Math.pow((w||((F.w[0]+F.w[1])/2))/1,1/3);
   const body=new T.SphereGeometry(1,12,8).toNonIndexed();body.scale(0.13*L*(F.long?0.8:1),0.24*L,0.5*L);
   const ct=new T.Color(F.top),cs=new T.Color(F.side),cb=new T.Color(F.belly),tmp=new T.Color();
@@ -26,7 +26,7 @@ function makeFishModel(k,w){
   const dor=new T.Shape();dor.moveTo(0,0);dor.lineTo(0.12*L,0.14*L);dor.lineTo(0.28*L,0);dor.lineTo(0,0);
   g.add(new T.Mesh(new T.ShapeGeometry(dor).rotateY(-Math.PI/2).translate(0,0.2*L,-0.1*L),fin));
   g.add(new T.Mesh(mergeGeos([new T.SphereGeometry(0.028*L/0.4,6,4).translate(0.1*L*(F.long?0.8:1),0.06*L,0.33*L),new T.SphereGeometry(0.028*L/0.4,6,4).translate(-0.1*L*(F.long?0.8:1),0.06*L,0.33*L)]),mat(0x111111)));
-  g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+  g.traverse(o=>{if(o.isMesh){o.castShadow=true;if(cooked&&o.material.color)o.material.color.setRGB(0.62,0.4,0.22);}});
   return g;
 }
 
@@ -130,12 +130,12 @@ function updateFishing(dt){
   }
   // Poisson montré à bout de bras après une prise
   if(P.catchShow>0){P.catchShow-=dt;player.armR.rotation.x=-2.3;}
-  const show=P.catchShow>0?P.catchFish:(S.mode==='foot'&&!P.carry&&!P.pail&&P.heldFish?{k:P.heldFish,w:null}:null);
-  const key=show?show.k+'|'+show.w:null;
+  const show=P.catchShow>0?P.catchFish:(S.mode==='foot'&&!P.carry&&!P.pail&&P.heldFish?{k:P.heldFish.split('|')[0],w:null,c:P.heldFish.includes('|c')}:null);
+  const key=show?show.k+'|'+show.w+'|'+!!show.c:null;
   if(key!==heldFishKey){
     if(heldFishMesh){heldFishMesh.parent.remove(heldFishMesh);heldFishMesh=null;}
     heldFishKey=key;
-    if(show){heldFishMesh=makeFishModel(show.k,show.w);heldFishMesh.rotation.set(Math.PI/2,0,0);heldFishMesh.position.set(0,-0.7,0.05);player.armR.add(heldFishMesh);}
+    if(show){heldFishMesh=makeFishModel(show.k,show.w,show.c);heldFishMesh.rotation.set(Math.PI/2,0,0);heldFishMesh.position.set(0,-0.7,0.05);player.armR.add(heldFishMesh);}
   }
   const f=P.fishing;
   if(!f){bobber.visible=fishLine.visible=false;return;}

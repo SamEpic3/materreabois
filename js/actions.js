@@ -37,6 +37,7 @@ function context(){
   if(S.mode==='sleep')return sleepContext();
   if(S.mode==='foot'&&S.inside)return insideContext();
   if(S.mode==='vtt')return driveContext();
+  if(S.mode==='pass')return passContext();
   if(S.mode==='crane')return craneContext();
   if(S.mode==='sit')return sitContext();
   if(S.mode==='place')return placeContext();
@@ -86,16 +87,20 @@ function context(){
   if(!act&&!info){const sb=nearestSugar();if(sb)info=boilInfo(sb);}
   if(!act&&!info&&!P.carry&&!P.pail&&nearestStump(1.2))info='Souche : prends une pelle pour l\'arracher';
   let enter=null,enterVeh=null,enterCrane=null;
-  let enterSeat=null,enterCabin=false;
+  let enterSeat=null,enterCabin=false,enterPass=null;
   if(!P.carry&&!P.pail&&nearDoor()){enter='Entrer dans la cabane';enterCabin=true;}
   else if(!P.carry){
     const nv=nearestVehicle(),nc=P.pail?null:nearestCrane(),ns=P.pail?null:nearestSeat();
     const dv=nv?Math.hypot(P.x-nv.x,P.z-nv.z):1e9;
     if(ns&&ns.d<dv&&(!nc||ns.d<nc.d)){enter='S\'asseoir';enterSeat=ns.seat;}
     else if(nc&&nc.d<dv){enter='Opérer la grue';enterCrane=nc.t;}
-    else if(nv){enter=`Embarquer (${nv.spec.name})`;enterVeh=nv;}
+    else if(nv){
+      const other=nv.driver&&nv.driver!==ME.id;
+      if(other&&nv.spec.pass&&!nv.passenger){enter=`Embarquer (passager)`;enterPass=nv;}
+      else{enter=`Embarquer (${nv.spec.name})`;enterVeh=nv;}
+    }
   }
-  return {enter,enterVeh,enterCrane,enterSeat,enterCabin,act,act2,full,preview,info,plant};
+  return {enter,enterVeh,enterCrane,enterSeat,enterCabin,enterPass,act,act2,full,preview,info,plant};
 }
 function setCarry(c){
   if(c&&!P.carry)sfxKnock(P.x,P.z,0.6);

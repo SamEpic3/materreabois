@@ -13,7 +13,7 @@ function audioInit(){
   const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;AU.noise=b;
   // Couches d'ambiance continues
   const loop=(type,freq,q)=>{const s=ctx.createBufferSource();s.buffer=AU.noise;s.loop=true;s.loopStart=Math.random();const f=ctx.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q||0.7;const g=ctx.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(AU.master);s.start();return {f,g};};
-  AU.amb={wind:loop('lowpass',380,0.6),rain:loop('highpass',1400,0.5),rainLow:loop('lowpass',500,0.5),fire:loop('bandpass',700,0.8)};
+  AU.amb={wind:loop('lowpass',380,0.6),rain:loop('highpass',1400,0.5),rainLow:loop('lowpass',500,0.5),fire:loop('bandpass',700,0.8),sizzle:loop('highpass',3500,0.7)};
   // Grillons : une note aiguë modulée par impulsions
   const cr=ctx.createOscillator();cr.type='sine';cr.frequency.value=4300;const crg=ctx.createGain();crg.gain.value=0;
   const am=ctx.createOscillator();am.type='square';am.frequency.value=28;const amg=ctx.createGain();amg.gain.value=0.5;
@@ -187,6 +187,9 @@ function updateSound(dt,focus){
   const fr=nearestFire(focus.x,focus.z);let fg=0;
   if(fr){fg=spatial(fr[0],fr[2],14).g*0.1;if(Math.random()<dt*7*(fg>0.01?1:0)){const o=out(fg*3,0);burst(o,t,0.03,'highpass',2000+Math.random()*3000,1,0.4,0.001);}}
   a.fire.g.gain.setTargetAtTime(fg,t,0.3);
+  // Grésillement du barbecue (quand il y a du poisson sur la grille)
+  let sz=0;S.builds.forEach(b=>{if(b.k==='bbq'&&b.on&&b.fish&&b.fish.some(Boolean))sz=Math.max(sz,spatial(b.x,b.z,12).g*(b.open?0.07:0.035));});
+  a.sizzle.g.gain.setTargetAtTime(sz*(0.7+0.3*Math.sin(S.time*7)),t,0.15);
   a.crick.g.gain.setTargetAtTime(0.012*(1-day)*(1-SKY.rain)*(1-SKY.snow)*ins,t,1);
   updateEngines();
 }

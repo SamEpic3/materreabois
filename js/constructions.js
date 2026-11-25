@@ -46,18 +46,30 @@ function makeBbqModel(){
   // Chariot : pattes, tablette du bas, deux roues
   g.add(new T.Mesh(mergeGeos([[-0.4,-0.2],[0.4,-0.2],[-0.4,0.2],[0.4,0.2]].map(([x,z])=>new T.BoxGeometry(0.05,0.85,0.05).translate(x,0.43,z)).concat([new T.BoxGeometry(0.9,0.04,0.48).translate(0,0.3,0)])),blk));
   g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.1,0.1,0.05,12).rotateZ(Math.PI/2).translate(0.44,0.1,-0.2),new T.CylinderGeometry(0.1,0.1,0.05,12).rotateZ(Math.PI/2).translate(-0.44,0.1,-0.2)]),mat(0x111111)));
-  // Cuve et couvercle arrondi, poignée, thermomètre, boutons
-  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.88,0.3,0.5).translate(0,0.99,0),new T.BoxGeometry(0.88,0.12,0.06).translate(0,0.9,0.27)]),blk));
-  const lid=new T.Mesh(new T.CylinderGeometry(0.25,0.25,0.88,16,1,false,0,Math.PI),blk);lid.rotation.z=Math.PI/2;lid.position.set(0,1.14,0);g.add(lid);
-  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.018,0.018,0.5,8).rotateZ(Math.PI/2).translate(0,1.34,0.3),new T.BoxGeometry(0.03,0.08,0.06).translate(0.22,1.31,0.28),new T.BoxGeometry(0.03,0.08,0.06).translate(-0.22,1.31,0.28),
-    new T.CylinderGeometry(0.04,0.04,0.02,12).rotateX(Math.PI/2).translate(0,1.25,0.26)]),steel));
+  // Cuve (ouverte sur le dessus), boutons
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.88,0.04,0.5).translate(0,0.86,0),new T.BoxGeometry(0.88,0.3,0.03).translate(0,0.99,0.235),new T.BoxGeometry(0.88,0.3,0.03).translate(0,0.99,-0.235),
+    new T.BoxGeometry(0.03,0.3,0.5).translate(0.425,0.99,0),new T.BoxGeometry(0.03,0.3,0.5).translate(-0.425,0.99,0),new T.BoxGeometry(0.88,0.12,0.06).translate(0,0.9,0.27)]),blk));
   g.add(new T.Mesh(mergeGeos([-0.25,0,0.25].map(x=>new T.CylinderGeometry(0.03,0.03,0.04,10).rotateX(Math.PI/2).translate(x,0.9,0.31))),steel));
+  // Brûleurs (rougeoient quand c'est allumé) et grille
+  const burn=new T.Mesh(mergeGeos([-0.25,0,0.25].map(x=>new T.BoxGeometry(0.06,0.03,0.4).translate(x,0.9,0))),new T.MeshBasicMaterial({color:0x2a2420}));g.add(burn);
+  const flames=new T.Group();[-0.25,0,0.25].forEach(x=>[-0.12,0,0.12].forEach(z=>{const c=new T.Mesh(new T.ConeGeometry(0.025,0.09,5),new T.MeshBasicMaterial({color:z?0xff9a2a:0x4a8cff}));c.position.set(x,0.95,z);flames.add(c);}));
+  flames.visible=false;g.add(flames);
+  const grate=[];for(let k=0;k<9;k++)grate.push(new T.BoxGeometry(0.82,0.012,0.012).translate(0,1.135,-0.2+k*0.05));grate.push(new T.BoxGeometry(0.012,0.015,0.44).translate(-0.3,1.13,0),new T.BoxGeometry(0.012,0.015,0.44).translate(0.3,1.13,0));
+  g.add(new T.Mesh(mergeGeos(grate),new T.MeshPhongMaterial({color:0x555555,shininess:30})));
+  // Couvercle sur charnière (à l'arrière) : poignée et thermomètre
+  const lid=new T.Group();lid.position.set(0,1.14,-0.25);g.add(lid);
+  const blk2=blk.clone();blk2.side=T.DoubleSide;
+  const dome=new T.Mesh(mergeGeos([new T.CylinderGeometry(0.25,0.25,0.88,16,1,true,0,Math.PI),new T.CircleGeometry(0.25,16,-Math.PI/2,Math.PI).rotateX(Math.PI/2).translate(0,0.44,0),new T.CircleGeometry(0.25,16,-Math.PI/2,Math.PI).rotateX(Math.PI/2).translate(0,-0.44,0)]),blk2);
+  dome.rotation.z=Math.PI/2;dome.position.set(0,0,0.25);lid.add(dome);
+  lid.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.018,0.018,0.5,8).rotateZ(Math.PI/2).translate(0,0.2,0.55),new T.BoxGeometry(0.03,0.08,0.06).translate(0.22,0.17,0.53),new T.BoxGeometry(0.03,0.08,0.06).translate(-0.22,0.17,0.53),
+    new T.CylinderGeometry(0.04,0.04,0.02,12).rotateX(Math.PI/2).translate(0,0.11,0.51)]),steel));
   // Tablettes de côté en lattes
   g.add(new T.Mesh(mergeGeos([0.6,-0.6].flatMap(x=>[0,1,2,3].map(k=>new T.BoxGeometry(0.34,0.035,0.1).translate(x+(x>0?0.04:-0.04),1.0,-0.17+k*0.115)))),wood));
   // Bonbonne de propane
   g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.15,0.15,0.34,14).translate(0.2,0.5,0),new T.SphereGeometry(0.15,14,6,0,Math.PI*2,0,Math.PI/2).translate(0.2,0.67,0),new T.CylinderGeometry(0.09,0.09,0.08,10).translate(0.2,0.84,0)]),mat(0xe8e4da)));
-  const glow=new T.Mesh(new T.BoxGeometry(0.7,0.04,0.02),new T.MeshBasicMaterial({color:0x3a2a20}));glow.position.set(0,0.87,0.27);g.add(glow);
-  g.userData.glow=glow;return g;
+  const glow=new T.Mesh(new T.BoxGeometry(0.7,0.04,0.02),new T.MeshBasicMaterial({color:0x3a2a20}));glow.position.set(0,0.87,0.3);g.add(glow);
+  const fishG=new T.Group();g.add(fishG);
+  Object.assign(g.userData,{glow,lid,flames,burn,fishG});return g;
 }
 // Passage du repère d'une construction au monde
 function lw(b,lx,lz){const c=Math.cos(b.rot||0),s=Math.sin(b.rot||0);return {x:b.x+c*lx+s*lz,z:b.z-s*lx+c*lz};}
@@ -117,7 +129,7 @@ function createAbri(b,o){
   [-1.1,0,1.1].forEach(lx=>{const p=lw(b,lx,-0.35);o.col(p.x,p.z,0.75);});
   refreshShed(b);
 }
-function createBbq(b,o){const g=makeBbqModel();o.add(g);o.glow=g.userData.glow;o.col(b.x,b.z,0.7);}
+function createBbq(b,o){const g=makeBbqModel();o.add(g);Object.assign(o,g.userData);o.fishKey=null;if(!b.fish)b.fish=[null,null,null,null];b.on=!!b.on;b.open=!!b.open;o.lidA=b.open?-1.55:0;o.col(b.x,b.z,0.7);}
 // Bûches rangées le bout vers l'avant : rangée du fond d'abord, puis celle de devant.
 function refreshShed(b){
   const o=b._o;if(!o)return;
@@ -135,8 +147,8 @@ const KINDS={
        desc:`Pour corder des bûches de chauffage de 3 pi maximum, sur deux cordes de profond (${SHED_CAP} bûches).`},
   sucres:{name:'Bouilloire à sirop',art:'la',price:400,icon:'🍁',dist:2.8,foot:[[0,0,1.3]],model:makeSucresModel,create:createSucres,init:()=>({fuel:0,sap:0,syrup:0}),near:b=>b,nearR:2.4,
        desc:'Un foyer avec une bouilloire pour faire bouillir l\'eau d\'érable en sirop.'},
-  bbq:{name:'Barbecue',art:'le',price:600,icon:'🍖',dist:2.4,foot:[[0,0,1.0]],model:makeBbqModel,create:createBbq,init:()=>({lit:0}),near:b=>b,nearR:1.7,
-       desc:'Un barbecue au propane. Il ne manque plus que la viande… la chasse s\'en vient !'},
+  bbq:{name:'Barbecue',art:'le',price:600,icon:'🍖',dist:2.4,foot:[[0,0,1.0]],model:makeBbqModel,create:createBbq,init:()=>({on:false,open:false,fish:[null,null,null,null]}),near:b=>b,nearR:1.7,
+       desc:'Un barbecue au propane : ouvre le couvercle, allume-le et mets-y jusqu\'à 4 poissons. Ils cuisent en 2 minutes.'},
   garage:{name:'Garage',art:'le',price:5000,icon:'🛠️',dist:7.5,foot:[[-1.6,-2.1,2.5],[1.6,-2.1,2.5],[-1.6,2.1,2.5],[1.6,2.1,2.5]],model:makeGarageModel,create:createGarage,init:()=>({}),near:b=>b,nearR:0,
        desc:'Un grand garage avec une porte à l\'avant pour rentrer le pick-up ou la débusqueuse à l\'abri, avec un établi au fond.'}
 };

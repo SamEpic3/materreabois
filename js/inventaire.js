@@ -12,6 +12,7 @@ function itemDef(id){
   if(t)return {kind:'tool',name:t.name,stack:1,tool:t};
   if(id.startsWith('plant:')){const k=id.slice(6);return {kind:'plant',name:`Plants ${/^[aeéiouy]/.test(seedName(k))?'d\'':'de '}${seedName(k)}`,stack:50,sp:k};}
   if(id.startsWith('poisson:')){const k=id.slice(8);return {kind:'fish',name:FISH[k].n,stack:10,fish:k};}
+  if(id.startsWith('cuit:')){const k=id.slice(5);return {kind:'cooked',name:fishTxt(k,true),stack:10,fish:k};}
   return {kind:'?',name:id,stack:1};
 }
 const PLANT_EMO={erable:'🍁',epinette:'🌲',sapin:'🎄',bouleau:'🌳'};
@@ -21,7 +22,7 @@ function itemIcon(it){
   if(d.kind==='tool'&&d.tool.kind==='rod')return '<span class="emo">🎣</span>';
   if(d.kind==='tool'){const src=thumb(it.id,()=>toolThumbModel(d.tool),true);return src?`<img src="${src}" alt="">`:'🪓';}
   if(d.kind==='plant')return `<span class="emo">${PLANT_EMO[d.sp]||'🌱'}</span>`;
-  if(d.kind==='fish'){const src=thumb(it.id,()=>{const g=new T.Group(),m=makeFishModel(d.fish);m.rotation.y=Math.PI/2;g.add(m);return g;},true);return src?`<img src="${src}" alt="">`:'🐟';}
+  if(d.kind==='fish'||d.kind==='cooked'){const src=thumb(it.id,()=>{const g=new T.Group(),m=makeFishModel(d.fish,null,d.kind==='cooked');m.rotation.y=Math.PI/2;g.add(m);return g;},true);return src?`<img src="${src}" alt="">`:'🐟';}
   return '❔';
 }
 function itemLabel(it){const d=itemDef(it.id);return it.n>1?`${d.name} ×${it.n}`:d.name;}
@@ -53,7 +54,7 @@ function syncTool(){
   const nt=!d?null:d.kind==='tool'?d.tool:d.kind==='plant'?PLANT_TOOL:null;
   if(d&&d.kind==='plant')S.seedSel=d.sp;
   if(nt!==TOOL){TOOL=nt;P.cut=null;P.cool=0;if(typeof stopFishing==='function')stopFishing(true);}
-  P.heldFish=d&&d.kind==='fish'?d.fish:null;
+  P.heldFish=d&&(d.kind==='fish'||d.kind==='cooked')?d.fish+(d.kind==='cooked'?'|c':''):null;
   updateToolVisual();renderHotbar();
 }
 function setTool(){syncTool();}   // ancien nom
@@ -148,7 +149,7 @@ S.drops=[];      // {id, it:{id,n,w}, x, z, t}
 function dropModel(it){
   const d=itemDef(it.id),g=new T.Group();
   if(d.kind==='tool'){const m=toolThumbModel(d.tool);const b=new T.Box3().setFromObject(m),sz=b.getSize(new T.Vector3()),k=0.75/Math.max(sz.x,sz.y,sz.z,0.01);m.scale.multiplyScalar(k);m.rotation.z=Math.PI/2;g.add(m);}
-  else if(d.kind==='fish'){const m=makeFishModel(d.fish);g.add(m);}
+  else if(d.kind==='fish'||d.kind==='cooked'){const m=makeFishModel(d.fish,null,d.kind==='cooked');g.add(m);}
   else if(d.kind==='plant'){box(0.03,0.3,0.03,mat(0x5b4330),0,0.15,0,g);const c=new T.Mesh(new T.ConeGeometry(0.12,0.3,6),mat(0x3f6b3a));c.position.y=0.38;g.add(c);const pot=new T.Mesh(new T.CylinderGeometry(0.09,0.07,0.12,8),mat(0x9a5a32));pot.position.y=0.06;g.add(pot);}
   else box(0.3,0.3,0.3,mat(0x999999),0,0.15,0,g);
   g.traverse(o=>{if(o.isMesh)o.castShadow=true;});

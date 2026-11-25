@@ -63,7 +63,7 @@ canvas.addEventListener('pointermove',e=>{
   const p=pointers.get(e.pointerId);if(!p)return;
   if((S.mode==='place'||S.mode==='pick')&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&(p.drag||Math.hypot(q.x-p.sx,q.y-p.sy)>12)){p.drag=true;mapPan(q.x-p.x,q.y-p.y);}
   if(camMode!=='iso'&&pointers.size===1&&(e.pointerType!=='mouse'||e.buttons)&&Math.hypot(q.x-p.sx,q.y-p.sy)>12){
-    if(S.mode==='vtt'){camVehOff=wrapAng(camVehOff-(q.x-p.x)*0.008);camYaw-=(q.x-p.x)*0.008;}else{camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;}
+    if(RV()){camVehOff=wrapAng(camVehOff-(q.x-p.x)*0.008);camYaw-=(q.x-p.x)*0.008;}else{camYawT-=(q.x-p.x)*0.008;camYaw=camYawT;}
     if(camMode==='fp')camPitch=clamp(camPitch-(q.y-p.y)*0.006,-1.2,0.9);
     else camTpTilt=clamp(camTpTilt+(q.y-p.y)*0.005,-0.6,1.0);}
   p.x=q.x;p.y=q.y;
@@ -109,7 +109,7 @@ $('btnAct').addEventListener('pointerdown',e=>{e.preventDefault();doAct();});
 /* ---------- Caméra ---------- */
 let camAz=Math.PI/4,camAzT=camAz;
 const camT=new T.Vector3(P.x,H(P.x,P.z),P.z);
-function rotateCam(d){if(camMode!=='iso'){if(S.mode==='vtt')camVehOff=wrapAng(camVehOff+d*Math.PI/4);else camYawT+=d*Math.PI/4;}else camAzT+=d*Math.PI/2;}
+function rotateCam(d){if(camMode!=='iso'){if(RV())camVehOff=wrapAng(camVehOff+d*Math.PI/4);else camYawT+=d*Math.PI/4;}else camAzT+=d*Math.PI/2;}
 const FOG=new T.Fog(SKY_HORIZON,30,110);
 function toggleCam(){
   if(S.mode==='place'||S.mode==='pick'){toast('Vue isométrique pendant la construction');return;}
@@ -121,9 +121,9 @@ function applyCamMode(m){
   activeCam=camMode==='iso'?camera:pcam;
   scene.fog=camMode==='iso'?null:FOG;sky.visible=camMode!=='iso';
   silMat.visible=camMode==='iso';
-  player.g.visible=camMode!=='fp'&&!(S.mode==='vtt'&&V.spec.hide);
+  player.g.visible=camMode!=='fp'&&!(RV()&&RV().spec.hide);
   pcam.fov=camMode==='fp'?70:60;pcam.updateProjectionMatrix();camPitch=-0.1;
-  camYaw=camYawT=S.mode==='vtt'?V.th+camVehOff:P.rot;
+  camYaw=camYawT=RV()?RV().th+camVehOff:P.rot;
 }
 $('btnCam').addEventListener('click',toggleCam);
 $('rotL').addEventListener('click',()=>rotateCam(-1));
