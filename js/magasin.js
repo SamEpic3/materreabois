@@ -46,6 +46,29 @@ function renderShop(){
   $('shopMoney').textContent=`Ton argent : ${S.money} $`;
   const L=$('shopList');L.innerHTML='';
   const sec=txt=>{const h=document.createElement('div');h.className='shopSec';h.textContent=txt;L.appendChild(h);};
+  // Commande en cours
+  const o=S.order;
+  if(o&&!o.done&&!o.expired){
+    sec('Commande en cours');
+    const d=document.createElement('div');d.className='item';
+    d.innerHTML=`<div class="thumb emoji">📋</div><div class="txt"><b>${o.who}</b> — prime ${o.reward} $<p>Veut ${orderText(o)}.</p><p class="stats">${Math.min(S.ordGot,o.n)}/${o.n} · il reste ${fmtLeft(o.left)}</p></div>`;
+    if(o.kind==='poisson'){const n=Math.min(orderFishAvail(),o.n-S.ordGot),b=document.createElement('button');b.textContent=n?`Livrer ${n}`:'Rien à livrer';b.disabled=!n;b.onclick=()=>{deliverFish();renderShop();};d.appendChild(b);}
+    L.appendChild(d);
+  }
+  // Vendre ses poissons (crus ou cuits)
+  const fishSlots=INV.map((s,i)=>[s,i]).filter(([s])=>s&&/^(poisson|cuit):/.test(s.id));
+  if(fishSlots.length){
+    sec('Vendre tes poissons');
+    fishSlots.forEach(([s,i])=>{
+      const d=document.createElement('div'),dd=itemDef(s.id),v=stackValue(s);d.className='item';
+      d.innerHTML=`<div class="thumb fishThumb">${itemIcon(s)}</div><div class="txt"><b>${itemLabel(s)}</b> — ${v} $<p>${fishInfo(s)}${dd.kind==='cooked'?' · cuit : 1,8 fois le prix':' · cuit sur le barbecue, il vaudrait '+Math.round(v*COOK_BONUS)+' $'}</p></div>`;
+      const b=document.createElement('button');b.textContent='Vendre';b.onclick=()=>{const g=sellFishSlot(i);sfxCash();toast(`🐟 +${g} $`);renderShop();};
+      d.appendChild(b);L.appendChild(d);
+    });
+    if(fishSlots.length>1){const tot=fishSlots.reduce((a,[s])=>a+stackValue(s),0),d=document.createElement('div');d.className='item';
+      d.innerHTML=`<div class="txt"><b>Tout vendre</b> — ${tot} $</div>`;const b=document.createElement('button');b.textContent='Tout vendre';
+      b.onclick=()=>{let g=0;INV.forEach((s,i)=>{if(s&&/^(poisson|cuit):/.test(s.id))g+=sellFishSlot(i);});sfxCash();toast(`🐟 +${g} $`);renderShop();};d.appendChild(b);L.appendChild(d);}
+  }
   sec('Outils');
   TOOLS.forEach(t=>{
     const d=document.createElement('div');d.className='item';
@@ -86,13 +109,13 @@ function renderShop(){
     const d=document.createElement('div');d.className='item';
     const isT=t.kind==='trailer';
     const img=thumb(t.id,()=>isT?TSPECS[t.id].build().g:SPECS[t.id].build().g);
-    const stats=t.id==='fendeuse'?'S\'attache au VTT ou au pick-up':isT?`Capacité : ${TSPECS[t.id].cap} billots`+(t.id==='loader'?' · jusqu\'à 12 pi':''):`Vitesse max ≈ ${Math.round(SPECS[t.id].maxF*3.6)} km/h (VTT : ${Math.round(SPECS.vtt.maxF*3.6)} km/h)`;
+    const stats=t.id==='fendeuse'||t.id==='chaloupe'?'S\'attache au VTT ou au pick-up':isT?`Capacité : ${TSPECS[t.id].cap} billots`+(t.id==='loader'?' · jusqu\'à 12 pi':''):`Vitesse max ≈ ${Math.round(SPECS[t.id].maxF*3.6)} km/h (VTT : ${Math.round(SPECS.vtt.maxF*3.6)} km/h)`;
     d.innerHTML=imgTag(img)+`<div class="txt"><b>${t.name}</b> — ${t.price} $<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
     const have=isT?trailers.filter(x=>x.kind===t.id).length:vehicles.filter(v=>v.type===t.id).length;
     if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
     {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;J.buy(t.name.toLowerCase(),t.price);
-      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{vtt:[8,4],small:[8,11],pickup:[11,8],loader:[8,11],skid:[12,13],fendeuse:[8,11]}[t.id]);
+      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{vtt:[8,4],small:[8,11],pickup:[11,8],loader:[8,11],skid:[12,13],fendeuse:[8,11],chaloupe:[8,11]}[t.id]);
       if(isT)makeTrailerObj(t.id,p.x,p.z,th);else makeVehicle(t.id,p.x,p.z,th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);

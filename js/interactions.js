@@ -23,13 +23,13 @@ function doEnter(){
     S.mode='vtt';P.target=null;marker.visible=false;
     V.mesh.g.add(player.g);player.g.position.set(...V.spec.seat);player.g.rotation.set(0,0,0);
     player.g.visible=!V.spec.hide&&camMode!=='fp';
-    legPose(player,V.spec.ride?'ride':'drive');player.armL.rotation.x=player.armR.rotation.x=-1.05;P.swing=0;updateToolVisual();
+    legPose(player,V.spec.ride?'ride':V.spec.boat?'sit':'drive');player.armL.rotation.x=player.armR.rotation.x=-1.05;P.swing=0;updateToolVisual();
   }else{
     const sx=Math.cos(V.th),sz=-Math.sin(V.th);
     let spot=null;
     const sd=V.spec.side,fr=V.spec.cols[0][0]+1.3;
-    for(const side of [1,-1,0]){const x=side?V.x+sx*sd*side:V.x+Math.sin(V.th)*fr,z=side?V.z+sz*sd*side:V.z+Math.cos(V.th)*fr;if(!hits(x,z,0.35)){spot={x,z};break;}}
-    if(!spot){toast("Pas de place pour débarquer ici");return;}
+    for(const side of [1,-1,0]){const x=side?V.x+sx*sd*side:V.x+Math.sin(V.th)*fr,z=side?V.z+sz*sd*side:V.z+Math.cos(V.th)*fr;if(!hits(x,z,0.35)&&(waterDepth(x,z)<0.4||onDock(x,z))){spot={x,z};break;}}
+    if(!spot){toast(V.spec.boat?'Approche-toi du bord ou du quai pour débarquer':"Pas de place pour débarquer ici");return;}
     S.mode='foot';
     scene.add(player.g);player.g.visible=camMode!=='fp';P.x=spot.x;P.z=spot.z;P.rot=V.th;
     legPose(player,'stand');player.armL.rotation.set(0,0,0);player.armR.rotation.set(0,0,0);updateToolVisual();
@@ -44,15 +44,15 @@ function boardPassenger(v){
   if(P.fishing)stopFishing(true);
   v.mesh.g.add(player.g);player.g.position.set(...v.spec.pass);player.g.rotation.set(0,0,0);
   player.g.visible=!v.spec.hide&&camMode!=='fp';
-  legPose(player,'drive');player.armL.rotation.x=player.armR.rotation.x=-0.3;updateToolVisual();
+  legPose(player,v.spec.boat?'sit':'drive');player.armL.rotation.x=player.armR.rotation.x=-0.3;updateToolVisual();
   toast(`Tu es passager — ${(v.driver&&NET.online&&NET.online[v.driver]||{}).name||'ton partenaire'} conduit`);
 }
 function leavePassenger(){
   const v=P.ride;if(!v){S.mode='foot';return;}
   const sx=Math.cos(v.th),sz=-Math.sin(v.th),sd=v.spec.side;let spot=null;
-  for(const side of [-1,1]){const x=v.x+sx*sd*side,z=v.z+sz*sd*side;if(!hits(x,z,0.35)&&waterDepth(x,z)<0.4){spot={x,z};break;}}
-  if(!spot){const fr=v.spec.cols[0][0]+1.3,x=v.x+Math.sin(v.th)*fr,z=v.z+Math.cos(v.th)*fr;if(!hits(x,z,0.35))spot={x,z};}
-  if(!spot){toast('Pas de place pour débarquer ici');return;}
+  for(const side of [-1,1]){const x=v.x+sx*sd*side,z=v.z+sz*sd*side;if(!hits(x,z,0.35)&&(waterDepth(x,z)<0.4||onDock(x,z))){spot={x,z};break;}}
+  if(!spot){const fr=v.spec.cols[0][0]+1.3,x=v.x+Math.sin(v.th)*fr,z=v.z+Math.cos(v.th)*fr;if(!hits(x,z,0.35)&&(waterDepth(x,z)<0.4||onDock(x,z)))spot={x,z};}
+  if(!spot){toast(v.spec.boat?'Approche-toi du bord ou du quai pour débarquer':'Pas de place pour débarquer ici');return;}
   if(v.passenger===ME.id)v.passenger=null;
   S.mode='foot';P.ride=null;scene.add(player.g);player.g.visible=camMode!=='fp';P.x=spot.x;P.z=spot.z;P.rot=v.th;
   legPose(player,'stand');player.armL.rotation.set(0,0,0);player.armR.rotation.set(0,0,0);updateToolVisual();
@@ -63,6 +63,7 @@ function updatePassenger(){
   v.passenger=ME.id;P.x=v.x;P.z=v.z;P.rot=v.th;
 }
 function passContext(){
+  if(P.ride&&P.ride.spec.boat&&TOOL&&TOOL.kind==='rod'){const r=fishContext();return {enter:'Débarquer',act:r.act||null,act2:null,full:false,info:r.info||''};}
   const v=P.ride,d=v&&v.driver&&v.driver!==ME.id?((NET.online&&NET.online[v.driver]||{}).name||'Ton partenaire'):null;
   return {enter:'Débarquer',act:null,act2:null,full:false,info:d?`${d} conduit`:'Personne au volant : débarque et remonte côté conducteur pour conduire'};
 }

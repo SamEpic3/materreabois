@@ -164,6 +164,7 @@ function engineFor(v){
 function updateEngines(){
   const t=AU.ctx.currentTime,live={};
   vehicles.forEach(v=>{
+    if(v.spec.boat)return;
     const mine=S.mode==='vtt'&&V===v,driven=mine||(v.driver&&v.net);
     if(!driven&&!AU.eng[v.id])return;
     const e=engineFor(v);live[v.id]=1;
@@ -202,3 +203,6 @@ function sfxSplash(x,z,big){if(!ready())return;const sp=spatial(x,z,40);if(sp.g<
 function sfxPlop(x,z){if(!ready())return;const sp=spatial(x,z,40);const t=AU.ctx.currentTime,o=out(Math.max(0.3,sp.g),sp.pan);
   tone(o,t,0.14,'sine',620,160,0.5,0.003);tone(o,t+0.16,0.1,'sine',520,200,0.25,0.003);burst(o,t,0.12,'lowpass',900,1,0.25,0.002);}
 function sfxReel(x,z){if(!ready())return;const sp=spatial(x,z);const t=AU.ctx.currentTime,o=out(sp.g*0.6,sp.pan);for(let i=0;i<14;i++)tone(o,t+i*0.045,0.015,'square',1800+(i%2)*300,0,0.05,0.001);}
+
+// Clochette d'une nouvelle commande
+function sfxBell(){if(!ready())return;const t=AU.ctx.currentTime,o=out(0.5,0);[1568,2093,2637].forEach((f,i)=>{tone(o,t+i*0.12,0.9,'sine',f,0,0.18,0.003);tone(o,t+i*0.12,0.6,'sine',f*2.01,0,0.05,0.003);});}

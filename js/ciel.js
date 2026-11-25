@@ -9,6 +9,7 @@ const WX={
   neige:  {cloud:0.88,rain:0,snow:1,fog:0.5}
 };
 const WX_NAME={clair:'Beau temps',nuageux:'Nuageux',pluie:'Pluie',neige:'Neige'};
+let VIEW_BOOST=1;
 const SKY={cloud:0.12,rain:0,snow:0,fog:1,snowCover:0,wet:0,day:1};   // valeurs adoucies affichées
 
 // Palette : jour, nuit, lever/coucher
@@ -124,7 +125,8 @@ function updateSky(dt,focus){
   _sd.set(Math.cos(az),Math.max(0.06,el),0.35+0.25*Math.sin(az)).normalize();
   if(day)skyMat.uniforms.uSun.value.copy(_sd);else{skyMat.uniforms.uMoon.value.copy(_sd);skyMat.uniforms.uSun.value.set(0,-1,0);}
   const fogC=_gc.copy(_c.hor);
-  FOG.color.copy(fogC);FOG.near=30*SKY.fog;FOG.far=110*(0.35+0.65*SKY.fog);
+  VIEW_BOOST=1+clamp((focus.y-6)/16,0,1)*0.9;   // en haut du mont, on voit plus loin
+  FOG.color.copy(fogC);FOG.near=30*SKY.fog*VIEW_BOOST;FOG.far=110*(0.35+0.65*SKY.fog)*VIEW_BOOST;
   scene.background.copy(_c.bg);
   WATER_U.uTime.value=S.time;WATER_MAT.color.setRGB(0.1,0.27,0.34);WATER_MAT.emissive.copy(_c.hor).multiplyScalar(0.3).add(_gc.copy(_c.mid).multiplyScalar(0.18));WATER_MAT.specular.copy(sun.color).multiplyScalar(0.6*(1-cl*0.7));
   hemi.color.copy(_c.hs);hemi.groundColor.copy(_c.hg);hemi.intensity=0.5+0.25*dayK+0.18*cl*dayK;

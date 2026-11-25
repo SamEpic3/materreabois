@@ -21,6 +21,7 @@
 <div id="stats" class="panel">
   💰 <b id="sMoney">35000 $</b><br>🪓 Outil : <b id="sTool">Vieille hachette</b><span id="sSpeedWrap" class="hidden"> &nbsp;·&nbsp; <b id="sSpeed">0</b> km/h</span><span id="netStatus" class="hidden"></span><br><span id="sClock">☀️ 7 h 00</span>
 </div>
+<div id="order" class="panel hidden"></div>
 <div id="hint" class="panel"></div>
 <div id="players" class="panel hidden"></div>
 
@@ -98,6 +99,10 @@
       <li><b>Sauvegarde :</b> la partie se sauvegarde toute seule dans ce navigateur.</li>
       <li><b>Inventaire (🎒 ou <kbd>I</kbd>) :</b> 6 cases en main et 12 de rangement. Touche ou glisse un objet pour le déplacer ; « Déposer par terre » pour le laisser au sol (ton partenaire peut le ramasser).</li>
       <li><b>Pêche :</b> achète une canne au magasin et suis le chemin vers l'est jusqu'au lac. Lance la ligne du bord ou du quai, attends que le flotteur cale et ferre aussitôt (<kbd>Espace</kbd>). Le doré mord mieux au lever et au coucher du soleil, le brochet en eau creuse.</li>
+      <li><b>Commandes (📋) :</b> de temps en temps, quelqu'un du village demande du bois, du poisson ou du sirop, avec un délai. Remplis-la à temps pour une prime. Le poisson se livre au magasin.</li>
+      <li><b>Chaloupe :</b> vendue sur sa remorque. Recule la remorque au bord du lac pour la mettre à l'eau, embarque (<kbd>E</kbd>), rame avec <kbd>W</kbd>/<kbd>S</kbd> et tourne avec <kbd>A</kbd>/<kbd>D</kbd>. Deux places, et on peut y pêcher.</li>
+      <li><b>Nouvelles terres :</b> l'érablière au nord et la terre à bois du Sud sont à vendre (panneau à la barrière). Le mont du Loup et la rivière sont sur le territoire public : on s'y promène et on y pêche, mais on n'y bûche pas.</li>
+      <li><b>Apparence :</b> dans l'inventaire (🎒), le bouton 👕 change ta chemise, ton chapeau et ta barbe.</li>
       <li><b>Journal (📜 ou <kbd>J</kbd>) :</b> tout ce que chacun fait sur la terre y est noté.</li>
       <li><b>Clavardage (💬, <kbd>Entrée</kbd> ou <kbd>T</kbd>) :</b> en partie à plusieurs, écris à ton partenaire. Son message apparaît aussi au-dessus de sa tête.</li>
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
@@ -158,6 +163,7 @@
 <script src="js/controles.js"></script>
 <script src="js/magasin.js"></script>
 <script src="js/inventaire.js"></script>
+<script src="js/apparence.js"></script>
 <script src="js/actions.js"></script>
 <script src="js/debusqueuse.js"></script>
 <script src="js/grue.js"></script>
@@ -166,10 +172,13 @@
 <script src="js/erabliere.js"></script>
 <script src="js/vente.js"></script>
 <script src="js/fendeuse.js"></script>
+<script src="js/chaloupe.js"></script>
 <script src="js/constructions.js"></script>
 <script src="js/camp.js"></script>
 <script src="js/cabane.js"></script>
 <script src="js/peche.js"></script>
+<script src="js/commandes.js"></script>
+<script src="js/terres.js"></script>
 <script src="js/plantation.js"></script>
 <script src="js/joueur.js"></script>
 <script src="js/physique.js"></script>
@@ -177,6 +186,7 @@
 <script src="js/ciel.js"></script>
 <script src="js/sons.js"></script>
 <script src="js/oiseaux.js"></script>
+<script src="js/animaux.js"></script>
 <script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>
 <script src="js/reseau.js"></script>

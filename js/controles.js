@@ -6,6 +6,7 @@ const pedal={gas:false,brake:false};
 addEventListener('keydown',e=>{
   if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;   // on écrit (nom, code, clavardage)
   if((e.code==='Enter'||e.code==='KeyT')&&!e.repeat&&typeof NET!=='undefined'&&NET.on&&NET.ready&&$('help').classList.contains('hidden')&&!CHAT.open){e.preventDefault();openChat();return;}
+  if(!$('look').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'){closeLook();e.preventDefault();}return;}
   if(invOpen()){if(e.code==='Escape'||e.code==='KeyI'||e.code==='Tab'||e.code==='KeyE'){closeInv();e.preventDefault();}return;}
   if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
   if(!$('journal').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space'||e.code==='KeyJ')closeJournal();e.preventDefault();return;}
@@ -87,7 +88,7 @@ function tap(cx,cy){
   if(S.mode!=='foot'&&S.mode!=='place'&&S.mode!=='pick')return;
   ndc.set(cx/viewW()*2-1,-(cy/viewH())*2+1);
   ray.setFromCamera(ndc,activeCam);
-  const hit=ray.intersectObject(terrain)[0];
+  const hit=ray.intersectObjects(TERRAIN_TILES.filter(m=>m.visible))[0];
   if(S.mode!=='foot'){if(hit)mapTap(hit.point.x,hit.point.z);return;}
   if(hit){P.target={x:hit.point.x,z:hit.point.z};marker.position.set(hit.point.x,hit.point.y+0.06,hit.point.z);marker.visible=true;marker.material.opacity=0.8;}
 }

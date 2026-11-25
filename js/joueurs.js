@@ -61,6 +61,7 @@ const J={
   split:()=>jcount('fendre',1,0),
   fish:()=>jcount('peche',1,0),
   buy:(what,pr)=>jlog(`a acheté ${what} (${pr} $)`),
+  order:(who,pr)=>jlog(`a rempli la commande — ${who.toLowerCase()} (+${pr} $)`),
   sell:(what,pr)=>jlog(`a vendu ${what} (+${pr} $)`),
   build:(what)=>jlog(`a construit ${what}`),
   move:(what)=>jlog(`a déplacé ${what}`),

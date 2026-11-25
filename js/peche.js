@@ -1,11 +1,11 @@
 /* Pêche au lac : canne à pêche (magasin), on lance la ligne vers l'eau, on attend que le flotteur cale
    et on ferre au bon moment. Les poissons vont dans l'inventaire. */
 const FISH={
-  perchaude:{n:'Perchaude',fem:true,w:[0.1,0.45],top:0x8a8a2e,side:0xd8c04a,belly:0xf0e6c0,bars:true},
-  achigan:{n:'Achigan',w:[0.4,2.3],top:0x3f5a2a,side:0x7a9050,belly:0xe8e4c8},
-  truite:{n:'Truite mouchetée',fem:true,w:[0.25,1.6],top:0x3d4a3a,side:0x7a8466,belly:0xe8a070,spots:true},
-  dore:{n:'Doré',w:[0.7,3.6],top:0x6a5a2a,side:0xc9a84a,belly:0xf2ead0},
-  brochet:{n:'Brochet',w:[1.5,6.5],top:0x3a4a2a,side:0x6b7d42,belly:0xe8e6cc,long:true}
+  perchaude:{n:'Perchaude',pkg:9,fem:true,w:[0.1,0.45],top:0x8a8a2e,side:0xd8c04a,belly:0xf0e6c0,bars:true},
+  achigan:{n:'Achigan',pkg:7,w:[0.4,2.3],top:0x3f5a2a,side:0x7a9050,belly:0xe8e4c8},
+  truite:{n:'Truite mouchetée',pkg:11,fem:true,w:[0.25,1.6],top:0x3d4a3a,side:0x7a8466,belly:0xe8a070,spots:true},
+  dore:{n:'Doré',pkg:13,w:[0.7,3.6],top:0x6a5a2a,side:0xc9a84a,belly:0xf2ead0},
+  brochet:{n:'Brochet',pkg:6,w:[1.5,6.5],top:0x3a4a2a,side:0x6b7d42,belly:0xe8e6cc,long:true}
 };
 const FISH_IDS=Object.keys(FISH);
 
@@ -119,7 +119,7 @@ function rodTip(out){
   return out;
 }
 function updateFishing(dt){
-  const rod=TOOL&&TOOL.kind==='rod'&&S.mode==='foot'&&!P.carry&&!P.pail;
+  const rod=TOOL&&TOOL.kind==='rod'&&(S.mode==='foot'||inBoat())&&!P.carry&&!P.pail;
   player.rod.visible=!!rod&&P.catchShow<=0;
   // Posture : canne tenue devant, lancer par-dessus l'épaule
   if(rod&&P.catchShow<=0){
@@ -164,7 +164,7 @@ function updateFishing(dt){
 /* ----- Avatars : la canne et le flotteur de l'autre joueur ----- */
 function avatarFishing(a,p,f){
   if(!f.rod){const r=makeRodModel();r.position.set(0,-0.68,0);r.rotation.x=1.65;f.armR.add(r);f.rod=r;}
-  const rod=p.tool==='canne'&&p.m==='foot'&&!p.c&&!p.v;
+  const rod=p.tool==='canne'&&!p.c&&(p.m==='foot'&&!p.v||p.boat);
   f.rod.visible=rod;
   if(rod&&p.ar===undefined){f.armR.rotation.x=-0.9;}
   if(p.fb&&rod){
@@ -175,3 +175,9 @@ function avatarFishing(a,p,f){
     f.rod.userData.tip.getWorldPosition(_tip);setLine(a.line,_tip,a.bob.position,0.25);
   }else if(a.bob){a.bob.visible=a.line.visible=false;}
 }
+
+/* ----- Valeur des poissons (au magasin) : prix au kilo, cuit 1,8 fois plus cher ----- */
+const COOK_BONUS=1.8;
+function fishValue(k,w,cooked){return Math.max(4,Math.round(FISH[k].pkg*w*(cooked?COOK_BONUS:1)));}
+function stackValue(s){const d=itemDef(s.id);if(d.kind!=='fish'&&d.kind!=='cooked')return 0;return (s.w||[]).reduce((a,w)=>a+fishValue(d.fish,w,d.kind==='cooked'),0)||fishValue(d.fish,1,d.kind==='cooked')*s.n;}
+function sellFishSlot(i){const s=INV[i];if(!s)return 0;const v=stackValue(s),d=itemDef(s.id),n=s.n;INV[i]=null;S.money+=v;J.sell(`${n} ${d.name.toLowerCase()}`,v);syncTool();renderInv();return v;}

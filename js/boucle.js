@@ -20,7 +20,7 @@ function frame(){
   updateCamp(dt);updateCabin(dt);tickPlants(dt);
   if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);
   const RVc=RV();
-  updateSugar(dt);updateMarket(dt);
+  updateSugar(dt);updateMarket(dt);updateOrders(dt);
   updateArrow();updateHUD();
   let gx,gz;
   const mc=mapCursor();
@@ -59,12 +59,13 @@ function frame(){
     camera.position.set(camT.x+Math.sin(camAz)*Math.cos(ELEV)*D,camT.y+Math.sin(ELEV)*D,camT.z+Math.cos(camAz)*Math.cos(ELEV)*D);
     camera.lookAt(camT);
   }
-  updateSky(dt,camT);updateBirds(dt,S.mode==='vtt'?V:P);updateSound(dt,S.mode==='vtt'?V:P);
+  updateSky(dt,camT);updateBirds(dt,S.mode==='vtt'?V:P);updateAnimals(dt,S.mode==='vtt'?V:P);updateSound(dt,S.mode==='vtt'?V:P);
   if(window.PHOTO){const f=window.PHOTO;activeCam=pcam;pcam.position.set(...f.pos);pcam.lookAt(...f.at);}   // caméra libre pour les captures de test
   updateFpTool();
   // Vitres du véhicule : invisibles quand on regarde de l'intérieur
   vehicles.forEach(v=>{const gl=v.mesh.g.userData.glass;if(gl){const hide=camMode==='fp'&&RVc===v;gl.forEach(m=>m.visible=!hide);}});
   if(sky.visible){sky.position.copy(pcam.position);skyMat.uniforms.uTime.value=S.time;}
+  updateCulling(camT);
   renderer.render(scene,activeCam);
   requestAnimationFrame(frame);
 }

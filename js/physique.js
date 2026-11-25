@@ -7,7 +7,7 @@ function bodyCircles(except){
   trailers.forEach(t=>{if(!except||t.hitch!==except)a.push(...trCircles(t,t.x,t.z,t.th));});
   return a;
 }
-function circlesHit(list,others){for(const c of list){if(waterDepth(c[0],c[1])>0.35)return true;if(hits(c[0],c[1],c[2]))return true;for(const o of others){const dx=c[0]-o[0],dz=c[1]-o[1],rr=c[2]+o[2];if(dx*dx+dz*dz<rr*rr)return true;}}return false;}
+function circlesHit(list,others){for(const c of list){if(waterDepth(c[0],c[1])>0.35||landBlocked(c[0],c[1]))return true;if(hits(c[0],c[1],c[2]))return true;for(const o of others){const dx=c[0]-o[0],dz=c[1]-o[1],rr=c[2]+o[2];if(dx*dx+dz*dz<rr*rr)return true;}}return false;}
 function trailerFollow(t,hx,hz,th){
   let dx=hx-t.x,dz=hz-t.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;
   const tth=Math.atan2(dx,dz);
@@ -15,6 +15,7 @@ function trailerFollow(t,hx,hz,th){
 }
 const JACK=110*Math.PI/180;
 function updateVehicle(v,dt){
+  if(v.spec.boat){updateBoat(v,dt);return;}
   const sp=v.spec,driving=S.mode==='vtt'&&V===v;
   let steerIn=0,thr=0;
   if(driving){
@@ -80,6 +81,7 @@ function updateVTT(dt){
     t.mark.visible=!t.hitch&&near&&vehicles.some(v=>canAttach(v,t));
     if(t.mark.visible){const p=tongue(t);t.mark.position.set(p.x,H(p.x,p.z)+0.08,p.z);t.mark.material.color.set(0x5fe07a);}
     if(t.crane)updateCrane(t,dt);
+    if(t.mesh.boat)t.mesh.boat.visible=!!t.boat;
   });
   skidMark.visible=false;
   if(S.mode==='vtt'&&V.type==='skid'&&!V.drag){const c=skidCandidate(V);if(c){skidMark.visible=true;skidMark.position.set(c.p.x,H(c.p.x,c.p.z)+0.1,c.p.z);}}

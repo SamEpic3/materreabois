@@ -276,6 +276,7 @@ function makeTrailerObj(kind,x,z,th,id){
   const spec=TSPECS[kind],m=spec.build();scene.add(m.g);markDynamic(m.g);
   const t={id:id||uid(),kind,spec,x,z,th,q:new T.Quaternion(),hitch:null,mesh:m};
   t.c={name:spec.name,cap:spec.cap,load:[],pails:[],pslots:spec.pslots||null,cargo:m.cargo,slots:spec.slots,r:spec.r,center:()=>({x:t.x,z:t.z}),yaw:()=>t.th};
+  if(spec.boatTr)t.boat=true;
   if(spec.crane)t.crane={slew:0,reach:3,grip:0,phase:'idle',y:1.9,target:0,held:null,heldMesh:null,onDone:null};
   t.mark=new T.Mesh(new T.RingGeometry(0.55,0.8,28),new T.MeshBasicMaterial({color:0xffc83d,transparent:true,opacity:0.85,side:T.DoubleSide,depthTest:false}));
   t.mark.rotation.x=-Math.PI/2;t.mark.renderOrder=15;t.mark.visible=false;scene.add(t.mark);

@@ -42,8 +42,9 @@ function updateHUD(){
   bh.classList.toggle('hidden',!hc);
   if(hc)bh.textContent=hc.label+(isTouch?'':' (R)');
   $('pedals').classList.toggle('hidden',!(isTouch&&S.mode==='vtt'));
-  $('hotbar').classList.toggle('hidden',isTouch||S.mode!=='foot');
-  $('toolBtn').classList.toggle('hidden',!isTouch||S.mode!=='foot');
+  const tools=S.mode==='foot'||inBoat();
+  $('hotbar').classList.toggle('hidden',isTouch||!tools);
+  $('toolBtn').classList.toggle('hidden',!isTouch||!tools);
   $('gripBtns').classList.toggle('hidden',!(isTouch&&S.mode==='crane'));
   let hint=c.info||'';
   if(S.mode==='foot'&&!hint){

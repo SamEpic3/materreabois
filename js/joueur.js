@@ -27,7 +27,7 @@ function updateFoot(dt){
     else{pushOut(p,0.35);
     bodyCircles(null).forEach(c=>pushCircle(p,0.35,c[0],c[1],c[2]));}
     clampW(p,1.5);
-    if(!S.inside&&waterDepth(p.x,p.z)>0.45&&!onDock(p.x,p.z)){p.x=P.x;p.z=P.z;}   // trop creux : on ne marche pas dans le lac
+    if(!S.inside&&(waterDepth(p.x,p.z)>0.45&&!onDock(p.x,p.z)||landBlocked(p.x,p.z))){p.x=P.x;p.z=P.z;}   // trop creux : on ne marche pas dans le lac
     const moved=Math.hypot(p.x-P.x,p.z-P.z);
     if(P.target&&moved<speed*dt*0.15){P.target=null;marker.visible=false;}
     P.x=p.x;P.z=p.z;

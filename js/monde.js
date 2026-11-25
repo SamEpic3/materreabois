@@ -1,7 +1,15 @@
 /* Le monde : relief, chemins, rendu, terrain, collisions, camp, village, billots et forêt */
 /* ---------- Monde ---------- */
 const WORLD=80;                                     // terre d'origine : -80..80 (la forêt de départ)
-const WB={x0:-80,x1:140,z0:-80,z1:80};              // la terre agrandie vers l'est, jusqu'au lac
+const WB={x0:-80,x1:170,z0:-180,z1:170};            // tout le territoire : ta terre, les terres à vendre, le territoire public
+// Les terres : la tienne (avec le lac), deux à vendre, et le territoire public tout autour
+const LANDS={
+  erab:{name:'Érablière du rang Nord',short:'l\'érablière',price:30000,x0:-80,x1:20,z0:-180,z1:-80,desc:'Une belle érablière, presque juste des érables à sucre.'},
+  coupe:{name:'Terre à bois du Sud',short:'la terre du Sud',price:40000,x0:-80,x1:60,z0:80,z1:170,desc:'Des épinettes et des sapins bien gros, parfaits pour le bois de sciage.'}
+};
+const MAIN_LAND={x0:-80,x1:140,z0:-80,z1:80};
+function inRect(x,z,r){return x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1;}
+function landAt(x,z){if(inRect(x,z,LANDS.erab))return 'erab';if(inRect(x,z,LANDS.coupe))return 'coupe';if(inRect(x,z,MAIN_LAND))return 'main';return 'pub';}
 function clampW(p,m){p.x=clamp(p.x,WB.x0+m,WB.x1-m);p.z=clamp(p.z,WB.z0+m,WB.z1-m);return p;}
 function outW(x,z,m){return x<WB.x0+m||x>WB.x1-m||z<WB.z0+m||z>WB.z1-m;}
 const CAMP={x:0,z:0,r:14};
@@ -25,13 +33,34 @@ const SEGS0=SEGS.slice();   // sentiers d'origine : servent à générer la for�
 // Nouveau sentier vers le lac
 const LAKE_TRAIL=[[58,-6],[68,-5],[78,-2],[87,2]];
 for(let i=0;i<LAKE_TRAIL.length-1;i++)SEGS.push([LAKE_TRAIL[i][0],LAKE_TRAIL[i][1],LAKE_TRAIL[i+1][0],LAKE_TRAIL[i+1][1]]);
+const SEGS_LAKE=SEGS.slice();
+// Sentiers vers les nouvelles terres et le belvédère
+const NEW_TRAILS=[
+  [[18,-62],[12,-78],[5,-95],[-8,-115],[-25,-138],[-40,-160]],          // vers l'érablière (nord)
+  [[-20,26],[-10,50],[0,78],[4,100],[-8,128],[-30,152]],                 // vers la terre du Sud
+  [[78,-2],[74,-38],[69,-74],[62,-100],[66,-118],[75,-136]]              // vers le belvédère (territoire public)
+];
+NEW_TRAILS.forEach(tr=>{for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1]]);});
 function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;t=clamp(t,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
 function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
+function trailDistLake(x,z){let m=1e9;for(const s of SEGS_LAKE){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function trailDist0(x,z){let m=1e9;for(const s of SEGS0){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function mudAt(x,z){let m=0;for(const p of MUD){m=Math.max(m,smoothstep(p.r,p.r*0.55,Math.hypot(x-p.x,z-p.z)));}return m;}
 function baseH(x,z){return 1.7*Math.sin(x*0.045+0.5)*Math.cos(z*0.038)+0.8*Math.sin(x*0.1+1.3)*Math.sin(z*0.085+0.7);}
 function detailH(x,z){return 0.32*Math.sin(x*0.33)*Math.cos(z*0.29)+0.15*Math.sin(x*0.7+z*0.5);}
 const CAMP_H=baseH(CAMP.x,CAMP.z),VIL_H=baseH(VILLAGE.x,VILLAGE.z);
+/* ---------- Le mont du Loup (colline avec belvédère) et la rivière (territoire public) ---------- */
+const HILL={x:75,z:-140,r:40,h:22};
+function hillH(x,z){const d=Math.hypot(x-HILL.x,z-HILL.z);return d<HILL.r?HILL.h*(0.5+0.5*Math.cos(Math.PI*d/HILL.r)):0;}
+const RIVER=[[128,-182],[122,-158],[129,-134],[119,-110],[123,-86],[115,-62],[113,-36],[113,-22]];
+const RIVER_L=(()=>{const a=[0];for(let i=1;i<RIVER.length;i++)a.push(a[i-1]+Math.hypot(RIVER[i][0]-RIVER[i-1][0],RIVER[i][1]-RIVER[i-1][1]));return a;})();
+function riverInfo(x,z){
+  let best=1e9,bs=0;
+  for(let i=0;i<RIVER.length-1;i++){const [ax,az]=RIVER[i],[bx,bz]=RIVER[i+1],dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=((x-ax)*dx+(z-az)*dz)/l2;t=clamp(t,0,1);
+    const d=Math.hypot(x-(ax+t*dx),z-(az+t*dz));if(d<best){best=d;bs=(RIVER_L[i]+t*Math.sqrt(l2))/RIVER_L[RIVER_L.length-1];}}
+  return {d:best,s:bs};
+}
+function riverY(s){return LAKE_Y+3.4*(1-Math.min(1,s/0.93));}
 /* ---------- Le lac (au bout est de la terre) ---------- */
 const LAKE={x:113,z:2,rx:23,rz:33};
 function lakeE(x,z){const dx=(x-LAKE.x)/LAKE.rx,dz=(z-LAKE.z)/LAKE.rz,a=Math.atan2(dz,dx);return Math.hypot(dx,dz)/(1+0.07*Math.sin(3*a+1)+0.05*Math.sin(5*a+2));}
@@ -42,17 +71,21 @@ function H(x,z){
   const tt=smoothstep(4,1.8,trailDist(x,z));
   const tv=smoothstep(VILLAGE.r+8,VILLAGE.r,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
   h+=detailH(x,z)*(1-Math.max(tc,tt,tv));
+  h+=hillH(x,z);
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
   h-=0.18*mudAt(x,z);
   if(x>60){const e=lakeE(x,z);if(e<2.0){h=lerp(h,LAKE_Y+0.35,smoothstep(2.0,1.1,e));h-=3.2*smoothstep(1.0,0.5,e);}}
+  if(x>100&&z<-15){const ri=riverInfo(x,z);if(ri.d<11){const ys=riverY(ri.s);h=lerp(h,ys+0.45,smoothstep(11,3.4,ri.d));h-=1.5*smoothstep(2.9,0.9,ri.d);}}
   return h;
 }
 // Profondeur d'eau (négatif : pas d'eau)
-function waterDepth(x,z){return x>60&&lakeE(x,z)<1.15?LAKE_Y-H(x,z):-1;}
+function waterDepth(x,z){if(x>60&&lakeE(x,z)<1.15)return LAKE_Y-H(x,z);if(x>100&&z<-15){const ri=riverInfo(x,z);if(ri.d<3)return riverY(ri.s)-H(x,z);}return -1;}
 // Le quai : on y marche au-dessus de l'eau
 const DOCK=(()=>{let sx=88;for(let x=86;x<LAKE.x;x+=0.1){if(H(x,LAKE.z)<LAKE_Y){sx=x;break;}}return {x0:sx-2.6,x1:sx+6.5,z0:LAKE.z-0.85,z1:LAKE.z+0.85,y:LAKE_Y+0.48};})();
 function onDock(x,z){return x>DOCK.x0&&x<DOCK.x1&&z>DOCK.z0&&z<DOCK.z1;}
-function walkH(x,z){const h=H(x,z);return onDock(x,z)?Math.max(h,DOCK.y):h;}
+// Belvédère au sommet du mont du Loup : une plate-forme où l'on monte
+const BELV=(()=>{const y=H(HILL.x,HILL.z)+0.45;return {x0:HILL.x-2.6,x1:HILL.x+2.6,z0:HILL.z-2.6,z1:HILL.z+2.6,y};})();
+function walkH(x,z){const h=H(x,z);return onDock(x,z)?Math.max(h,DOCK.y):inRect(x,z,BELV)?Math.max(h,BELV.y):h;}
 
 /* ---------- Rendu ---------- */
 const canvas=$('c');
@@ -66,7 +99,8 @@ scene.background=new T.Color(0xbcd3e2);
 /* Ciel : un dôme qui suit la caméra, dégradé bleu + nuages qui dérivent (calculés dans le shader, une seule
    petite géométrie, pas de texture). Visible surtout en vue 3e et 1re personne. */
 const SKY_HORIZON=0xd6e6f0;
-const GROUND_U={uSnow:{value:0},uWet:{value:0}};   // neige au sol et sol mouillé (météo)
+const GROUND_U={uSnow:{value:0},uWet:{value:0}};
+const TERRAIN_TILES=[];   // neige au sol et sol mouillé (météo)
 const skyMat=new T.ShaderMaterial({
   uniforms:{uTime:{value:0},uTop:{value:new T.Color(0x2f6fbf)},uMid:{value:new T.Color(0x78acdc)},uHor:{value:new T.Color(SKY_HORIZON)},uSun:{value:new T.Vector3(0.45,0.75,0.2).normalize()},
     uMoon:{value:new T.Vector3(-0.45,0.6,-0.2).normalize()},uNight:{value:0},uCloud:{value:0},uCloudCol:{value:new T.Color(1,1,1)},uSunVis:{value:1}},
@@ -213,30 +247,36 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
   }
 },23);
 {
-  const SX=WB.x1-WB.x0,SZ=WB.z1-WB.z0,TILE=4;
-  const g=new T.PlaneGeometry(SX,SZ,Math.round(SX*1.3),Math.round(SZ*1.3));g.rotateX(-Math.PI/2);g.translate((WB.x0+WB.x1)/2,0,(WB.z0+WB.z1)/2);
-  const pos=g.attributes.position,cols=new Float32Array(pos.count*3),dirt=new Float32Array(pos.count);
+  // Le terrain est fait de tuiles de 50 m (les tuiles hors de la vue ne sont pas dessinées)
+  const TS=50,TILE=4;
+  grassTex.repeat.set(TS/TILE,TS/TILE);
+  dirtTex.repeat.set(TS/TILE,TS/TILE);
+  const buildTile=(cx,cz,dens)=>{
+  const g=new T.PlaneGeometry(TS,TS,Math.round(TS*dens),Math.round(TS*dens));g.rotateX(-Math.PI/2);g.translate(cx,0,cz);
+  const pos=g.attributes.position,cols=new Float32Array(pos.count*3),dirt=new Float32Array(pos.count),nor=g.attributes.normal;
   for(let i=0;i<pos.count;i++){
     const x=pos.getX(i),z=pos.getZ(i);
-    pos.setY(i,H(x,z));
+    const hy=H(x,z);pos.setY(i,hy);
+    {const e=0.5,hx=H(x+e,z)-H(x-e,z),hz=H(x,z+e)-H(x,z-e),l=Math.hypot(hx,2*e,hz);nor.setXYZ(i,-hx/l,2*e/l,-hz/l);}
     const n=0.5+0.5*Math.sin(x*0.21+Math.cos(z*0.17)*2)*Math.cos(z*0.13);
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP.r+3,CAMP.r-3,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
     const vilF=smoothstep(VILLAGE.r+2,VILLAGE.r-4,Math.hypot(x-VILLAGE.x,z-VILLAGE.z));
     const patch=vilF*(0.38+0.25*Math.sin(x*0.55+1.7)*Math.cos(z*0.47));
-    const le=x>60?lakeE(x,z):9,beach=smoothstep(1.22,1.02,le);
-    dirt[i]=Math.max(tr,mud,patch,beach*0.9);
+    const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
+    const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
+    dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);
     let r=0.88+0.22*n,gg=0.88+0.2*n,b=0.86+0.18*n;
     r*=1+0.06*campF;b*=1-0.08*campF;
     r=lerp(r,0.55,mud);gg=lerp(gg,0.48,mud);b=lerp(b,0.42,mud);
-    if(beach>0){const wet=smoothstep(1.0,0.85,le);r=lerp(r,1.12,beach*0.5)*(1-0.45*wet);gg=lerp(gg,1.05,beach*0.5)*(1-0.4*wet);b=lerp(b,0.9,beach*0.5)*(1-0.3*wet);}
+    if(beach>0){const wet=Math.max(smoothstep(1.0,0.85,le),smoothstep(2.6,2.0,rd));r=lerp(r,1.12,beach*0.5)*(1-0.45*wet);gg=lerp(gg,1.05,beach*0.5)*(1-0.4*wet);b=lerp(b,0.9,beach*0.5)*(1-0.3*wet);}
     cols[i*3]=r;cols[i*3+1]=gg;cols[i*3+2]=b;
   }
   g.setAttribute('color',new T.BufferAttribute(cols,3));
   g.setAttribute('aDirt',new T.BufferAttribute(dirt,1));
-  g.computeVertexNormals();
-  grassTex.repeat.set(SX/TILE,SZ/TILE);
-  dirtTex.repeat.set(SX/TILE,SZ/TILE);
+  g.computeBoundingSphere();
+  return g;
+  };
   const tm=new T.MeshLambertMaterial({vertexColors:true,map:grassTex});
   tm.onBeforeCompile=sh=>{
     sh.uniforms.tDirt={value:dirtTex};sh.uniforms.uSnow=GROUND_U.uSnow;sh.uniforms.uWet=GROUND_U.uWet;
@@ -244,8 +284,11 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     sh.fragmentShader='uniform sampler2D tDirt;\nuniform float uSnow,uWet;\nvarying float vDirt;\n'+sh.fragmentShader.replace('#include <map_fragment>',
       'vec4 tg=texture2D(map,vUv);vec4 td=texture2D(tDirt,vUv*1.3);\n  float m=smoothstep(0.42,0.58,vDirt+(tg.g-0.42)*0.55);\n  diffuseColor*=mix(tg,td,m);\n  diffuseColor.rgb*=1.0-uWet*0.28;\n  diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.92,0.94,1.0),clamp(uSnow*(1.25+tg.r-tg.g)*(1.0-m*0.35),0.0,1.0));');
   };
-  var terrain=new T.Mesh(g,tm);
-  terrain.receiveShadow=true;scene.add(terrain);
+  var terrain=new T.Group();scene.add(terrain);
+  for(let x=WB.x0;x<WB.x1;x+=TS)for(let z=WB.z0;z<WB.z1;z+=TS){
+    const cx=x+TS/2,cz=z+TS/2,dens=inRect(cx,cz,MAIN_LAND)?1.3:1.0;
+    const m=new T.Mesh(buildTile(cx,cz,dens),tm);m.receiveShadow=true;m.userData.c={x:cx,z:cz};m.geometry.computeBoundingBox();m.userData.box=m.geometry.boundingBox.clone();terrain.add(m);TERRAIN_TILES.push(m);
+  }
 }
 
 /* ---------- Collisions (grille) ---------- */
@@ -471,6 +514,8 @@ const piles=[];
 const stumpList=[],campStumps=[];   // souches qu'on peut arracher à la pelle
 /* ---------- Forêt ---------- */
 const SPECIES={epinette:{n:'Épinette',p:30},sapin:{n:'Sapin',p:25},erable:{n:'Érable',p:45},bouleau:{n:'Bouleau',p:35}};
+const TREE_INST={},REG_INST={};
+const REG_RECT={};   // boîte de chaque carré de forêt
 const treeList=[];
 for(let k=0;k<5200&&treeList.length<900;k++){
   const x=(rnd()*2-1)*(WORLD-1),z=(rnd()*2-1)*(WORLD-1);
@@ -491,13 +536,13 @@ for(let k=0;k<5200&&treeList.length<900;k++){
 }
 const ORIG_TREE_N=treeList.length;
 // Le nouveau sentier passe dans la forêt de départ : ces arbres-là sont déjà coupés (sans souche)
-treeList.forEach(t=>{if(trailDist(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
 // Forêt de la terre agrandie (son propre hasard : ne change rien à la forêt de départ)
 const rng2=mulberry32(4242);
 for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){
-  const x=81+rng2()*(WB.x1-82),z=WB.z0+1+rng2()*(WB.z1-WB.z0-2);
+  const x=81+rng2()*58,z=-79+rng2()*158;
   const e=lakeE(x,z);if(e<1.28)continue;
-  if(trailDist(x,z)<3.4||(x<DOCK.x1+4&&Math.abs(z-LAKE.z)<5&&x>DOCK.x0-6))continue;
+  if(trailDistLake(x,z)<3.4||(x<DOCK.x1+4&&Math.abs(z-LAKE.z)<5&&x>DOCK.x0-6))continue;
   if(rng2()>0.9)continue;
   if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2.3))continue;
   const r=rng2(),near=e<1.8;
@@ -507,6 +552,34 @@ for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){
   t.col=addCol(x,z,0.32*s);t.col.tree=t;
   treeList.push(t);
 }
+const LAKE_TREE_N=treeList.length;
+treeList.forEach(t=>t.region='main');
+// Les nouvelles terres et le territoire public : chacune sa forêt (et son propre hasard)
+const REGIONS={
+  erab:{x0:-79,x1:19,z0:-179,z1:-81,n:520,seed:501,types:[['erable',0.78],['bouleau',0.1],['sapin',0.06],['epinette',0.06]],s:[0.95,1.45],gap:2.5},
+  coupe:{x0:-79,x1:59,z0:81,z1:169,n:470,seed:502,types:[['epinette',0.45],['sapin',0.3],['bouleau',0.13],['erable',0.12]],s:[1.05,1.6],gap:2.7},
+  pubN:{x0:21,x1:169,z0:-179,z1:-81,n:360,seed:503,types:[['epinette',0.35],['sapin',0.25],['erable',0.22],['bouleau',0.18]],s:[0.8,1.3],gap:2.4},
+  pubS:{x0:61,x1:169,z0:81,z1:169,n:230,seed:504,types:[['erable',0.35],['bouleau',0.2],['epinette',0.25],['sapin',0.2]],s:[0.8,1.3],gap:2.4},
+  pubE:{x0:141,x1:169,z0:-79,z1:79,n:80,seed:505,types:[['epinette',0.4],['sapin',0.3],['bouleau',0.3]],s:[0.8,1.3],gap:2.4}
+};
+for(const rk in REGIONS){
+  const R=REGIONS[rk],rr=mulberry32(R.seed);R.rng=rr;const start=treeList.length;
+  for(let k=0;k<R.n*8&&treeList.length<start+R.n;k++){
+    const x=R.x0+rr()*(R.x1-R.x0),z=R.z0+rr()*(R.z1-R.z0);
+    if(trailDist(x,z)<3.4)continue;
+    if(x>60&&lakeE(x,z)<1.3)continue;
+    if(x>100&&z<-15&&riverInfo(x,z).d<4.5)continue;
+    if(Math.hypot(x-HILL.x,z-HILL.z)<15)continue;
+    if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<R.gap))continue;
+    let r=rr(),type='erable';for(const [tp,p] of R.types){if(r<p){type=tp;break;}r-=p;}
+    const s=R.s[0]+rr()*(R.s[1]-R.s[0]);
+    const t={x,z,y:H(x,z),type,s,rot:rr()*6.28,alive:true,work:0,base:Math.round(5+s*5),region:rk,rr};
+    t.col=addCol(x,z,0.32*s);t.col.tree=t;treeList.push(t);
+  }
+}
+// Deuxième ménage : arbres sur les nouveaux sentiers ou dans la rivière
+treeList.forEach((t,i)=>{if(t.cleared||i>=LAKE_TREE_N)return;if(trailDist(t.x,t.z)<3.2||t.x>100&&t.z<-15&&riverInfo(t.x,t.z).d<4.5||Math.hypot(t.x-HILL.x,t.z-HILL.z)<6){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+
 /* Arbres : géométries détaillées, partagées et dessinées en lots (une seule commande par sorte de pièce).
    Les couleurs par sommet donnent du relief (ombre dans le feuillage, taches des bouleaux). */
 function paintGeo(g,fn){
@@ -548,7 +621,6 @@ const TREE_GEO=(()=>{
   return {trunk,trunkD,btrunk,fir,crown,blob};
 })();
 function treeMat(c){return new T.MeshPhongMaterial({color:c,flatShading:true,shininess:3,vertexColors:true});}
-const TREE_INST={};
 const MAPLE_COLS=[0xb5452a,0xc9682b,0xd28a2f,0x9c3b25,0xa8532a],BIRCH_COLS=[0xd8b23a,0xc9a83a,0xbfa045];
 // Pièces d'un arbre : sert à la forêt de départ, aux arbres plantés et à l'animation de chute.
 // (Même nombre de tirages au hasard qu'avant, pour que la forêt et les sauvegardes restent identiques.)
@@ -571,16 +643,19 @@ function makeTreeParts(t,rf){
 function treeGroupFromParts(parts){const g=new T.Group();parts.forEach(pp=>{const m=new T.Mesh(TREE_GEO[pp.g],treeMat(pp.c));m.position.set(pp.dx,pp.dy,pp.dz);m.scale.set(pp.sx,pp.sy,pp.sz);m.rotation.y=pp.rot;g.add(m);});shadows(g);return g;}
 const ZERO_M=new T.Matrix4().makeScale(0,0,0);
 {
-  treeList.forEach(t=>{t.parts=makeTreeParts(t,t.ext?rng2:rnd);});
-  const counts={};
-  treeList.forEach(t=>t.parts.forEach(pp=>{pp.idx=counts[pp.g]=(counts[pp.g]||0);counts[pp.g]++;}));
+  treeList.forEach(t=>{t.parts=makeTreeParts(t,t.rr||(t.ext?rng2:rnd));delete t.rr;});
+  // Un lot d'instances par carré de 50 m (on ne dessine que les carrés dans la vue)
+  const counts={},chunkOf=t=>`${Math.floor((t.x-WB.x0)/50)},${Math.floor((t.z-WB.z0)/50)}`;
+  treeList.forEach(t=>{t.chunk=chunkOf(t);const c=counts[t.chunk]||(counts[t.chunk]={});t.parts.forEach(pp=>{pp.idx=c[pp.g]=(c[pp.g]||0);c[pp.g]++;});});
+  for(const ck in counts){const [i,j]=ck.split(',').map(Number),x0=WB.x0+i*50,z0=WB.z0+j*50;REG_RECT[ck]=new T.Box3(new T.Vector3(x0-4,-10,z0-4),new T.Vector3(x0+54,45,z0+54));}
   var ph=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,shininess:3});
   var m4=new T.Matrix4(),q=new T.Quaternion(),p=new T.Vector3(),sc=new T.Vector3(),UP=new T.Vector3(0,1,0),col=new T.Color();
   var put=function(mesh,i,x,y,z,sx,sy,sz,rot,c){q.setFromAxisAngle(UP,rot);m4.compose(p.set(x,y,z),q,sc.set(sx,sy,sz));mesh.setMatrixAt(i,m4);mesh.setColorAt(i,col.set(c));};
   const phT=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,shininess:3,vertexColors:true});
-  for(const k in counts)TREE_INST[k]=new T.InstancedMesh(TREE_GEO[k],phT,counts[k]);
-  treeList.forEach(t=>t.parts.forEach(pp=>{put(TREE_INST[pp.g],pp.idx,t.x+pp.dx,t.y+pp.dy,t.z+pp.dz,pp.sx,pp.sy,pp.sz,pp.rot,pp.c);if(t.cleared)TREE_INST[pp.g].setMatrixAt(pp.idx,ZERO_M);}));
-  Object.values(TREE_INST).forEach(m=>{m.castShadow=true;m.receiveShadow=true;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;scene.add(m);});
+  for(const rk in counts){const R=REG_INST[rk]={};for(const k in counts[rk])R[k]=new T.InstancedMesh(TREE_GEO[k],phT,counts[rk][k]);}
+  treeList.forEach(t=>{const R=t.inst=REG_INST[t.chunk];t.parts.forEach(pp=>{put(R[pp.g],pp.idx,t.x+pp.dx,t.y+pp.dy,t.z+pp.dz,pp.sx,pp.sy,pp.sz,pp.rot,pp.c);if(t.cleared)R[pp.g].setMatrixAt(pp.idx,ZERO_M);});});
+  for(const rk in REG_INST)Object.values(REG_INST[rk]).forEach(m=>{m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;scene.add(m);});
+
 
   // Roches
   const rocks=[];
@@ -665,4 +740,65 @@ WATER_MAT.onBeforeCompile=sh=>{
   const rg=new T.IcosahedronGeometry(1,0);const rk=new T.InstancedMesh(rg,new T.MeshPhongMaterial({color:0x8a8780,flatShading:true,shininess:4}),srocks.length);
   srocks.forEach((o,i)=>{q.setFromEuler(new T.Euler(r(),r()*6,r()));m4.compose(p.set(o.x,H(o.x,o.z)+0.05,o.z),q,sc.set(o.s*1.3,o.s*0.7,o.s));rk.setMatrixAt(i,m4);rk.setColorAt(i,col.setHSL(0.08,0.04,0.45+r()*0.15));if(o.s>0.45)addCol(o.x,o.z,o.s*1.1);});
   [stem,head,pad,rk].forEach(m=>{m.castShadow=m!==pad;m.receiveShadow=true;scene.add(m);});
+}
+
+
+/* ---------- Ce qu'on ne dessine pas quand c'est loin : tuiles de terrain et forêts des autres terres ---------- */
+const _frus=new T.Frustum(),_pm=new T.Matrix4();
+function updateCulling(f){
+  const far=camMode==='iso'?110:150*(typeof VIEW_BOOST!=='undefined'?VIEW_BOOST:1);
+  activeCam.updateMatrixWorld();_pm.multiplyMatrices(activeCam.projectionMatrix,activeCam.matrixWorldInverse);_frus.setFromProjectionMatrix(_pm);
+  // La zone des ombres déborde un peu de la vue : on garde aussi ce qui est tout près
+  TERRAIN_TILES.forEach(m=>{const c=m.userData.c,d=Math.max(Math.abs(c.x-f.x),Math.abs(c.z-f.z));m.visible=d<45||(d<far+60&&_frus.intersectsBox(m.userData.box));});
+  for(const ck in REG_INST){const b=REG_RECT[ck],dx=Math.max(b.min.x-f.x,0,f.x-b.max.x),dz=Math.max(b.min.z-f.z,0,f.z-b.max.z),d=Math.hypot(dx,dz);
+    const v=d<far&&(d<30||_frus.intersectsBox(b));for(const k in REG_INST[ck])REG_INST[ck][k].visible=v;}
+}
+
+/* ---------- La rivière : une bande d'eau qui descend vers le lac ---------- */
+{
+  const pts=[],N=Math.ceil(RIVER_L[RIVER_L.length-1]/1.5);
+  for(let k=0;k<=N;k++){
+    const L=k/N*RIVER_L[RIVER_L.length-1];let i=0;while(i<RIVER_L.length-2&&RIVER_L[i+1]<L)i++;
+    const t=(L-RIVER_L[i])/(RIVER_L[i+1]-RIVER_L[i]),[ax,az]=RIVER[i],[bx,bz]=RIVER[i+1];
+    const x=ax+(bx-ax)*t,z=az+(bz-az)*t,dl=Math.hypot(bx-ax,bz-az),nx=-(bz-az)/dl,nz=(bx-ax)/dl,y=riverY(L/RIVER_L[RIVER_L.length-1])+0.02;
+    pts.push([x+nx*2.6,y,z+nz*2.6],[x-nx*2.6,y,z-nz*2.6]);
+  }
+  const pos=[];for(let k=0;k<pts.length/2-1;k++){const a=pts[2*k],b=pts[2*k+1],c=pts[2*k+2],d=pts[2*k+3];pos.push(...a,...c,...b,...b,...c,...d);}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.computeVertexNormals();
+  const w=new T.Mesh(g,WATER_MAT);w.receiveShadow=true;w.renderOrder=2;scene.add(w);
+  // Roches dans le courant et sur les rives
+  const r=mulberry32(77),rk=[];
+  for(let k=0;k<200&&rk.length<55;k++){const L=r()*RIVER_L[RIVER_L.length-1]*0.9;let i=0;while(i<RIVER_L.length-2&&RIVER_L[i+1]<L)i++;
+    const t=(L-RIVER_L[i])/(RIVER_L[i+1]-RIVER_L[i]),[ax,az]=RIVER[i],[bx,bz]=RIVER[i+1],dl=Math.hypot(bx-ax,bz-az),off=(r()<0.5?-1:1)*(1.2+r()*2.8);
+    const x=ax+(bx-ax)*t-(bz-az)/dl*off,z=az+(bz-az)*t+(bx-ax)/dl*off;rk.push({x,z,s:0.2+r()*0.45});}
+  const im=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),new T.MeshPhongMaterial({color:0x7d7a74,flatShading:true,shininess:6}),rk.length);
+  const m4=new T.Matrix4(),q=new T.Quaternion(),p=new T.Vector3(),sc=new T.Vector3();
+  rk.forEach((o,i)=>{q.setFromEuler(new T.Euler(r(),r()*6,r()));m4.compose(p.set(o.x,H(o.x,o.z)+0.05,o.z),q,sc.set(o.s*1.3,o.s*0.7,o.s));im.setMatrixAt(i,m4);});
+  im.castShadow=true;im.receiveShadow=true;scene.add(im);
+}
+
+/* ---------- Le belvédère au sommet du mont du Loup ---------- */
+{
+  const g=new T.Group(),B=BELV,w=B.x1-B.x0,d=B.z1-B.z0,y=B.y-H(HILL.x,HILL.z);
+  const deck=texMat(sidingTex('#9a7a55','#5e4632',true),1,1);deck.map.repeat.set(1,10);
+  g.add(new T.Mesh(new T.BoxGeometry(w,0.1,d).translate(0,y-0.05,0),deck));
+  const post=new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3}),rail=mat(0x6e5236);
+  const ps=[],rs=[];
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>ps.push(new T.CylinderGeometry(0.09,0.1,y+1.1,7).translate(a*(w/2-0.1),(y+1.1)/2-0.05,b*(d/2-0.1))));
+  // Garde-corps sur trois côtés (ouvert vers le sentier, au sud-ouest)
+  [[0,-d/2,w,0],[w/2,0,d,Math.PI/2],[-w/2,0,d,Math.PI/2]].forEach(([x,z,L,r])=>{rs.push(new T.BoxGeometry(L,0.07,0.08).rotateY(r).translate(x,y+1.0,z),new T.BoxGeometry(L,0.05,0.06).rotateY(r).translate(x,y+0.55,z));
+    for(let k=-L/2+0.3;k<L/2;k+=0.35)rs.push(new T.BoxGeometry(0.04,0.45,0.04).translate(r?x:x+k,y+0.77,r?z+k:z));});
+  // Banc et longue-vue
+  rs.push(new T.BoxGeometry(1.6,0.06,0.4).translate(0,y+0.45,-d/2+0.6),new T.BoxGeometry(0.08,0.42,0.35).translate(-0.7,y+0.21,-d/2+0.6),new T.BoxGeometry(0.08,0.42,0.35).translate(0.7,y+0.21,-d/2+0.6));
+  g.add(new T.Mesh(mergeGeos(ps),post),new T.Mesh(mergeGeos(rs),rail));
+  const sc=new T.Mesh(mergeGeos([new T.CylinderGeometry(0.03,0.04,1.1,8).translate(0,y+0.55,0),new T.CylinderGeometry(0.06,0.08,0.45,10).rotateX(Math.PI/2-0.15).translate(0,y+1.15,0.05)]),new T.MeshPhongMaterial({color:0x2d4f3a,shininess:60}));
+  sc.position.set(w/2-0.8,0,-d/2+0.7);g.add(sc);
+  // Panneau
+  const pan=new T.Mesh(new T.PlaneGeometry(1.4,0.5),new T.MeshBasicMaterial({map:canvasTex(256,92,(c,W,Hh)=>{c.fillStyle='#4d3220';c.fillRect(0,0,W,Hh);c.fillStyle='#f1e6c8';c.font='bold 34px Georgia,serif';c.textAlign='center';c.textBaseline='middle';c.fillText('Mont du Loup',W/2,Hh/2);})}));
+  pan.position.set(-w/2-0.6,1.4,d/2+0.8);pan.rotation.y=-0.8;g.add(pan);
+  g.add(new T.Mesh(new T.BoxGeometry(0.08,1.3,0.08).translate(-w/2-0.6,0.65,d/2+0.8),post));
+  g.position.set(HILL.x,H(HILL.x,HILL.z),HILL.z);shadows(g);scene.add(g);
+  // Garde-corps : on ne tombe pas du belvédère
+  for(let k=-w/2;k<=w/2;k+=0.5){addCol(HILL.x+k,HILL.z-d/2,0.12);addCol(HILL.x-w/2,HILL.z+k,0.12);addCol(HILL.x+w/2,HILL.z+k,0.12);}
+  label('Belvédère',HILL.x,B.y+3,HILL.z);
 }

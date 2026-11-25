@@ -182,17 +182,16 @@ function nearestBuild(k,maxD){
 const buildNear=(k)=>nearestBuild(k,KINDS[k].nearR);
 
 /* ----- Terre battue sous les feux de camp (le terrain d'origine revient quand le feu part) ----- */
-let dirtAttr=null,dirtOrig=null,dirtTouched=[];
+let dirtTouched=[];   // [tuile, index, valeur d'origine]
 function refreshCampDirt(){
-  if(!dirtAttr){dirtAttr=terrain.geometry.attributes.aDirt;dirtOrig=Float32Array.from(dirtAttr.array);}
-  dirtTouched.forEach(i=>{dirtAttr.array[i]=dirtOrig[i];});dirtTouched=[];
-  const fires=S.builds.filter(b=>b.k==='feu'&&b._o),pa=terrain.geometry.attributes.position;
-  if(fires.length)for(let i=0;i<pa.count;i++){
-    const x=pa.getX(i),z=pa.getZ(i);let v=0;
-    for(const f of fires){const d=Math.hypot(x-f.x,z-f.z);if(d<3.4)v=Math.max(v,smoothstep(3.4,2.3,d));}
-    if(v>0){dirtAttr.array[i]=Math.max(dirtOrig[i],v);dirtTouched.push(i);}
-  }
-  dirtAttr.needsUpdate=true;
+  dirtTouched.slice().reverse().forEach(([m,i,v])=>{m.geometry.attributes.aDirt.array[i]=v;m.geometry.attributes.aDirt.needsUpdate=true;});dirtTouched=[];
+  const fires=S.builds.filter(b=>b.k==='feu'&&b._o);
+  fires.forEach(f=>TERRAIN_TILES.forEach(m=>{
+    const c=m.userData.c;if(Math.abs(f.x-c.x)>29||Math.abs(f.z-c.z)>29)return;
+    const pa=m.geometry.attributes.position,da=m.geometry.attributes.aDirt;
+    for(let i=0;i<pa.count;i++){const d=Math.hypot(pa.getX(i)-f.x,pa.getZ(i)-f.z);if(d<3.4){const v=smoothstep(3.4,2.3,d);if(v>da.array[i]){dirtTouched.push([m,i,da.array[i]]);da.array[i]=v;}}}
+    da.needsUpdate=true;
+  }));
 }
 
 /* ----- Modes « carte » : placer, choisir quoi déplacer ou démolir (vue isométrique, curseur libre) ----- */
@@ -235,6 +234,8 @@ function placeProblem(k,pos,moving){
     const c=lw(pos,lx,lz);
     if(outW(c.x,c.z,r+2))return 'Trop près du bout de la terre';
     if(waterDepth(c.x,c.z)>-0.15||onDock(c.x,c.z))return 'Pas dans l\'eau';
+    if(isPublic(c.x,c.z))return 'Pas sur le territoire public';
+    if(landBlocked(c.x,c.z))return 'Cette terre n\'est pas à vous';
     if(Math.hypot(c.x-VILLAGE.x,c.z-VILLAGE.z)<VILLAGE.r+r||inSale(c.x,c.z))return 'Pas au village';
     if(Math.hypot(c.x-YARD.x,c.z-YARD.z)<YARD.r+r)return 'Pas dans la cour à bois';
     if(trailDist(c.x,c.z)<r*0.5+1.4)return 'Pas sur un chemin';

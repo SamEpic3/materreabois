@@ -59,7 +59,7 @@ function syncTool(){
 }
 function setTool(){syncTool();}   // ancien nom
 function selectSlot(i){
-  if(S.mode!=='foot'||P.swing>0)return;
+  if((S.mode!=='foot'&&!inBoat())||P.swing>0)return;
   if(i<0||i>=HOT_N)return;
   S.hot=i;syncTool();
   const it=INV[i];toast(it?itemLabel(it):'Mains vides');
@@ -88,7 +88,7 @@ $('toolBtn').addEventListener('pointerdown',e=>{
 /* ----- Fenêtre d'inventaire : toucher ou glisser pour déplacer, empiler ou échanger ----- */
 const invEl=document.createElement('div');invEl.id='inv';invEl.className='hidden';
 invEl.innerHTML=`<div class="card"><button id="invClose" class="xclose" title="Fermer" aria-label="Fermer">✕</button>
-  <h1>🎒 Inventaire</h1><div class="money" id="invInfo">Touche un objet pour le prendre, puis une case pour le poser</div>
+  <h1>🎒 Inventaire <button id="invLook" class="lookBtn">👕 Apparence</button></h1><div class="money" id="invInfo">Touche un objet pour le prendre, puis une case pour le poser</div>
   <div class="invLbl">En main (1 à 6)</div><div class="invGrid" id="invHot"></div>
   <div class="invLbl">Rangement</div><div class="invGrid" id="invBag"></div>
   <div class="invBtns"><button id="invDrop" disabled>Déposer par terre</button><button id="invHalf" disabled>Séparer en deux</button></div></div>`;

@@ -89,10 +89,11 @@ const COLS=[
    del:id=>{const v=vehicles.find(v=>v.id===id);if(v)removeVehicle(v);},
    get:id=>vehicles.find(v=>v.id===id)},
   {c:'tl',items:()=>trailers.map(t=>[t.id,t]),
-   key:t=>`${t.kind}|${t.hitch?t.hitch.id:''}|${t.resale||''}|`+(t.hitch&&t.hitch.driver?'':`${rd(t.x,100)},${rd(t.z,100)},${rd(t.th,100)}`),
-   ser:t=>({kind:t.kind,x:rd(t.x,1000),z:rd(t.z,1000),th:rd(t.th,1000),hitch:t.hitch?t.hitch.id:null,resale:t.resale}),
+   key:t=>`${t.kind}|${t.hitch?t.hitch.id:''}|${t.resale||''}|${t.boat?1:0}|`+(t.hitch&&t.hitch.driver?'':`${rd(t.x,100)},${rd(t.z,100)},${rd(t.th,100)}`),
+   ser:t=>({kind:t.kind,x:rd(t.x,1000),z:rd(t.z,1000),th:rd(t.th,1000),hitch:t.hitch?t.hitch.id:null,resale:t.resale,boat:t.boat}),
    set:(id,d)=>{let t=trailers.find(t=>t.id===id);if(!t)t=makeTrailerObj(d.kind,d.x,d.z,d.th,id);
      if(d.resale!==undefined&&d.resale!==null)t.resale=d.resale;
+     if(d.boat!==undefined)t.boat=d.boat;
      if(t.hitch&&t.hitch===V&&S.mode==='vtt'&&d.hitch===V.id)return;
      t.hitch=d.hitch?vehicles.find(v=>v.id===d.hitch)||null:null;
      if(!(t.hitch&&t.hitch.driver)){t.x=d.x;t.z=d.z;t.th=d.th;t.net=null;}},
@@ -132,6 +133,9 @@ const COLS=[
    del:id=>{const i=S.journal.findIndex(e=>e.id===id);if(i>=0)S.journal.splice(i,1);},get:id=>S.journal.find(e=>e.id===id)},
   {c:'wx',hostOnly:true,items:()=>[['wx',S.wx]],key:()=>S.wx.type+'|'+Math.floor(S.wx.clock/15),ser:()=>({clock:Math.round(S.wx.clock*10)/10,type:S.wx.type,left:Math.round(S.wx.left)}),
    set:(id,d)=>{Object.assign(S.wx,d);},del:()=>{},get:()=>S.wx},
+  {c:'od',hostOnly:true,items:()=>S.order?[['ord',S.order]]:[],key:o=>`${o.id}|${o.done?1:0}${o.expired?1:0}|${Math.floor(o.left/20)}`,ser:o=>Object.assign({},o),
+   set:(id,d)=>{const prev=S.order?Object.assign({},S.order):null;S.order=Object.assign({},d);orderChanged(prev,S.order);},del:()=>{S.order=null;renderOrder();},get:()=>S.order},
+  {c:'ld',items:()=>[['lands',S.lands]],key:()=>JSON.stringify(S.lands),ser:()=>Object.assign({},S.lands),set:(id,d)=>{Object.keys(d).forEach(k=>{if(d[k])S.lands[k]=true;});refreshLands();},del:()=>{},get:()=>S.lands},
   {c:'mk',hostOnly:true,items:()=>[['mkt',S.mkt]],key:()=>JSON.stringify(S.mkt),ser:()=>({mkt:S.mkt,prev:S.mktPrev,next:S.mktNext}),
    set:(id,d)=>{Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.prev);S.mktNext=d.next;if(!$('board').classList.contains('hidden'))renderBoard();},
    del:()=>{},get:()=>S.mkt}
@@ -143,6 +147,7 @@ const SCAL={
   money:[()=>S.money,d=>{S.money+=d;}],
   delivered:[()=>S.delivered,d=>{S.delivered+=d;}],
   taps:[()=>S.taps,d=>{S.taps+=d;}],
+  ordGot:[()=>S.ordGot,d=>{S.ordGot+=d;renderOrder();}],
   yard:[()=>yardCount,d=>{for(let i=0;i<d;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},yardCount++);}]
 };
 
@@ -187,7 +192,7 @@ function avatarOf(id){
 }
 function dropAvatar(id){const a=NET.avatars[id];if(!a)return;if(a.bob){scene.remove(a.bob);scene.remove(a.line);}if(a.f.g.parent)a.f.g.parent.remove(a.f.g);scene.remove(a.l);const i=labels.indexOf(a.l);if(i>=0)labels.splice(i,1);delete NET.avatars[id];}
 function onPos(from,p){
-  const a=avatarOf(from);a.p=p;a.tx=p.x;a.tz=p.z;a.trot=p.rot;
+  const a=avatarOf(from);a.p=p;if(p.lk&&a.f.lookKey!==p.lk)applyLook(a.f,lookFromKey(p.lk));a.tx=p.x;a.tz=p.z;a.trot=p.rot;
   if(a.first){a.x=p.x;a.z=p.z;a.rot=p.rot;a.first=false;}
   // Véhicule conduit par l'autre
   if(p.v){
@@ -232,7 +237,7 @@ function updateAvatars(dt){
     if(a.sitOn){scene.add(f.g);a.sitOn=null;legPose(f,'stand');f.armL.rotation.set(0,0,0);f.armR.rotation.set(0,0,0);}
     if(v){
       if(a.inVeh!==v||a.inPass!==!!pv){v.mesh.g.add(f.g);f.g.position.set(...(pv?v.spec.pass:v.spec.seat));f.g.rotation.set(0,0,0);a.inVeh=v;a.inPass=!!pv;
-        legPose(f,v.spec.ride?'ride':'drive');f.armL.rotation.x=f.armR.rotation.x=-1.05;}
+        legPose(f,v.spec.ride?'ride':v.spec.boat?'sit':'drive');f.armL.rotation.x=f.armR.rotation.x=-1.05;}
       f.g.visible=!v.spec.hide;a.l.position.set(v.x,H(v.x,v.z)+3,v.z);a.x=v.x;a.z=v.z;
       continue;
     }
@@ -256,7 +261,7 @@ function updateAvatars(dt){
   });
 }
 function posPacket(){
-  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);if(S.mode==='pass'&&P.ride)p.pv=P.ride.id;if(P.fishing&&P.fishing.state!=='cast')p.fb=[rd(P.fishing.x,100),rd(P.fishing.z,100),P.fishing.state==='bite'?1:0];
+  const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);p.lk=lookKey(LOOK);if(S.mode==='pass'&&P.ride)p.pv=P.ride.id;if(inBoat())p.boat=1;if(P.fishing&&P.fishing.state!=='cast')p.fb=[rd(P.fishing.x,100),rd(P.fishing.z,100),P.fishing.state==='bite'?1:0];
   if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0,sp:P.carry.sp};
   if(P.pail)p.pl=1;
   if(S.mode==='vtt'&&V){p.v={id:V.id,x:rd(V.x,100),z:rd(V.z,100),th:rd(V.th,1000),sp:rd(V.v,10)};const tw=towed(V);if(tw)p.v.tw={id:tw.id,x:rd(tw.x,100),z:rd(tw.z,100),th:rd(tw.th,1000)};}

@@ -48,6 +48,8 @@ function context(){
   if(P.pail){const r=pailContext();act=r.act;act2=r.act2;info=r.info||'';}
   else if(!P.carry&&nearestDrop()){const dr=nearestDrop();act={label:`Ramasser : ${itemLabel(dr.it)}`,fn:()=>pickUpDrop(dr)};}
   else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
+  else if(!P.carry&&!P.pail&&landContext()){const r=landContext();act=r.act||null;info=r.info||'';}
+  else if(!P.carry&&!P.pail&&boatContext()){const r=boatContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&TOOL&&TOOL.kind==='rod'&&(P.fishing||castTarget()||!extra)){const r=fishContext();act=r.act||null;info=r.info||'';}
   else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}
   else if(P.carry&&carryExtras()){const r=carryExtras();act=r.act||null;info=r.info||'';}
@@ -82,7 +84,7 @@ function context(){
     else if(cont&&cont.pails.length){const pp=cont.pails[cont.pails.length-1];act={label:`Prendre un seau (${pailTxt(pp)}) dans la ${cont.name}`,fn:()=>takePailFrom(cont)};}
     else if(cont&&cont.load.length){const top=cont.load[cont.load.length-1].userData.c;if(top.len<=CARRY_MAX)act={label:`Prendre un billot (${cont.name})`,fn:()=>takeFrom(cont)};else info=`Billot de ${ftin(top.len)} : trop long pour l'épaule, utilise la grue`;}
     else if(TOOL&&TOOL.kind==='plant'){plant=plantContext();act=plant.act;act2=plant.act2;info=plant.info;}
-    else{const t=nearestTree(1.3);if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
+    else{const t=nearestTree(1.3);if(t&&isPublic(t.x,t.z))info='Territoire public : défendu de bûcher ou d\'entailler ici';else if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
   if(!act&&!info){const sb=nearestSugar();if(sb)info=boilInfo(sb);}
   if(!act&&!info&&!P.carry&&!P.pail&&nearestStump(1.2))info='Souche : prends une pelle pour l\'arracher';
@@ -133,6 +135,7 @@ function sellPiece(c){
   const pr=priceOf(c);
   addYardLog(c,yardCount++);
   S.money+=pr;S.delivered++;J.wood(c,pr);sfxCash();
+  if(c.split)orderProgress('fendu',1);else if(c.len>=SAW_MIN)orderProgress('sciage',1,{sp:c.sp});
   toast(c.len>=SAW_MIN?`+${pr} $ — billot de ${SPECIES[c.sp].n.toLowerCase()} (${ftin(c.len)})`:`+${pr} $ — bois de chauffage${c.split?' fendu':''} (${ftin(c.len)})`);
 }
 function sellLog(){const c=P.carry;setCarry(null);halvesOf(c).forEach(sellPiece);}
@@ -223,7 +226,7 @@ function fell(t){
 function hideTree(t){
   t.alive=false;removeCol(t.col);
   if(t.group){scene.remove(t.group);const i=planted.indexOf(t);if(i>=0)planted.splice(i,1);}
-  else{t.parts.forEach(pp=>TREE_INST[pp.g].setMatrixAt(pp.idx,ZERO_M));Object.values(TREE_INST).forEach(m=>m.instanceMatrix.needsUpdate=true);}
+  else{const R=t.inst||TREE_INST;t.parts.forEach(pp=>R[pp.g].setMatrixAt(pp.idx,ZERO_M));Object.values(R).forEach(m=>m.instanceMatrix.needsUpdate=true);}
 }
 function makeStump(t){
   const bm=logMatsFor(t.type)[0],st=new T.Mesh(STUMP_GEO,[bm,RING_M,bm]);st.scale.set(t.s,1,t.s);st.rotation.y=t.rot||0;
@@ -308,6 +311,7 @@ function driveContext(){
   let act=null,act2=null,info='';
   const sale=driveSaleContext();
   if(sale)return {enter:'Débarquer',act:sale.act||null,act2:sale.act2||null,full:false,info:sale.info||''};
+  if(V.spec.boat){if(TOOL&&TOOL.kind==='rod'){const r=fishContext();return {enter:'Débarquer',act:r.act||null,act2:null,full:false,info:r.info||''};}return {enter:'Débarquer',act:null,act2:null,full:false,info:'W/S : ramer · A/D : tourner · prends ta canne (1 à 6) pour pêcher'};}
   if(V.type==='skid'){
     if(V.drag)act={label:`Relâcher la tige (${ftin(V.drag.len)})`,fn:()=>skidRelease(V)};
     else{const c=skidCandidate(V);if(c){if(Math.abs(V.v)<1.5)act={label:`Agripper (${ftin(c.pc.len)})`,fn:()=>skidGrab(V,c)};else info='Ralentis pour agripper la tige';}}

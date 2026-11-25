@@ -12,11 +12,13 @@ function addSilhouette(root){
 }
 
 /* ---------- Bonhomme ---------- */
-function plaidTex(){
+const PLAID_CACHE={};
+function plaidTex(base,line){
+  base=base||'#b3241f';line=line||'rgba(20,10,10,.85)';const k=base+line;if(PLAID_CACHE[k])return PLAID_CACHE[k];
   const cv=document.createElement('canvas');cv.width=cv.height=32;const c=cv.getContext('2d');
-  c.fillStyle='#b3241f';c.fillRect(0,0,32,32);c.fillStyle='rgba(20,10,10,.85)';
+  c.fillStyle=base;c.fillRect(0,0,32,32);c.fillStyle=line;
   for(let i=0;i<32;i+=16){c.fillRect(i,0,8,32);c.fillRect(0,i,32,8);}
-  const t=new T.CanvasTexture(cv);t.magFilter=T.NearestFilter;t.wrapS=t.wrapT=T.RepeatWrapping;return t;
+  const t=new T.CanvasTexture(cv);t.magFilter=T.NearestFilter;t.wrapS=t.wrapT=T.RepeatWrapping;return PLAID_CACHE[k]=t;
 }
 /* Hache et hachette : vraie tête forgée (coin qui s'amincit vers le tranchant) et manche galbé.
    Repère : le manche suit +z (la main est à z≈0), le tranchant est vers -y. */
@@ -157,7 +159,11 @@ const BODY_GEO=(()=>{
   const tuque=mergeGeos([roundBox(0.39,0.19,0.37,0.08).translate(0,2.0,0),roundBox(0.3,0.07,0.28,0.03).translate(0,2.1,0)]);
   const brim=roundBox(0.405,0.085,0.385,0.035).translate(0,1.94,0);
   const pom=new T.SphereGeometry(0.075,10,8).translate(0,2.19,0);
-  return {torso,belt,hips,thigh,shin,boot,shoulder,upper,fore,hand,head,neck,ears,nose,beard,brows,eyes,tuque,brim,pom};
+  // Casquette : calotte arrondie et palette vers l'avant
+  const cap=roundBox(0.385,0.13,0.37,0.06).translate(0,1.99,-0.005);
+  const visor=new T.BoxGeometry(0.3,0.022,0.17).rotateX(0.12).translate(0,1.945,0.25);
+  const button=new T.SphereGeometry(0.025,6,4).translate(0,2.06,0);
+  return {cap,visor,button,torso,belt,hips,thigh,shin,boot,shoulder,upper,fore,hand,head,neck,ears,nose,beard,brows,eyes,tuque,brim,pom};
 })();
 function makePlayer(){
   const g=new T.Group(),B=BODY_GEO;
@@ -174,14 +180,17 @@ function makePlayer(){
   [armL,armR].forEach(a=>{M(B.shoulder,plaid,a);M(B.upper,plaid,a);M(B.fore,plaid,a);M(B.hand,skin,a);g.add(a);});
   // Tête
   M(B.head,skin);M(B.ears,skin);M(B.nose,skin);M(B.beard,beard);M(B.brows,beard);M(B.eyes,eye);
-  M(B.tuque,tuque);M(B.brim,new T.MeshPhongMaterial({color:0x245e36,shininess:4}));M(B.pom,new T.MeshPhongMaterial({color:0xd8d0b8,shininess:4}));
+  const brimM=new T.MeshPhongMaterial({color:0x245e36,shininess:4}),capM=new T.MeshPhongMaterial({color:0x2a6e3f,shininess:8});
+  const hat={tuque:[M(B.tuque,tuque),M(B.brim,brimM),M(B.pom,new T.MeshPhongMaterial({color:0xd8d0b8,shininess:4}))],cap:[M(B.cap,capM),M(B.visor,capM),M(B.button,capM)]};
+  hat.cap.forEach(m=>m.visible=false);
   const axe=makeAxeModel();axe.position.set(0,-0.68,0);armR.add(axe);
   const saw=makeSawModel();saw.position.set(0,-0.68,0);armR.add(saw);
   const chain=makeChainModel();chain.position.set(0,-0.68,0);armR.add(chain);
   const shovel=makeShovelModel();shovel.position.set(0,-0.68,0);armR.add(shovel);
   const carryLog=makeLog(logGeoZ);carryLog.position.set(0.24,1.72,0.1);carryLog.visible=false;g.add(carryLog);
   shadows(g);addSilhouette(g);
-  return {g,legL,legR,armL,armR,axe,saw,chain,shovel,carryLog};
+  const beardMesh=g.children.find(m=>m.geometry===B.beard);
+  return {g,legL,legR,armL,armR,axe,saw,chain,shovel,carryLog,hat,mats:{tuque,brimM,capM,plaid},beardMesh};
 }
 const player=makePlayer();scene.add(player.g);markDynamic(player.g);
 function updateToolVisual(){
