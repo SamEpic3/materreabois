@@ -10,6 +10,9 @@ const TOOLS=[
   {id:'scie-pro',name:'Scie à chaîne pro',kind:'chainsaw',delay:0.55,fell:0.25,cut:1,price:2200,desc:'Puissante et légère. Le rêve de tout bûcheron.'}
   ,{id:'canne',name:'Canne à pêche',kind:'rod',delay:0.6,fell:null,cut:null,price:120,desc:'Une canne avec moulinet et flotteur. Lance au lac, attends que ça morde et ferre au bon moment !'}
   ,{id:'pelle',name:'Pelle',kind:'shovel',delay:1.2,fell:null,cut:null,price:60,desc:'Pour creuser autour des souches et les arracher : le terrain est ensuite dégagé.'}
+  ,{id:'carabine',name:'Carabine de chasse',kind:'rifle',hunt:true,delay:1.4,fell:null,cut:null,price:650,desc:'Une .308 avec lunette. Porte loin (≈ 130 m). Il faut des balles.'}
+  ,{id:'arc',name:'Arc à poulies',kind:'bow',hunt:true,delay:1.1,fell:null,cut:null,price:350,desc:'Silencieux : les bêtes se sauvent moins loin. Il faut s\'approcher (≈ 35 m). Il faut des flèches.'}
+  ,{id:'couteau',name:'Couteau de chasse',kind:'knife',hunt:true,delay:0.5,fell:null,cut:null,price:40,desc:'Pour dépecer le gibier. Il suffit de l\'avoir dans l\'inventaire.'}
 ];
 const VEH_SHOP=[
   {id:'vtt',kind:'veh',name:'VTT',price:3000,desc:'Petit, agile et passe partout dans le bois. Tire la petite remorque.'},

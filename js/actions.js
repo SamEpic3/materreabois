@@ -50,6 +50,7 @@ function context(){
   else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
   else if(!P.carry&&!P.pail&&landContext()){const r=landContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&boatContext()){const r=boatContext();act=r.act||null;info=r.info||'';}
+  else if(!P.carry&&!P.pail&&huntContext()){const r=huntContext();act=r.act||null;act2=r.act2||null;info=r.info||'';}
   else if(!P.carry&&TOOL&&TOOL.kind==='rod'&&(P.fishing||castTarget()||!extra)){const r=fishContext();act=r.act||null;info=r.info||'';}
   else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}
   else if(P.carry&&carryExtras()){const r=carryExtras();act=r.act||null;info=r.info||'';}
@@ -312,6 +313,7 @@ function driveContext(){
   const sale=driveSaleContext();
   if(sale)return {enter:'Débarquer',act:sale.act||null,act2:sale.act2||null,full:false,info:sale.info||''};
   if(V.spec.boat){if(TOOL&&TOOL.kind==='rod'){const r=fishContext();return {enter:'Débarquer',act:r.act||null,act2:null,full:false,info:r.info||''};}return {enter:'Débarquer',act:null,act2:null,full:false,info:'W/S : ramer · A/D : tourner · prends ta canne (1 à 6) pour pêcher'};}
+  if(V.type==='abat'){const r=harvContext(V);act=r.act||null;info=r.info||'';}
   if(V.type==='skid'){
     if(V.drag)act={label:`Relâcher la tige (${ftin(V.drag.len)})`,fn:()=>skidRelease(V)};
     else{const c=skidCandidate(V);if(c){if(Math.abs(V.v)<1.5)act={label:`Agripper (${ftin(c.pc.len)})`,fn:()=>skidGrab(V,c)};else info='Ralentis pour agripper la tige';}}

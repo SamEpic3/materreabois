@@ -89,11 +89,12 @@ const COLS=[
    del:id=>{const v=vehicles.find(v=>v.id===id);if(v)removeVehicle(v);},
    get:id=>vehicles.find(v=>v.id===id)},
   {c:'tl',items:()=>trailers.map(t=>[t.id,t]),
-   key:t=>`${t.kind}|${t.hitch?t.hitch.id:''}|${t.resale||''}|${t.boat?1:0}|`+(t.hitch&&t.hitch.driver?'':`${rd(t.x,100)},${rd(t.z,100)},${rd(t.th,100)}`),
-   ser:t=>({kind:t.kind,x:rd(t.x,1000),z:rd(t.z,1000),th:rd(t.th,1000),hitch:t.hitch?t.hitch.id:null,resale:t.resale,boat:t.boat}),
+   key:t=>`${t.kind}|${t.hitch?t.hitch.id:''}|${t.resale||''}|${t.boat?1:0}|${Math.round((t.chips||0)*20)}|`+(t.hitch&&t.hitch.driver?'':`${rd(t.x,100)},${rd(t.z,100)},${rd(t.th,100)}`),
+   ser:t=>({kind:t.kind,x:rd(t.x,1000),z:rd(t.z,1000),th:rd(t.th,1000),hitch:t.hitch?t.hitch.id:null,resale:t.resale,boat:t.boat,chips:t.chips||0}),
    set:(id,d)=>{let t=trailers.find(t=>t.id===id);if(!t)t=makeTrailerObj(d.kind,d.x,d.z,d.th,id);
      if(d.resale!==undefined&&d.resale!==null)t.resale=d.resale;
      if(d.boat!==undefined)t.boat=d.boat;
+     if(d.chips!==undefined)t.chips=d.chips;
      if(t.hitch&&t.hitch===V&&S.mode==='vtt'&&d.hitch===V.id)return;
      t.hitch=d.hitch?vehicles.find(v=>v.id===d.hitch)||null:null;
      if(!(t.hitch&&t.hitch.driver)){t.x=d.x;t.z=d.z;t.th=d.th;t.net=null;}},
@@ -131,7 +132,13 @@ const COLS=[
    set:(id,d)=>{const e=S.journal.find(e=>e.id===id);if(e)Object.assign(e,d);else{S.journal.push(d);S.journal.sort((a,b)=>a.t-b.t);trimJournal();}
      if(!$('journal').classList.contains('hidden'))renderJournal();},
    del:id=>{const i=S.journal.findIndex(e=>e.id===id);if(i>=0)S.journal.splice(i,1);},get:id=>S.journal.find(e=>e.id===id)},
-  {c:'wx',hostOnly:true,items:()=>[['wx',S.wx]],key:()=>S.wx.type+'|'+Math.floor(S.wx.clock/15),ser:()=>({clock:Math.round(S.wx.clock*10)/10,type:S.wx.type,left:Math.round(S.wx.left)}),
+  {c:'gb',items:()=>S.carcs.map(c=>[c.id,c]),key:c=>Math.round((c.work||0)*10)+'|'+Math.round(c.x*10)+'|'+Math.round(c.z*10),ser:c=>({kind:c.kind,x:c.x,z:c.z,rot:c.rot,buck:c.buck,work:c.work||0}),
+   set:(id,d)=>{const c=S.carcs.find(c=>c.id===id);if(c&&c.kind===d.kind&&Math.abs(c.x-d.x)<0.01&&Math.abs(c.z-d.z)<0.01){c.work=d.work;return;}if(c)removeCarc(c);const n=Object.assign({id},d);S.carcs.push(n);spawnCarc(n);},
+   del:id=>{const c=S.carcs.find(c=>c.id===id);if(c)removeCarc(c);},get:id=>S.carcs.find(c=>c.id===id)},
+  {c:'sn',items:()=>S.snares.map(s=>[s.id,s]),key:s=>(s.caught?1:0)+'|'+Math.round(s.x*10)+'|'+Math.round(s.z*10),ser:s=>({x:s.x,z:s.z,rot:s.rot,caught:!!s.caught,wait:Math.round(s.wait)}),
+   set:(id,d)=>{const s=S.snares.find(s=>s.id===id);if(s){s.caught=d.caught;s.wait=d.wait;if(s.hareM)s.hareM.visible=!!s.caught;return;}const n=Object.assign({id},d);S.snares.push(n);spawnSnare(n);},
+   del:id=>{const s=S.snares.find(s=>s.id===id);if(s)removeSnare(s);},get:id=>S.snares.find(s=>s.id===id)},
+  {c:'wx',hostOnly:true,items:()=>[['wx',S.wx]],key:()=>S.wx.type+'|'+Math.floor(S.wx.clock/15)+'|'+(S.wx.day||0),ser:()=>({clock:Math.round(S.wx.clock*10)/10,type:S.wx.type,left:Math.round(S.wx.left),day:S.wx.day||0}),
    set:(id,d)=>{Object.assign(S.wx,d);},del:()=>{},get:()=>S.wx},
   {c:'od',hostOnly:true,items:()=>S.order?[['ord',S.order]]:[],key:o=>`${o.id}|${o.done?1:0}${o.expired?1:0}|${Math.floor(o.left/20)}`,ser:o=>Object.assign({},o),
    set:(id,d)=>{const prev=S.order?Object.assign({},S.order):null;S.order=Object.assign({},d);orderChanged(prev,S.order);},del:()=>{S.order=null;renderOrder();},get:()=>S.order},
@@ -348,7 +355,7 @@ function onMessage(m){
   }else if(m.t==='ack'){NET.lastSeq=Math.max(NET.lastSeq,m.seq);
   }else if(m.t==='pos'){if(NET.ready)onPos(m.from,m.p);
   }else if(m.t==='chat'){if(NET.ready)addChat(m.m);
-  }else if(m.t==='emote'){const a=NET.ready&&NET.avatars[m.from];if(a&&EMOTES.includes(m.e))showBubble(a,m.e,true);
+  }else if(m.t==='emote'){const a=NET.ready&&NET.avatars[m.from];if(a&&/^fx:/.test(m.e))onNetFx(m.from,m.e);else if(a&&EMOTES.includes(m.e))showBubble(a,m.e,true);
   }else if(m.t==='joined'){
     NET.online[m.id]={name:m.name};delete S.others[m.id];showOthers();
     const a=NET.avatars[m.id];if(a){/* nom à jour */}

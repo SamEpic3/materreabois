@@ -98,6 +98,7 @@ function treeContext(t){
   const tapAct=(t.type==='erable'&&S.taps>0)?{label:`Entailler l'érable (${S.taps} chaudière${S.taps>1?'s':''})`,fn:()=>tapTree(t)}:null;
   if(!TOOL)return {act:tapAct,info:tapAct?'':'Mains vides : choisis un outil pour bûcher (touches 1 à 9)'};
   if(TOOL.kind==='shovel')return {act:tapAct,info:tapAct?'':'La pelle sert à essoucher : choisis un outil de coupe pour bûcher'};
+  if(!TOOL.fell)return {act:tapAct,info:tapAct?'':'Choisis un outil de coupe pour bûcher'};
   const tot=fellTotal(t);
   return {act:{label:`${toolVerb()} (${Math.round(t.work*tot)}/${tot})`,fn:()=>chop(t),cool:true},act2:tapAct};
 }

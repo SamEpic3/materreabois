@@ -8,8 +8,8 @@ const r3=v=>Math.round(v*1000)/1000;
 function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=c.split;return o;}
 function contSnap(c){return {logs:c.load.map(m=>cOf(m.userData.c)),pails:(c.pails||[]).map(p=>({kind:p.kind,L:p.L}))};}
 function snapshot(){
-  const f=flatSnapshot(),me={name:ME.name,player:f.player,inv:f.inv,hot:f.hot,t:f.t};
-  delete f.player;delete f.inv;delete f.hot;delete f.ver;delete f.sig;
+  const f=flatSnapshot(),me={name:ME.name,player:f.player,inv:f.inv,hot:f.hot,t:f.t,hunt:f.hunt};
+  delete f.player;delete f.inv;delete f.hot;delete f.hunt;delete f.ver;delete f.sig;
   return {ver:SAVE_VER,sig:WORLD_SIG,t:me.t,world:f,players:Object.assign({},S.others,{[ME.id]:me}),journal:S.journal};
 }
 // Ancienne forme « tout à plat » : sert aussi à lire les sauvegardes v1
@@ -30,12 +30,14 @@ function flatSnapshot(){
     extraStumps:stumpList.filter(s=>s.tree&&s.tree.planted).map(s=>({id:s.id,x:s.x,z:s.z,s:s.size,type:s.tree.type,work:r3(s.work)})),
     pieces:pcs,
     vehicles:vehicles.map(v=>({id:v.id,type:v.type,x:r3(v.x),z:r3(v.z),th:r3(v.th),resale:v.resale,bed:v.bed?contSnap(v.bed):null})),
-    trailers:trailers.map(t=>({id:t.id,kind:t.kind,x:r3(t.x),z:r3(t.z),th:r3(t.th),hitch:t.hitch?vehicles.indexOf(t.hitch):-1,resale:t.resale,boat:t.boat,c:contSnap(t.c)})),
+    trailers:trailers.map(t=>({id:t.id,kind:t.kind,x:r3(t.x),z:r3(t.z),th:r3(t.th),hitch:t.hitch?vehicles.indexOf(t.hitch):-1,resale:t.resale,boat:t.boat,chips:t.chips?r3(t.chips):undefined,c:contSnap(t.c)})),
     pails:pails.map(p=>({id:p.id,x:r3(p.x),z:r3(p.z),kind:p.kind,L:p.L})),
     tapsOn:taps.map(tp=>({tree:tp.t.planted?'p'+planted.indexOf(tp.t):treeList.indexOf(tp.t),sap:tp.sap,a:r3(tp.mesh.rotation.y)})),
     planted:planted.map(t=>({id:t.id,type:t.type,x:r3(t.x),z:r3(t.z),s:r3(t.s),rot:r3(t.rot),plantedAt:t.plantedAt,growMs:t.growMs,work:t.work})),
     lands:S.lands,order:S.order,ordGot:S.ordGot,ordNext:r3(S.ordNext),becInit:!!S.becInit,
-    camp:S.camp,stove:stove.fuel,wx:{clock:r3(S.wx.clock),type:S.wx.type,left:r3(S.wx.left)},
+    camp:S.camp,stove:stove.fuel,wx:{clock:r3(S.wx.clock),type:S.wx.type,left:r3(S.wx.left),day:S.wx.day||0},
+    carcs:S.carcs.map(c=>({id:c.id,kind:c.kind,x:r3(c.x),z:r3(c.z),rot:r3(c.rot),buck:c.buck,work:r3(c.work||0)})),snares:S.snares.map(s=>({id:s.id,x:r3(s.x),z:r3(s.z),rot:r3(s.rot),caught:!!s.caught,wait:r3(s.wait)})),
+    hunt:Object.assign({},S.hunt),
     builds:S.builds.map(b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):typeof b[k]==='number'?r3(b[k]):b[k];}return o;})
   };
 }
@@ -56,12 +58,15 @@ function loadGame(given){
     const me=(d.players||{})[ME.id]||null;
     S.others={};for(const id in d.players||{})if(id!==ME.id)S.others[id]=d.players[id];
     S.journal=d.journal||[];compactJournal();
-    d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,inv:me?me.inv:null,hot:me?me.hot:0});
+    d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,inv:me?me.inv:null,hot:me?me.hot:0,hunt:me?me.hunt:null});
   }
   S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;
   if(d.wx)Object.assign(S.wx,d.wx);
   if(d.lands)Object.assign(S.lands,d.lands);refreshLands();
   S.order=d.order||null;S.ordGot=d.ordGot||0;if(d.ordNext!==undefined)S.ordNext=d.ordNext;S.becInit=!!d.becInit;
+  S.hunt=Object.assign({permit:false,day:0,deer:0},d.hunt||{});
+  S.carcs.slice().forEach(removeCarc);(d.carcs||[]).forEach(o=>{const c=Object.assign({},o);S.carcs.push(c);spawnCarc(c);});
+  S.snares.slice().forEach(removeSnare);(d.snares||[]).forEach(o=>{const s=Object.assign({},o);S.snares.push(s);spawnSnare(s);});
   yardCount=d.yardCount||0;for(let i=Math.max(0,yardCount-60);i<yardCount;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},i);
   if(d.mkt){Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.mktPrev||{});S.mktNext=d.mktNext||MKT_PERIOD;}
   if(d.inv){INV.fill(null);d.inv.forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined};});}
@@ -76,7 +81,7 @@ function loadGame(given){
   (d.pieces||[]).forEach(p=>addPiece({id:p.id,cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,crown:!!p.crown}));
   clearAllVehicles();
   (d.vehicles||[]).forEach(o=>{const v=makeVehicle(o.type,o.x,o.z,o.th,o.id);if(o.resale!==undefined)v.resale=o.resale;if(o.bed&&v.bed)fillCont(v.bed,o.bed);});
-  (d.trailers||[]).forEach(o=>{const t=makeTrailerObj(o.kind,o.x,o.z,o.th,o.id);if(o.resale!==undefined)t.resale=o.resale;if(o.boat!==undefined)t.boat=o.boat;if(o.hitch>=0&&vehicles[o.hitch])t.hitch=vehicles[o.hitch];fillCont(t.c,o.c||{});});
+  (d.trailers||[]).forEach(o=>{const t=makeTrailerObj(o.kind,o.x,o.z,o.th,o.id);if(o.resale!==undefined)t.resale=o.resale;if(o.boat!==undefined)t.boat=o.boat;if(o.chips)t.chips=o.chips;if(o.hitch>=0&&vehicles[o.hitch])t.hitch=vehicles[o.hitch];fillCont(t.c,o.c||{});});
   V=vehicles[0]||null;
   pails.forEach(p=>scene.remove(p.mesh));pails.length=0;(d.pails||[]).forEach(p=>addGroundPail(p.x,p.z,p.kind,p.L,p.id));
   (d.planted||[]).forEach(o=>addPlanted(o));
@@ -114,6 +119,7 @@ saveOff=true;                       // rien n'est sauvegardé avant que la parti
 function beginWorld(d){
   started=true;
   const r=loadGame(d);saveOff=false;
+  applyCamMode('tp');            // 3e personne par défaut
   if(r){
     camT.set(P.x,H(P.x,P.z),P.z);
     const bits=[];

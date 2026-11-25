@@ -13,6 +13,7 @@ addEventListener('keydown',e=>{
   if(!$('proj').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeProjects();e.preventDefault();return;}
   if(!$('board').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space')closeBoard();e.preventDefault();return;}
   if($('help').classList.contains('hidden')===false&&e.code!=='Escape')return;
+  if((e.code==='AltLeft'||e.code==='AltRight')&&!e.repeat){e.preventDefault();toggleCursor();return;}
   keys[e.code]=true;
   if(e.code==='KeyE'&&!e.repeat)doEnter();
   if(e.code==='KeyR'&&!e.repeat){if(S.mode==='place')rotatePlace();else if(S.mode==='pick'){}else doHitch();}
@@ -56,6 +57,7 @@ canvas.addEventListener('pointerdown',e=>{
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
 });
 canvas.addEventListener('pointermove',e=>{
+  if(mouseLocked())return;          // vue à la souris : gérée par mousemove plus bas
   const q=toView(e.clientX,e.clientY);
   if(joy.active&&e.pointerId===joy.id){
     let dx=q.x-joy.cx,dy=q.y-joy.cy;const l=Math.hypot(dx,dy);if(l>JR){dx*=JR/l;dy*=JR/l;}
@@ -115,7 +117,7 @@ const FOG=new T.Fog(SKY_HORIZON,30,110);
 function toggleCam(){
   if(S.mode==='place'||S.mode==='pick'){toast('Vue isométrique pendant la construction');return;}
   applyCamMode(camMode==='iso'?'tp':camMode==='tp'?'fp':'iso');
-  toast(camMode==='tp'?'Vue 3e personne (essai)':camMode==='fp'?'Vue 1re personne (essai)':'Vue isométrique');
+  toast(camMode==='tp'?'Vue 3e personne':camMode==='fp'?(FINE_PTR?'Vue 1re personne — la souris tourne la vue (Alt : curseur)':'Vue 1re personne'):'Vue isométrique');
 }
 function applyCamMode(m){
   camMode=m;
@@ -125,6 +127,8 @@ function applyCamMode(m){
   player.g.visible=camMode!=='fp'&&!(RV()&&RV().spec.hide);
   pcam.fov=camMode==='fp'?70:60;pcam.updateProjectionMatrix();camPitch=-0.1;
   camYaw=camYawT=RV()?RV().th+camVehOff:P.rot;
+  $('cross').classList.toggle('hidden',camMode!=='fp');
+  if(camMode==='fp'){cursorFree=false;tryLock();}else if(mouseLocked())document.exitPointerLock();
 }
 $('btnCam').addEventListener('click',toggleCam);
 $('rotL').addEventListener('click',()=>rotateCam(-1));
@@ -137,3 +141,37 @@ $('btnStart').addEventListener('click',()=>{if(started){$('help').classList.add(
 const ELEV=0.6155; // 35,26° : vraie isométrique
 // Menu ☰ (écrans étroits) : montre/cache les boutons secondaires
 $('btnMenu').addEventListener('click',()=>$('camBtns').classList.toggle('open'));
+
+/* ---------- Ordinateur : en 1re personne, la souris tourne la vue sans cliquer (verrouillage du pointeur).
+   Alt (ou Échap) libère le curseur ; Alt ou un clic le reprend. ---------- */
+const FINE_PTR=matchMedia('(pointer:fine)').matches&&!matchMedia('(pointer:coarse)').matches;
+let cursorFree=false,lockTry=0;
+function mouseLocked(){return document.pointerLockElement===canvas;}
+function uiOpen(){return ['look','shop','journal','proj','board','help'].some(id=>{const el=$(id);return el&&!el.classList.contains('hidden');})||invOpen()||(typeof CHAT!=='undefined'&&CHAT.open);}
+function wantLock(){return FINE_PTR&&started&&camMode==='fp'&&!cursorFree&&!uiOpen()&&S.mode!=='place'&&S.mode!=='pick';}
+function tryLock(){if(!wantLock()||mouseLocked()||performance.now()-lockTry<600)return;lockTry=performance.now();try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(_){}}
+function toggleCursor(){
+  if(!FINE_PTR||camMode!=='fp')return;
+  cursorFree=!cursorFree;
+  if(cursorFree){if(mouseLocked())document.exitPointerLock();toast('Curseur libre — Alt ou clic pour reprendre la vue');}
+  else tryLock();
+}
+document.addEventListener('pointerlockchange',()=>{if(!mouseLocked()&&camMode==='fp'&&!uiOpen())cursorFree=true;$('cross').classList.toggle('free',!mouseLocked());});
+document.addEventListener('mousemove',e=>{
+  if(!mouseLocked())return;
+  const dx=e.movementX||0,dy=e.movementY||0;
+  if(Math.abs(dx)>300||Math.abs(dy)>300)return;   // sauts parasites de certains navigateurs
+  if(RV()){camVehOff=wrapAng(camVehOff-dx*0.0028);camYaw-=dx*0.0028;}else{camYawT-=dx*0.0028;camYaw=camYawT;}
+  camPitch=clamp(camPitch-dy*0.0024,-1.2,0.9);
+});
+canvas.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='mouse'||!FINE_PTR||camMode!=='fp')return;
+  if(mouseLocked()){e.stopImmediatePropagation();e.preventDefault();if(e.button===0)fpClick();return;}
+  if(cursorFree&&S.mode==='foot'&&!uiOpen()){cursorFree=false;tryLock();}
+},true);
+function fpClick(){if(typeof huntClick==='function'&&huntClick())return;doAct();}
+// En boucle : quitte le verrou quand un panneau s'ouvre, le reprend après (le geste récent du joueur le permet)
+function updateMouseLock(){
+  if(mouseLocked()&&!wantLock()&&!cursorFree)document.exitPointerLock();
+  else if(wantLock()&&!mouseLocked()&&(!navigator.userActivation||navigator.userActivation.isActive))tryLock();
+}

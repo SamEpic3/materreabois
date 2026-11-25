@@ -14,13 +14,13 @@ function frame(){
   if(S.mode==='foot')updateFoot(dt);
   if(S.mode==='pass')updatePassenger();
   updateFishing(dt);updateDrops(dt);
-  updateMapCursor(dt);updatePlacement();updatePick();
+  updateMapCursor(dt);updatePlacement();updatePick();updateMouseLock();
   updateNet(dt);updateVTT(dt);
   updateFalling(dt);updateSplitters(dt);updateYardSales(dt);
   updateCamp(dt);updateCabin(dt);tickPlants(dt);
   if(S.mode==='vtt')updateLabels(V.x,V.z);else updateLabels(P.x,P.z);
   const RVc=RV();
-  updateSugar(dt);updateMarket(dt);updateOrders(dt);
+  updateSugar(dt);updateMarket(dt);updateOrders(dt);updateHunt(dt);updateHarvesters(dt);updateChippers(dt);
   updateArrow();updateHUD();
   let gx,gz;
   const mc=mapCursor();

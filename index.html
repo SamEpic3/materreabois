@@ -25,6 +25,7 @@
 <div id="hint" class="panel"></div>
 <div id="players" class="panel hidden"></div>
 
+<div id="cross" class="hidden"></div>
 <div id="camBtns">
   <button class="sbtn more" id="rotL" title="Tourner la caméra (Z)">⟲</button>
   <button class="sbtn more" id="rotR" title="Tourner la caméra (C)">⟳</button>
@@ -75,7 +76,8 @@
       <li>Clic sur le terrain : marcher jusque-là · <kbd>Maj</kbd> : courir</li>
       <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>6</kbd> : choisir une case de la barre · <kbd>I</kbd> ou 🎒 : inventaire · <kbd>Q</kbd> : jeter l'objet tenu · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
       <li>Grue : <kbd>E</kbd> près de la grue pour l'opérer · <kbd>W</kbd>/<kbd>S</kbd> portée · <kbd>A</kbd>/<kbd>D</kbd> pivot · <kbd>Espace</kbd> prendre ou déposer · <kbd>Q</kbd>/<kbd>R</kbd> tourner le billot</li>
-      <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (iso, 3e personne, 1re personne), glisser la souris pour tourner autour</li>
+      <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (3e personne, 1re personne, iso), glisser la souris pour tourner autour · en 1re personne, la souris tourne la vue sans cliquer : <kbd>Alt</kbd> (ou <kbd>Échap</kbd>) libère le curseur, un clic le reprend</li>
+      <li><b>Chasse :</b> achète un permis, une carabine ou un arc et des munitions au magasin. Vise et tire (clic en 1re personne, ou Espace). Avec un couteau dans l'inventaire, dépèce le gibier, puis vends la viande au magasin. Les collets se posent au pied d'un arbre en forêt.</li>
     </ul>
     <h2>Sur téléphone</h2>
     <ul>
@@ -168,12 +170,14 @@
 <script src="js/apparence.js"></script>
 <script src="js/actions.js"></script>
 <script src="js/debusqueuse.js"></script>
+<script src="js/abatteuse.js"></script>
 <script src="js/grue.js"></script>
 <script src="js/interactions.js"></script>
 <script src="js/marche.js"></script>
 <script src="js/erabliere.js"></script>
 <script src="js/vente.js"></script>
 <script src="js/fendeuse.js"></script>
+<script src="js/dechiqueteuse.js"></script>
 <script src="js/chaloupe.js"></script>
 <script src="js/constructions.js"></script>
 <script src="js/camp.js"></script>
@@ -189,6 +193,7 @@
 <script src="js/sons.js"></script>
 <script src="js/oiseaux.js"></script>
 <script src="js/animaux.js"></script>
+<script src="js/chasse.js"></script>
 <script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>
 <script src="js/reseau.js"></script>

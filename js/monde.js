@@ -442,8 +442,8 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     const g=new T.Group(),W=12,D=9,Hh=6.2;
     const cream=texMat(sidingTex('#e8e0cc','#b9ae96'),1,28),shing=texMat(shingleTex('#8e2b22','#5e1b15'),14,10),green=vmat(0x2f5a3a);
     g.add(new T.Mesh(new T.BoxGeometry(W,Hh,D).translate(0,Hh/2,0),cream));
-    g.add(new T.Mesh(mergeGeos([gable(W,D+0.1,Hh,2.4,W/2),gable(W,D+0.1,Hh,2.4,-W/2)]),texMat(sidingTex('#e8e0cc','#b9ae96'),1,10)));
-    roofTex(g,W,D,Hh+1.2,shing,0.45,0.5);
+    g.add(new T.Mesh(mergeGeos([gable(W,D+0.1,Hh,2.1,W/2),gable(W,D+0.1,Hh,2.1,-W/2)]),texMat(sidingTex('#e8e0cc','#b9ae96'),1,10)));
+    roofTex(g,W,D,Hh+1.05,shing,0.45,0.5);
     // Planches de coin, bandeau entre les étages, fausse façade et corniche
     const tr=[];[-1,1].forEach(sx=>[-1,1].forEach(sz=>tr.push(new T.BoxGeometry(0.22,Hh,0.22).translate(sx*W/2,Hh/2,sz*D/2))));
     tr.push(new T.BoxGeometry(W+0.3,0.22,0.12).translate(0,3.2,D/2+0.06),new T.BoxGeometry(W+0.8,0.3,0.5).translate(0,Hh+3.05,D/2+0.15),new T.BoxGeometry(W+0.5,0.18,0.35).translate(0,Hh+2.75,D/2+0.12));
@@ -467,6 +467,8 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     // Étage : fenêtres à volets
     const uf=[],us=[];[-4.5,-1.5,1.5,4.5].forEach(x=>{const w=windowGeo(1.0,1.4,x,4.65,D/2+0.06,0);uf.push(w.frame);gl.push(w.glass);us.push(new T.BoxGeometry(0.42,1.45,0.05).translate(x-0.75,4.65,D/2+0.06),new T.BoxGeometry(0.42,1.45,0.05).translate(x+0.75,4.65,D/2+0.06));});
     [-1,1].forEach(sd=>[-2.2,2.2].forEach(z=>[1.8,4.65].forEach(y=>{const w=windowGeo(1.0,1.3,sd*(W/2+0.06),y,z,sd*Math.PI/2);uf.push(w.frame);gl.push(w.glass);})));
+    [-3.5,3.5].forEach(x=>[1.8,4.65].forEach(y=>{const w=windowGeo(1.0,1.3,x,y,-D/2-0.06,Math.PI);uf.push(w.frame);gl.push(w.glass);}));
+    {const bd=doorGeo(0.9,2.1,0,-D/2-0.04,Math.PI);g.add(new T.Mesh(bd.door,vmat(0x2f5a3a)),new T.Mesh(bd.frame,trim));}
     g.add(new T.Mesh(mergeGeos(uf),trim),new T.Mesh(mergeGeos(us),green),new T.Mesh(mergeGeos(gl),VIL_WIN));
     // Galerie couverte : plancher, marches, poteaux tournés, garde-corps, toit en appentis
     const P=[new T.BoxGeometry(W+1.2,0.24,2.8).translate(0,0.12,D/2+1.4),new T.BoxGeometry(3,0.14,0.45).translate(0,0.07,D/2+3.0)];
@@ -512,11 +514,11 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     [-4.6,-1.6,1.4,4.4].forEach(x=>[-1,1].forEach(s=>{const z=s*(Wd/2+0.06),ry=s>0?0:Math.PI;
       const w=windowGeo(1.0,2.4,x,2.9,z,ry);wf.push(w.frame);wg.push(w.glass);
       const tri=new T.Shape();tri.moveTo(-0.58,0);tri.lineTo(0.58,0);tri.lineTo(0,0.62);tri.lineTo(-0.58,0);const tg=new T.ShapeGeometry(tri);tg.rotateY(ry);tg.translate(x,4.15,z+s*0.01);wg.push(tg);
-      wf.push(new T.BoxGeometry(1.3,0.1,0.1).rotateZ(0.5).translate(x-0.3,4.45,z),new T.BoxGeometry(1.3,0.1,0.1).rotateZ(-0.5).translate(x+0.3,4.45,z));}));
+      wf.push(new T.BoxGeometry(0.88,0.1,0.1).rotateZ(0.82).translate(x-0.29,4.46,z),new T.BoxGeometry(0.88,0.1,0.1).rotateZ(-0.82).translate(x+0.29,4.46,z));}));
     nave.add(new T.Mesh(mergeGeos(wf),vmat(0xffffff)),new T.Mesh(mergeGeos(wg),vm));
     // Sacristie à l'arrière
     nave.add(new T.Mesh(new T.BoxGeometry(3,3.4,4).translate(L/2+1.5,1.7,0),white));
-    const sr=new T.Mesh(new T.BoxGeometry(3.6,0.14,4.6),grey);sr.position.set(L/2+1.5,3.7,0);sr.rotation.z=-0.25;nave.add(sr);
+    nave.add(new T.Mesh(new T.BoxGeometry(3.5,0.16,4.5).translate(L/2+1.55,3.48,0),grey),new T.Mesh(new T.BoxGeometry(3.6,0.1,4.6).translate(L/2+1.55,3.4,0),vmat(0xe0ddd5)));
     // Clocher : tour, horloge, abat-sons, corniche, flèche octogonale, croix
     const tz=L/2+1.7,TW=3.4;
     c.add(new T.Mesh(new T.BoxGeometry(TW,Hh+3.6,TW).translate(0,(Hh+3.6)/2,tz),white));
@@ -558,7 +560,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
   [[-12,-14,'#4f6f8f','#2e4458','#8e2b22',0,LEFT],[12,-14,'#efe9dc','#c9c0ae','#8e2b22',2,RIGHT],[12,22,'#d8b84a','#9a7a2a','#2f5a3a',1,RIGHT]].forEach(([lx,lz,wc,lc,dc,k,r])=>{
     const h=new T.Group();h.add(new T.Mesh(new T.BoxGeometry(6,3.0,5).translate(0,1.5,0),texMat(sidingTex(wc,lc),1,14)));
     h.add(new T.Mesh(mergeGeos([gable(6,5,3.0,1.6,3),gable(6,5,3.0,1.6,-3)]),texMat(sidingTex(wc,lc),1,7)));
-    roofTex(h,6,5,3.6,texMat(shingleTex('#3a3430','#262220'),9,7),0.6,0.45);
+    roofTex(h,6,5,3.8,texMat(shingleTex('#3a3430','#262220'),9,7),0.6,0.45);
     const hd=doorGeo(1,2.0,0.8,2.52);h.add(new T.Mesh(hd.door,vmat(parseInt(dc.slice(1),16))),new T.Mesh(hd.frame,vmat(0xf1eee6)),new T.Mesh(hd.knob,gold));
     const hw=[],hg=[],sh=[];[-1.4,2.2].forEach(x=>{const w=windowGeo(0.9,1.0,x,1.6,2.56,0);hw.push(w.frame);hg.push(w.glass);sh.push(new T.BoxGeometry(0.32,1.05,0.05).translate(x+0.7,1.6,2.56),new T.BoxGeometry(0.32,1.05,0.05).translate(x-0.7,1.6,2.56));});
     [-1.3,1.3].forEach(z=>[-1,1].forEach(sd=>{const w=windowGeo(0.8,0.9,sd*3.06,1.6,z,sd*Math.PI/2);hw.push(w.frame);hg.push(w.glass);}));
@@ -823,7 +825,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const rockMat=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,vertexColors:true,shininess:4});
   const rockMs=[rockGeo(3),rockGeo(17)].map((gg,j)=>new T.InstancedMesh(gg,rockMat,rocks.filter((r,i)=>i%2===j).length));
   const cnt=[0,0];
-  rocks.forEach((r,i)=>{q.setFromEuler(new T.Euler(rnd(),rnd()*6,rnd()));m4.compose(p.set(r.x,H(r.x,r.z)+0.1*r.s,r.z),q,sc.set(r.s,r.s*0.7,r.s));const rm=rockMs[i%2],n=cnt[i%2]++;const gone=trailDist(r.x,r.z)<2.5;if(gone)removeCol(r.col);rm.setMatrixAt(n,gone?ZERO_M:m4);rm.setColorAt(n,col.set(rnd()<0.5?0x8a8780:0x76736c));});
+  rocks.forEach((r,i)=>{q.setFromEuler(new T.Euler(rnd(),rnd()*6,rnd()));m4.compose(p.set(r.x,H(r.x,r.z)+0.1*r.s,r.z),q,sc.set(r.s,r.s*0.7,r.s));const rm=rockMs[i%2],n=cnt[i%2]++;const gone=trailDist(r.x,r.z)<2.5||vilOut(r.x,r.z)<1;if(gone)removeCol(r.col);rm.setMatrixAt(n,gone?ZERO_M:m4);rm.setColorAt(n,col.set(rnd()<0.5?0x8a8780:0x76736c));});
   rockMs.forEach(rm=>{rm.castShadow=true;rm.receiveShadow=true;scene.add(rm);});
 
   // Souches autour du camp (on a déjà bûché ici)
@@ -896,10 +898,11 @@ WATER_MAT.onBeforeCompile=sh=>{
 /* ---------- Ce qu'on ne dessine pas quand c'est loin : tuiles de terrain et forêts des autres terres ---------- */
 const _frus=new T.Frustum(),_pm=new T.Matrix4();
 function updateCulling(f){
-  const far=camMode==='iso'?110:150*(typeof VIEW_BOOST!=='undefined'?VIEW_BOOST:1);
+  // en 3e et 1re personne, le brouillard cache tout au-delà de FOG.far : inutile de dessiner plus loin
+  const iso=camMode==='iso',far=iso?110:FOG.far+8;
   activeCam.updateMatrixWorld();_pm.multiplyMatrices(activeCam.projectionMatrix,activeCam.matrixWorldInverse);_frus.setFromProjectionMatrix(_pm);
   // La zone des ombres déborde un peu de la vue : on garde aussi ce qui est tout près
-  TERRAIN_TILES.forEach(m=>{const c=m.userData.c,d=Math.max(Math.abs(c.x-f.x),Math.abs(c.z-f.z));m.visible=d<45||(d<far+60&&_frus.intersectsBox(m.userData.box));});
+  TERRAIN_TILES.forEach(m=>{const c=m.userData.c,d=Math.max(Math.abs(c.x-f.x),Math.abs(c.z-f.z));m.visible=d<45||(d<far+(iso?60:30)&&_frus.intersectsBox(m.userData.box));});
   for(const ck in REG_INST){const b=REG_RECT[ck],dx=Math.max(b.min.x-f.x,0,f.x-b.max.x),dz=Math.max(b.min.z-f.z,0,f.z-b.max.z),d=Math.hypot(dx,dz);
     const v=d<far&&(d<30||_frus.intersectsBox(b));for(const k in REG_INST[ck])REG_INST[ck][k].visible=v;}
 }

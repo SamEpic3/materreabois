@@ -28,7 +28,7 @@ function findSpawn(cols,th,pref){
     if(circlesHit(list,others))return false;
     if(list.some(c=>inSale(c[0],c[1])||Math.hypot(c[0]-YARD.x,c[1]-YARD.z)<YARD.r+c[2]))return false;
     return list.every(c=>Math.hypot(c[0]-P.x,c[1]-P.z)>c[2]+0.6);};
-  const cand=[pref,[8,4],[11,8],[8,11],[12,13],[14,8],[16,4],[-4,16],[4,17],[9,16],[-7,17]];
+  const cand=[pref,[0,-18],[1,-7],[0,14],[0,27],[0,33],[2,9],[-1,-22]];   // dans la rue du village
   for(const [lx,lz] of cand){const p=vpos(lx,lz);if(free(p.x,p.z))return p;}
   for(let r=4;r<30;r+=2)for(let a=0;a<Math.PI*2;a+=0.4){const x=VILLAGE.x+Math.cos(a)*r,z=VILLAGE.z+Math.sin(a)*r;if(free(x,z))return {x,z};}
   return vpos(pref[0],pref[1]);
@@ -69,8 +69,9 @@ function renderShop(){
       d.innerHTML=`<div class="txt"><b>Tout vendre</b> — ${tot} $</div>`;const b=document.createElement('button');b.textContent='Tout vendre';
       b.onclick=()=>{let g=0;INV.forEach((s,i)=>{if(s&&/^(poisson|cuit):/.test(s.id))g+=sellFishSlot(i);});sfxCash();toast(`🐟 +${g} $`);renderShop();};d.appendChild(b);L.appendChild(d);}
   }
+  if(typeof renderHuntShop==='function')renderHuntShop(L,sec);
   sec('Outils');
-  TOOLS.forEach(t=>{
+  TOOLS.filter(t=>!t.hunt).forEach(t=>{
     const d=document.createElement('div');d.className='item';
     const stats=t.kind==='rod'?'Pour pêcher au lac, du bord ou du quai':t.kind==='shovel'?`Une souche : ≈ ${secs(12*t.delay)}`:`Arbre moyen : ≈ ${secs(Math.max(1,Math.ceil(9*t.fell))*t.delay)} · Une coupe : ≈ ${secs(t.cut*t.delay)}`;
     d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t),true))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
@@ -109,13 +110,13 @@ function renderShop(){
     const d=document.createElement('div');d.className='item';
     const isT=t.kind==='trailer';
     const img=thumb(t.id,()=>isT?TSPECS[t.id].build().g:SPECS[t.id].build().g);
-    const stats=t.id==='fendeuse'||t.id==='chaloupe'?'S\'attache au VTT ou au pick-up':isT?`Capacité : ${TSPECS[t.id].cap} billots`+(t.id==='loader'?' · jusqu\'à 12 pi':''):`Vitesse max ≈ ${Math.round(SPECS[t.id].maxF*3.6)} km/h (VTT : ${Math.round(SPECS.vtt.maxF*3.6)} km/h)`;
+    const stats=t.id==='fendeuse'||t.id==='chaloupe'||t.id==='dechiq'?'S\'attache au VTT ou au pick-up':isT?`Capacité : ${TSPECS[t.id].cap} billots`+(t.id==='loader'?' · jusqu\'à 12 pi':''):`Vitesse max ≈ ${Math.round(SPECS[t.id].maxF*3.6)} km/h (VTT : ${Math.round(SPECS.vtt.maxF*3.6)} km/h)`;
     d.innerHTML=imgTag(img)+`<div class="txt"><b>${t.name}</b> — ${t.price} $<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
     const have=isT?trailers.filter(x=>x.kind===t.id).length:vehicles.filter(v=>v.type===t.id).length;
     if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
     {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;J.buy(t.name.toLowerCase(),t.price);
-      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,{vtt:[8,4],small:[8,11],pickup:[11,8],loader:[8,11],skid:[12,13],fendeuse:[8,11],chaloupe:[8,11]}[t.id]);
+      const th=VROT,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,[0,-13]);
       if(isT)makeTrailerObj(t.id,p.x,p.z,th);else makeVehicle(t.id,p.x,p.z,th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);

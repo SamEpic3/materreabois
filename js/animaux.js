@@ -1,5 +1,5 @@
 /* Chevreuils et lièvres : ils broutent, se promènent et se sauvent quand on approche.
-   Pas encore de chasse. Chaque joueur voit ses propres animaux (ils ne sont pas partagés). */
+   On peut les chasser (chasse.js). Chaque joueur voit ses propres animaux vivants; le gibier abattu, lui, est partagé. */
 const ANIM_MAT=new T.MeshLambertMaterial({vertexColors:true,flatShading:true});
 const col3=(g,c)=>{const k=new T.Color(c);return paintGeo(g.toNonIndexed(),()=>[k.r,k.g,k.b]);};
 
@@ -58,9 +58,9 @@ function spawnAnimal(kind,f){
     const n=kind==='deer'?(Math.random()<0.45?1:Math.random()<0.7?2:3):1;
     for(let i=0;i<n;i++){
       const ox=x+(Math.random()-0.5)*4,oz=z+(Math.random()-0.5)*4;if(!okGround(ox,oz))continue;
-      const m=kind==='deer'?makeDeer(i===0&&Math.random()<0.4):makeHare(SKY.snowCover>0.35);
+      const buck=kind==='deer'&&i===0&&Math.random()<0.4,m=kind==='deer'?makeDeer(buck):makeHare(SKY.snowCover>0.35);
       scene.add(m.g);
-      animals.push({kind,...m,x:ox,z:oz,rot:Math.random()*6.28,st:'graze',t:Math.random()*4,sp:0,phase:Math.random()*6,hop:0});
+      animals.push({kind,buck,...m,x:ox,z:oz,rot:Math.random()*6.28,st:'graze',t:Math.random()*4,sp:0,phase:Math.random()*6,hop:0});
     }
     return;
   }

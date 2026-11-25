@@ -155,3 +155,9 @@ body.touch #order{top:calc(170px + var(--pad-t))}
 #btnOrder.pulse{box-shadow:0 0 0 2px #ffd27a inset}
 #actions{max-width:calc(100vw - 28px - var(--pad-l) - var(--pad-r))}
 .abtn{max-width:100%;white-space:normal}
+
+/* Mire en 1re personne */
+#cross{position:fixed;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 0 0 1.5px rgba(0,0,0,.45);pointer-events:none;z-index:5}
+#cross.free{opacity:.35}
+#cross.aim{width:18px;height:18px;margin:-9px 0 0 -9px;background:none;border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.4)}
+#cross.aim::after{content:'';position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px;border-radius:50%;background:#fff}

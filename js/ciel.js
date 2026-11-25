@@ -1,7 +1,7 @@
 /* Ciel : cycle jour/nuit (20 min de jour, 5 min de nuit) et météo (beau la plupart du temps,
    parfois nuageux, de la pluie ou de la neige). L'heure et la météo sont menées par l'hôte en multijoueur. */
 const DAY_LEN=1200,NIGHT_LEN=300,CYCLE=DAY_LEN+NIGHT_LEN;
-S.wx={clock:150,type:'clair',left:420};   // clock : secondes depuis le lever du soleil
+S.wx={clock:150,type:'clair',left:420,day:0};   // clock : secondes depuis le lever du soleil
 const WX={
   clair:  {cloud:0.12,rain:0,snow:0,fog:1},
   nuageux:{cloud:0.72,rain:0,snow:0,fog:0.8},
@@ -101,6 +101,7 @@ function leadsWorld(){return typeof NET==='undefined'||!NET.on||NET.host;}
 const _sd=new T.Vector3();
 function updateSky(dt,focus){
   const w=S.wx;
+  if(w.clock+dt>=CYCLE)w.day=(w.day||0)+1;      // un nouveau jour (limite de chasse, etc.)
   w.clock=(w.clock+dt)%CYCLE;
   if(leadsWorld()){w.left-=dt;if(w.left<=0)rollWeather();}
   // Position du soleil (le jour) ou de la lune (la nuit)

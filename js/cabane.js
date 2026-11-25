@@ -143,7 +143,7 @@ let wasNightSleeping=false;
 function updateCabin(dt){
   // Le lit : l'hôte (ou le joueur seul) fait lever le soleil quand tout le monde dort
   if(S.mode==='sleep'){
-    if(S.wx.clock>=DAY_LEN-20){wasNightSleeping=true;if(leadsWorld()&&everyoneAsleep()&&!fadeEl.classList.contains('on')){fadeThrough(()=>{S.wx.clock=20;},500);}}
+    if(S.wx.clock>=DAY_LEN-20){wasNightSleeping=true;if(leadsWorld()&&everyoneAsleep()&&!fadeEl.classList.contains('on')){fadeThrough(()=>{S.wx.clock=20;S.wx.day=(S.wx.day||0)+1;},500);}}
     else if(wasNightSleeping){wasNightSleeping=false;wakeUp('☀️ Bon matin !');}
   }
   // Couleur des fenêtres (ciel du dehors), lueur du poêle
