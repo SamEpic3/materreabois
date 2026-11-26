@@ -66,16 +66,31 @@ function updateVehicle(v,dt){
   if(tw)tw.mesh.wheels.forEach(w=>w.rotation.x+=v.v*dt/tw.spec.wr);
   updateDrag(v);
 }
-const TILT={};
+const TILT={},HITCH_Y=0.55,_hb=new T.Vector3(),_hb2=new T.Vector3(),_he=new T.Euler();
 const skidMark=new T.Mesh(new T.RingGeometry(0.45,0.7,24),new T.MeshBasicMaterial({color:0x5fe07a,transparent:true,opacity:0.85,side:T.DoubleSide,depthTest:false}));
 skidMark.rotation.x=-Math.PI/2;skidMark.renderOrder=15;skidMark.visible=false;scene.add(skidMark);
 function updateVTT(dt){
   vehicles.forEach(v=>updateVehicle(v,dt));
   trailers.forEach(t=>{
     const g2=ground(t.x,t.z,t.th,t.spec.hl,t.spec.hw,_q);
-    if(!t.hitch){if(!TILT[t.kind])TILT[t.kind]=new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),t.spec.tilt);_q.multiply(TILT[t.kind]);}
-    t.q.slerp(_q,1-Math.exp(-(t.hitch?12:5)*dt));
-    t.mesh.g.position.set(t.x,g2.h,t.z);t.mesh.g.quaternion.copy(t.q);
+    if(t.hitch&&t.hitch.mesh){
+      // Attelée : le timon pointe exactement sur la boule du véhicule (même quand il penche ou tangue),
+      // les roues restent au sol et la remorque penche de côté selon le terrain.
+      const vg=t.hitch.mesh.g;vg.updateMatrixWorld();
+      const B=vg.localToWorld(_hb.set(0,HITCH_Y,-(t.hitch.spec.hitch||2)));
+      const dx=B.x-t.x,dz=B.z-t.z,dh=Math.hypot(dx,dz)||1,yaw=Math.atan2(dx,dz);
+      const pitch=Math.atan2(B.y-(g2.h+HITCH_Y),dh);
+      const rx=Math.cos(yaw),rz=-Math.sin(yaw),hw=t.spec.hw;
+      const roll=Math.atan2(H(t.x+rx*hw,t.z+rz*hw)-H(t.x-rx*hw,t.z-rz*hw),2*hw);
+      _he.set(-pitch,yaw,roll,'YXZ');t.q.setFromEuler(_he);
+      // l'image suit la boule exactement (la position de jeu, elle, reste celle de la physique)
+      _hb2.set(0,HITCH_Y,t.spec.tl).applyQuaternion(t.q);
+      t.mesh.g.position.set(B.x-_hb2.x,g2.h,B.z-_hb2.z);t.mesh.g.quaternion.copy(t.q);
+    }else{
+      if(!TILT[t.kind])TILT[t.kind]=new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),t.spec.tilt);_q.multiply(TILT[t.kind]);
+      t.q.slerp(_q,1-Math.exp(-5*dt));
+    }
+    if(!t.hitch||!t.hitch.mesh){t.mesh.g.position.set(t.x,g2.h,t.z);t.mesh.g.quaternion.copy(t.q);}
     // Cercle du timon : seulement quand un véhicule est prêt à atteler
     const near=Math.hypot(t.x-(S.mode==='vtt'?V.x:P.x),t.z-(S.mode==='vtt'?V.z:P.z))<9;   // seulement de près
     t.mark.visible=!t.hitch&&near&&vehicles.some(v=>canAttach(v,t));
