@@ -114,12 +114,20 @@ function trSpotFree(t,x,z,th){
   const others=[];vehicles.forEach(v=>others.push(...vehCircles(v,v.x,v.z,v.th)));trailers.forEach(o=>{if(o!==t)others.push(...trCircles(o,o.x,o.z,o.th));});
   return !circlesHit(list,others);
 }
+// Il faut aussi de la place devant le timon pour y reculer un véhicule et atteler
+function hitchRoom(t,x,z,th){
+  const fx=Math.sin(th),fz=Math.cos(th),tl=t.spec.tl||2;
+  const list=[1.6,3.4,5.2,7.0].map(d=>[x+fx*(tl+d),z+fz*(tl+d),1.25]);
+  if(list.some(c=>outW(c[0],c[1],2)))return false;
+  const others=[];vehicles.forEach(v=>others.push(...vehCircles(v,v.x,v.z,v.th)));trailers.forEach(o=>{if(o!==t)others.push(...trCircles(o,o.x,o.z,o.th));});
+  return !circlesHit(list,others);
+}
 function rescueTrailer(t,quiet){
   if(t.hitch){if(!quiet)toast('Dételle la remorque ou replace le véhicule qui la tire');return false;}
   for(let r=0;r<=24;r+=0.75)for(let k=0,n=Math.max(1,Math.round(r*3));k<n;k++){
     const a=k/n*Math.PI*2,x=t.x+Math.cos(a)*r,z=t.z+Math.sin(a)*r;
     for(const dth of [0,Math.PI/2,-Math.PI/2,Math.PI]){const th=t.th+dth;
-      if(!trSpotFree(t,x,z,th))continue;
+      if(!trSpotFree(t,x,z,th)||!hitchRoom(t,x,z,th))continue;
       t.x=x;t.z=z;t.th=th;
       if(!quiet)toast(r<0.1?'La remorque n\'est pas coincée':`Remorque replacée à ${Math.round(r)} m`);
       return true;}
