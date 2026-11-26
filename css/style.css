@@ -169,3 +169,4 @@ body.touch #order{top:calc(170px + var(--pad-t))}
 #btnScope{position:fixed;right:calc(18px + var(--pad-r));bottom:calc(190px + var(--pad-b));width:54px;height:54px;border-radius:50%;border:none;font-size:26px;background:rgba(30,30,30,.7);color:#fff;z-index:6}
 #btnScope.on{background:rgba(200,129,31,.9)}
 @media (pointer:fine){#btnScope{display:none}}
+#cross.scoped{display:none}

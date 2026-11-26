@@ -30,7 +30,7 @@ const CAMP_FLAT=24;
 // Village le long d'une rue : repère local (lx vers la droite, lz vers le camp) et rectangle aplani
 const VIL_A=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z),VIL_S=Math.sin(VIL_A),VIL_C=Math.cos(VIL_A);
 function vilLocal(x,z){const dx=x-VILLAGE.x,dz=z-VILLAGE.z;return [dx*VIL_C-dz*VIL_S,dx*VIL_S+dz*VIL_C];}
-const VIL_RECTS=[{x0:-19,x1:29,z0:-32,z1:12},{x0:-36,x1:25,z0:8,z1:38}];   // rue et maisons / scierie et concessionnaire
+const VIL_RECTS=[{x0:-19,x1:29,z0:-32,z1:12},{x0:-36,x1:33,z0:8,z1:38}];   // rue et maisons / scierie et concessionnaire
 function vilOut(x,z){const [a,b]=vilLocal(x,z);let m=1e9;for(const R of VIL_RECTS)m=Math.min(m,Math.hypot(Math.max(R.x0-a,0,a-R.x1),Math.max(R.z0-b,0,b-R.z1)));return m;}
 const CAP=6;
 
@@ -48,6 +48,17 @@ const NEW_TRAILS=[
   [[78,-2],[74,-38],[69,-74],[62,-100],[66,-118],[75,-136]]              // vers le belvédère (territoire public)
 ];
 NEW_TRAILS.forEach(tr=>{for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1]]);});
+// Le chemin du camp arrive maintenant dans l'axe de la rue asphaltée; celui de la terre du Sud contourne la scierie.
+// (SEGS0 et SEGS_LAKE, qui ont servi à générer la forêt, ne changent pas.)
+{
+  const L=(lx,lz)=>{const a=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z);return [VILLAGE.x+Math.cos(a)*lx+Math.sin(a)*lz,VILLAGE.z-Math.sin(a)*lx+Math.cos(a)*lz];};
+  const same=(s,a,b)=>s[0]===a[0]&&s[1]===a[1]&&s[2]===b[0]&&s[3]===b[1];
+  const drop=[[[-4,12],[-20,26]],[[-20,26],[-36,38]],[[-36,38],[-44,41]],[[-20,26],[-10,50]]];
+  for(let i=SEGS.length-1;i>=0;i--)if(drop.some(([a,b])=>same(SEGS[i],a,b)))SEGS.splice(i,1);
+  const add=(pts)=>{for(let i=0;i<pts.length-1;i++)SEGS.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]]);};
+  add([[-4,12],L(0,46),L(0,37)]);
+  add([L(0,40),L(-18,42),L(-38,38),[0,78]]);
+}
 function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;t=clamp(t,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
 function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function trailDistLake(x,z){let m=1e9;for(const s of SEGS_LAKE){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
@@ -271,7 +282,8 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP_FLAT-1,CAMP_FLAT-7,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
     const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-37,-33,vl[1])*smoothstep(41,37,vl[1]);
-    const patch=Math.max(road*0.95,smoothstep(9,6,Math.hypot((vl[0]+14)*0.85,vl[1]-22))*0.7);
+    const yardF=smoothstep(-24,-22.5,vl[0])*smoothstep(-3.6,-5,vl[0])*smoothstep(11.5,13,vl[1])*smoothstep(39,37,vl[1]);   // la cour rejoint le chemin de terre
+    const patch=Math.max(road*0.95,yardF*0.8);
     const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
     dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);
@@ -630,6 +642,9 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     // bandeau rouge et enseigne
     g.add(new T.Mesh(new T.BoxGeometry(W+0.2,0.9,0.2).translate(0,Hh-0.55,D/2+0.1),red));
     const sg=new T.Mesh(new T.PlaneGeometry(12,0.8),textSign('CONCESSIONNAIRE · ÉQUIPEMENT FORESTIER',12,0.8,'#b3241f','#ffffff',0.55));sg.position.set(-1.5,Hh-0.55,D/2+0.21);g.add(sg);
+    // porte d'entrée vitrée (porte d'homme), entre la salle de montre et la porte de garage
+    {const dd=doorGeo(1.0,2.2,2.45,D/2+0.04);g.add(new T.Mesh(dd.door,glassM),new T.Mesh(dd.frame,vmat(0x2b2f33)),new T.Mesh(dd.knob,gold));
+     const ds=new T.Mesh(new T.PlaneGeometry(1.1,0.3),textSign('ENTRÉE',1.1,0.3,'#2b2f33','#ffffff',0.6));ds.position.set(2.45,2.55,D/2+0.1);g.add(ds);}
     // salle de montre : grandes vitrines + porte vitrée
     const fr=[],gl=[];
     gl.push(new T.PlaneGeometry(10,3.6).translate(-3.5,2.2,D/2+0.02));
@@ -646,17 +661,15 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     // fenêtres sur les côtés
     const sf=[],sgl=[];[-1,1].forEach(sd=>[-3,1,4].forEach(z=>{const w=windowGeo(1.4,1.1,sd*(W/2+0.06),3.2,z,sd*Math.PI/2);sf.push(w.frame);sgl.push(w.glass);}));
     g.add(new T.Mesh(mergeGeos(sf),trim),new T.Mesh(mergeGeos(sgl),VIL_WIN));
-    // marquise au-dessus de l'entrée
-    g.add(new T.Mesh(new T.BoxGeometry(4,0.12,1.6).translate(-6.5,4.35,D/2+0.8),red));
     // pylône près de la rue
-    const py=new T.Group();py.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.25,4.2,0.25).translate(-1,2.1,0),new T.BoxGeometry(0.25,4.2,0.25).translate(1,2.1,0)]),vmat(0x2b2f33)));
-    py.add(new T.Mesh(new T.BoxGeometry(2.6,1.3,0.3).translate(0,4.6,0),red));
-    const pt=new T.Mesh(new T.PlaneGeometry(2.4,1.1),textSign('MACHINERIE',2.4,1.1,'#b3241f','#ffffff',0.32));pt.position.set(0,4.6,0.16);py.add(pt);
+    const py=new T.Group();py.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.25,4.2,0.25).translate(-1.3,2.1,0),new T.BoxGeometry(0.25,4.2,0.25).translate(1.3,2.1,0)]),vmat(0x2b2f33)));
+    py.add(new T.Mesh(new T.BoxGeometry(3.4,1.3,0.3).translate(0,4.6,0),red));
+    const pt=new T.Mesh(new T.PlaneGeometry(3.2,1.1),textSign('MACHINERIE',3.2,1.1,'#b3241f','#ffffff',0.36));pt.position.set(0,4.6,0.16);py.add(pt);
     const pt2=pt.clone();pt2.rotation.y=Math.PI;pt2.position.z=-0.16;py.add(pt2);
-    py.position.set(8.5,0,D/2+4.6);py.rotation.y=Math.PI/2;g.add(py);
-    const DX=16,DZ=24,p=placeB(g,DX,DZ,RIGHT),bl=BL(DX,DZ,RIGHT);
-    bl.b(0,0,9,6);bl.c(8.5-1,D/2+4.6,0.25);bl.c(8.5+1,D/2+4.6,0.25);
-    DEALER_DOOR=vpos(...bl.at(-6.5,D/2+1.6));
+    py.position.set(8.0,0,D/2+12.4);py.rotation.y=Math.PI/2;g.add(py);
+    const DX=24,DZ=24,p=placeB(g,DX,DZ,RIGHT),bl=BL(DX,DZ,RIGHT);
+    bl.b(0,0,9,6);bl.c(8.0-1.3,D/2+12.4,0.25);bl.c(8.0+1.3,D/2+12.4,0.25);
+    DEALER_DOOR=vpos(...bl.at(2.45,D/2+1.3));
     label('Concessionnaire',p.x,VIL_H+9.5,p.z);
   }
 
@@ -665,7 +678,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     const asph=canvasTex(256,256,(c,w,h)=>{c.fillStyle='#3d3f42';c.fillRect(0,0,w,h);for(let i=0;i<3500;i++){const v=40+Math.random()*50|0;c.fillStyle=`rgba(${v},${v+2},${v+5},0.55)`;c.fillRect(Math.random()*w,Math.random()*h,2,2);}});
     asph.wrapS=asph.wrapT=T.RepeatWrapping;
     const am=new T.MeshLambertMaterial({map:asph,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
-    const rects=[[-4.4,4.4,-34,37],[-17.5,-4.4,-21.5,-5.5],[4.4,10,15,33]];
+    const rects=[[-4.4,4.4,-34,37],[-17.5,-4.4,-21.5,-5.5],[4.4,18,14,34]];
     const gs=rects.map(([x0,x1,z0,z1])=>{const g=new T.PlaneGeometry(x1-x0,z1-z0).rotateX(-Math.PI/2).translate((x0+x1)/2,0.04,(z0+z1)/2);
       const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(x1-x0)/6,uv.getY(i)*(z1-z0)/6);return g;});
     const road=new T.Mesh(mergeGeos(gs),am);road.receiveShadow=true;
@@ -674,13 +687,15 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     for(let z=-33;z<36;z+=6)lineY.push(new T.PlaneGeometry(0.15,3).rotateX(-Math.PI/2).translate(0,0.06,z+1.5));
     for(let z=-21;z<=-5.9;z+=3)lineW.push(new T.PlaneGeometry(5,0.12).rotateX(-Math.PI/2).translate(-15,0.06,z));
     lineW.push(new T.PlaneGeometry(0.12,15).rotateX(-Math.PI/2).translate(-17.4,0.06,-13.5));
+    // stationnement du concessionnaire, de chaque côté du cercle de vente
+    [14.2,17,31,33.8].forEach(z=>lineW.push(new T.PlaneGeometry(5,0.12).rotateX(-Math.PI/2).translate(15.5,0.06,z)));
     const lm=(c)=>new T.MeshBasicMaterial({color:c,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
     const lines=new T.Group();lines.add(new T.Mesh(mergeGeos(lineY),lm(0xe8c23a)),new T.Mesh(mergeGeos(lineW),lm(0xf2f2f2)),road);
     const q=vpos(0,0);lines.position.set(q.x,VIL_H,q.z);lines.rotation.y=VROT;scene.add(lines);
   }
 
   /* ===== Grands lampadaires de chaque côté de la rue ===== */
-  const VIL_LAMPS=[[-5.2,-24],[-5.2,-3],[-5.2,10],[-5.2,34],[5.2,-22],[5.2,-6],[5.2,12],[5.2,35]];
+  const VIL_LAMPS=[[-5.2,-24],[-5.2,-3],[-5.2,9.6],[5.2,-22],[5.2,-6],[5.2,12],[5.2,36]];
   {const g=new T.Group(),pole=[],glow=[];
    VIL_LAMPS.forEach(([lx,lz])=>{
      const s=lx<0?1:-1;            // le bras s'avance au-dessus de la rue

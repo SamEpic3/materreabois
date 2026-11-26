@@ -167,7 +167,7 @@ document.addEventListener('mousemove',e=>{
   camPitch=clamp(camPitch-dy*0.0024*sens,-1.2,0.9);
 });
 canvas.addEventListener('pointerdown',e=>{
-  if(e.pointerType==='mouse'&&e.button===2&&canScope()){e.stopImmediatePropagation();e.preventDefault();setScope(true);return;}
+  if(e.pointerType==='mouse'&&e.button===2&&(canScope()||SCOPE)){e.stopImmediatePropagation();e.preventDefault();setScope(!SCOPE);return;}   // clic droit : entre / sort de la lunette
   if(e.pointerType!=='mouse'||!FINE_PTR||camMode!=='fp')return;
   if(mouseLocked()){e.stopImmediatePropagation();e.preventDefault();if(e.button===0)fpClick();return;}
   if(cursorFree&&S.mode==='foot'&&!uiOpen()){cursorFree=false;tryLock();}
@@ -186,14 +186,16 @@ function setScope(on){
   on=!!on&&canScope();if(on===SCOPE)return;
   SCOPE=on;
   if(on&&camMode==='tp')camPitch=0;
-  pcam.fov=on?15:60;pcam.updateProjectionMatrix();
+  pcam.fov=on?15:60;pcam.updateProjectionMatrix();scopeTool=TOOL;
+  $('cross').classList.toggle('scoped',on);
   $('scope').classList.toggle('hidden',!on);$('btnScope').classList.toggle('on',on);
   player.g.visible=!on&&camMode!=='fp';
 }
-window.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'&&e.button===2&&SCOPE)setScope(false);});
 $('btnScope').addEventListener('click',()=>setScope(!SCOPE));
+let scopeTool=null;
 function updateScope(){
-  if(SCOPE&&!canScope())setScope(false);
+  if(SCOPE&&(!canScope()||TOOL!==scopeTool))setScope(false);   // changer d'outil sort de la lunette
+  if(!SCOPE)scopeTool=TOOL;
   $('btnScope').classList.toggle('hidden',!canScope());
 }
 $('btnRescue').addEventListener('click',()=>rescueMine());

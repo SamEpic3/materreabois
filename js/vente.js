@@ -1,5 +1,5 @@
 /* Vente de véhicules et de remorques, près du magasin général */
-const SALE_L=[-11,-13.5];           // stationnement asphalté à côté du magasin général (repère du village)
+const SALE_L=[11.5,24];             // devant le concessionnaire, sur l'asphalte (repère du village)
 const SALE=(()=>{const p=vpos(SALE_L[0],SALE_L[1]);return {x:p.x,z:p.z,r:5};})();
 const BUY_PRICE={vtt:3000,pickup:6500,skid:15000,small:800,loader:4500,fendeuse:1800,abat:45000,dechiq:9000};
 {
