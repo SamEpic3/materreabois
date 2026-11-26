@@ -42,4 +42,12 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1||(e.scale!==unde
 // Si la page a quand même glissé ou zoomé, on la remet en place
 function resetPageView(){if(scrollX||scrollY)scrollTo(0,0);}
 addEventListener('scroll',resetPageView);
-if(window.visualViewport)visualViewport.addEventListener("resize",resetPageView);
+// Si la page est restée agrandie (pincement ou double-tape), iOS ne la remet pas à 1 tout seul :
+// on réécrit la balise viewport pour forcer l'échelle 1, puis on refait la mise en page.
+function resetZoom(){const vv=window.visualViewport;if(!vv||Math.abs(vv.scale-1)<0.01)return;
+  const m=document.querySelector('meta[name=viewport]');if(!m)return;const c=m.content;
+  m.content=c.replace(/initial-scale=[\d.]+/,'initial-scale=1').replace('maximum-scale=1','maximum-scale=1.01');
+  setTimeout(()=>{m.content=c;resetPageView();applyLayout();},60);}
+if(window.visualViewport){visualViewport.addEventListener("resize",()=>{resetPageView();resetZoom();});visualViewport.addEventListener("scroll",resetPageView);}
+addEventListener('pageshow',()=>{resetZoom();resetPageView();});
+setTimeout(()=>{resetZoom();resetPageView();applyLayout();},400);
