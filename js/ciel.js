@@ -156,5 +156,5 @@ function updateSky(dt,focus){
   const cp=camMode==='iso'?focus:pcam.position;
   updatePrecip(dt,cp.x,(camMode==='iso'?focus.y:cp.y),cp.z);
   // Heure dans le coin
-  const el2=$('sClock');if(el2){const txt=`${isNight()?'🌙':cl>0.6?(SKY.snow>0.5?'🌨️':SKY.rain>0.5?'🌧️':'☁️'):'☀️'} ${clockText()}`;if(el2.textContent!==txt)el2.textContent=txt;}
+  const el2=$('sClock');if(el2){const ic=isNight()?'moon':cl>0.6?(SKY.snow>0.5?'snow':SKY.rain>0.5?'rain':'cloud'):'sun',txt=ic+clockText();if(el2.dataset.k!==txt){el2.dataset.k=txt;el2.innerHTML=`<svg class="i"><use href="#i-${ic}"/></svg><span>${clockText()}</span>`;}}
 }

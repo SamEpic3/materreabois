@@ -73,7 +73,6 @@ function selectSlot(i){
   if((S.mode!=='foot'&&!inBoat())||P.swing>0)return;
   if(i<0||i>=HOT_N)return;
   S.hot=i;syncTool();
-  const it=INV[i];toast(it?itemLabel(it):'Mains vides');
 }
 
 /* ----- Barre du bas (ordinateur) et bouton d'outil (téléphone) ----- */

@@ -43,8 +43,9 @@ function updateHUD(){
   if(hc)bh.textContent=hc.label+(isTouch?'':' (R)');
   $('pedals').classList.toggle('hidden',!(isTouch&&S.mode==='vtt'));
   const tools=S.mode==='foot'||inBoat();
-  $('hotbar').classList.toggle('hidden',isTouch||!tools);
-  $('toolBtn').classList.toggle('hidden',!isTouch||!tools);
+  $('hotbar').classList.toggle('hidden',!tools);
+  $('toolName').classList.toggle('hidden',!tools);
+  $('toolBtn').classList.add('hidden');
   $('gripBtns').classList.toggle('hidden',!(isTouch&&S.mode==='crane'));
   let hint=c.info||'';
   if(S.mode==='foot'&&!hint){
@@ -69,11 +70,11 @@ function updateHUD(){
   trailers.forEach(t=>{if(!t.c.cap)return;const g=grp[t.spec.label]||(grp[t.spec.label]={n:0,l:0,c:0,p:0});g.n++;g.l+=t.c.load.length;g.c+=t.c.cap;g.p+=t.c.pails.length;});
   vehicles.forEach(v=>{if(!v.bed)return;const g=grp['Boîte']||(grp['Boîte']={n:0,l:0,c:0,p:0});g.n++;g.l+=v.bed.load.length;g.c+=v.bed.cap;g.p+=v.bed.pails.length;});
   const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : `+(g.p?`${g.p} seau${g.p>1?'x':''}`:`${g.l}/${g.c}`)).join(' · ')||'Aucune remorque';
-  const hud=`${S.money}|${TOOL?TOOL.id:''}|${S.delivered}|${loadTxt}|${S.mode}|${V?Math.round(Math.abs(V.v)*3.6):0}|${hint}`;
+  const hud=`${S.money}|${TOOL?TOOL.id:''}|${S.hot}|${heldItem()?itemLabel(heldItem()):''}|${S.delivered}|${loadTxt}|${S.mode}|${V?Math.round(Math.abs(V.v)*3.6):0}|${hint}`;
   if(hud===lastHud)return;lastHud=hud;
-  $('sMoney').textContent=S.money+' $';$('sTool').textContent=TOOL?TOOL.name:'Mains vides';
+  $('sMoney').textContent=S.money.toLocaleString('fr-CA')+' $';{const h=heldItem();$('sTool').textContent=h?itemLabel(h):'Mains vides';}
   $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=V?Math.round(Math.abs(V.v)*3.6):0;
-  $('hint').textContent=hint;
+  const he=$('hint');if(he.textContent!==hint){he.textContent=hint;he.classList.remove('faded');clearTimeout(he._t);if(hint)he._t=setTimeout(()=>he.classList.add("faded"),8000);}
 }
 
 // Bouton de test : ajoute de l'argent (à retirer plus tard)

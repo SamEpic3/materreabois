@@ -279,7 +279,7 @@ function posPacket(){
 
 /* ---------- Connexion ---------- */
 function netSend(m){if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(m));}
-function setNetStatus(txt,warn){const e=$('netStatus');e.innerHTML=txt?'<br>'+txt.replace(/</g,'&lt;'):'';e.classList.toggle('hidden',!txt);e.classList.toggle('warn',!!warn);}
+function setNetStatus(txt,warn){const e=$('netStatus');e.textContent=txt||'';e.classList.toggle('hidden',!txt);e.classList.toggle('warn',!!warn);}
 function onlineNames(){return Object.keys(NET.online).filter(id=>id!==ME.id).map(id=>NET.online[id].name||'Partenaire');}
 function refreshNetStatus(){
   if(!NET.on)return setNetStatus('');

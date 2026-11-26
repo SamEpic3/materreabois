@@ -24,12 +24,12 @@ function audioInit(){
 }
 ['pointerdown','touchend','keydown','click'].forEach(ev=>window.addEventListener(ev,audioInit,{passive:true}));
 $('btnSound').addEventListener('click',()=>setSound(!AU.on));
-$('btnSound').textContent=AU.on?'🔊':'🔇';
+$('btnSound').innerHTML=`<svg class="i"><use href="#i-${AU.on?'sound':'mute'}"/></svg>`;
 
 function setSound(on){
   AU.on=on;try{localStorage.setItem('terre-a-bois-son',on?'1':'0');}catch(e){}
   if(AU.master)AU.master.gain.setTargetAtTime(on?0.7:0,AU.ctx.currentTime,0.05);
-  const b=$('btnSound');if(b)b.textContent=on?'🔊':'🔇';
+  const b=$('btnSound');if(b)b.innerHTML=`<svg class="i"><use href="#i-${on?'sound':'mute'}"/></svg>`;
 }
 
 /* ----- Utilitaires : gain selon la distance, panoramique gauche/droite ----- */

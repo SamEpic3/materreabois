@@ -184,3 +184,65 @@ body.touch #order{top:calc(170px + var(--pad-t))}
 #droneBtns{position:fixed;right:calc(18px + var(--pad-r));bottom:calc(150px + var(--pad-b));display:flex;flex-direction:column;gap:10px;z-index:6}
 #droneBtns button{width:58px;height:58px;border-radius:50%;border:none;font-size:24px;background:rgba(30,30,30,.72);color:#fff}
 #droneBtns button.on{background:rgba(200,129,31,.9)}
+
+/* ================= Thème « Forêt moderne » ================= */
+:root{--glass:rgba(18,30,22,.74);--glassB:rgba(255,255,255,.14);--acc:#f2a33a;--accInk:#22160a;--ok:#9fd07a}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;pointer-events:none}
+.panel{background:var(--glass);border:1px solid var(--glassB);color:#fff;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+/* Barre d'état compacte */
+#stats{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;padding:6px 12px 6px 9px;font-size:15px;font-weight:700;line-height:1.2;max-width:min(70vw,520px)}
+#stats .st{display:flex;align-items:center;gap:5px;white-space:nowrap}
+#stats .st svg.i{width:20px;height:20px}
+#stats .gold,#stats b{color:var(--acc)}
+#stats #sClock{color:#fff}
+#stats .sep{width:1px;height:16px;background:rgba(255,255,255,.3)}
+#sSpeedWrap{gap:8px!important}
+#netStatus{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--ok);color:#16240e;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+#netStatus.warn{background:#f0c24a;color:#2a1c06}
+/* Boutons du haut : ronds, icônes */
+.sbtn{width:42px;height:42px;border-radius:50%;background:var(--glass);border:1px solid var(--glassB);color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.28);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.sbtn:active{transform:scale(.92)}
+#camBtns.open #btnMenu{background:var(--acc)!important;color:var(--accInk)}
+#camBtns{gap:8px}
+#camBtns.open{max-width:206px!important}
+#btnOrder.pulse{box-shadow:0 0 0 2px var(--acc) inset,0 3px 10px rgba(0,0,0,.28)}
+/* Consigne : petite pastille en haut, s'efface */
+#hint{top:calc(60px + var(--pad-t));border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;transition:opacity .6s}
+body.touch #hint{top:calc(60px + var(--pad-t));bottom:auto;max-width:52%}
+#hint.faded{opacity:0}
+/* Barre d'outils (ordinateur et téléphone) */
+#hotbar{background:var(--glass);border:1px solid var(--glassB);border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);gap:6px;padding:6px}
+.slot{background:rgba(255,255,255,.07);border-radius:11px}
+.slot.on{border-color:var(--acc);background:rgba(242,163,58,.2);box-shadow:0 0 10px rgba(242,163,58,.45)}
+.slot .k{color:rgba(255,255,255,.7)}
+#toolName{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + var(--pad-b));background:var(--glass);border:1px solid var(--glassB);color:#fff;border-radius:999px;padding:3px 12px;font-size:13px;pointer-events:none;white-space:nowrap;max-width:60vw;overflow:hidden;text-overflow:ellipsis}
+#toolName b{color:#fff;font-weight:700}
+body.touch #hotbar{gap:5px;padding:5px;bottom:calc(8px + var(--pad-b))}
+body.touch .slot{width:46px;height:46px}
+body.touch .slot img{width:42px;height:32px}
+body.touch #toolName{bottom:calc(68px + var(--pad-b));font-size:12px}
+/* Boutons d'action : pilules, orange pour l'action principale */
+.abtn{border-radius:999px;padding:12px 20px;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.35);border:1px solid transparent}
+.abtn:active{transform:scale(.95)}
+#btnAct{background:linear-gradient(90deg,var(--acc) var(--p,100%),#8a6a3c var(--p,100%));color:var(--accInk)}
+#btnAct.cool{color:#3a2a14}
+#btnAct2{background:var(--glass);border-color:var(--glassB);color:#fff;filter:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#btnEnter{background:var(--ok);color:#16240e}
+#btnHitch{background:#5aa0d0;color:#0d1f2c}
+.pedal{background:var(--glass)!important;border:1px solid var(--glassB)!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#btnGas{background:var(--acc)!important;color:var(--accInk)!important;border:0!important}
+/* Joystick et messages */
+#joy{background:rgba(18,30,22,.18);border:2px solid rgba(255,255,255,.4)}
+#joyKnob{background:rgba(255,255,255,.75)}
+#toast{background:var(--glass);border:1px solid var(--glassB);color:#fff;border-radius:999px;font-size:15px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#order{border-left:4px solid var(--acc)}
+#players h3{color:var(--acc)}
+#order,body.touch #order{top:calc(56px + var(--pad-t))}
+#players{top:calc(56px + var(--pad-t))}
+/* Sur téléphone (même à l'horizontale, plus large que 700 px) : boutons secondaires dans le menu ☰ */
+body.touch #btnMenu{display:flex}
+body.touch #camBtns:not(.open) .more{display:none}
+body.touch #camBtns.open{max-width:206px!important}
+/* Téléphone : la barre d'outils un peu à gauche pour laisser la place aux boutons d'action */
+body.touch #hotbar,body.touch #toolName{left:42%}
+body.touch .abtn{font-size:15px;padding:11px 17px;min-width:0}
