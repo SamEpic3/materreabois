@@ -88,6 +88,7 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 const ray=new T.Raycaster(),ndc=new T.Vector2();
 function tap(cx,cy){
   if(S.mode!=='foot'&&S.mode!=='place'&&S.mode!=='pick')return;
+  if(S.mode==='foot'&&camMode!=='iso')return;     // en 1re et 3e personne, on ne se déplace pas en cliquant
   ndc.set(cx/viewW()*2-1,-(cy/viewH())*2+1);
   ray.setFromCamera(ndc,activeCam);
   const hit=ray.intersectObjects(TERRAIN_TILES.filter(m=>m.visible))[0];
@@ -148,7 +149,7 @@ const FINE_PTR=matchMedia('(pointer:fine)').matches&&!matchMedia('(pointer:coars
 let cursorFree=false,lockTry=0;
 function mouseLocked(){return document.pointerLockElement===canvas;}
 function uiOpen(){return ['look','shop','journal','proj','board','help'].some(id=>{const el=$(id);return el&&!el.classList.contains('hidden');})||invOpen()||(typeof CHAT!=='undefined'&&CHAT.open);}
-function wantLock(){return FINE_PTR&&started&&camMode==='fp'&&!cursorFree&&!uiOpen()&&S.mode!=='place'&&S.mode!=='pick';}
+function wantLock(){return FINE_PTR&&started&&(camMode==='fp'||SCOPE)&&!cursorFree&&!uiOpen()&&S.mode!=='place'&&S.mode!=='pick';}
 function tryLock(){if(!wantLock()||mouseLocked()||performance.now()-lockTry<600)return;lockTry=performance.now();try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(_){}}
 function toggleCursor(){
   if(!FINE_PTR||camMode!=='fp')return;
@@ -161,10 +162,12 @@ document.addEventListener('mousemove',e=>{
   if(!mouseLocked())return;
   const dx=e.movementX||0,dy=e.movementY||0;
   if(Math.abs(dx)>300||Math.abs(dy)>300)return;   // sauts parasites de certains navigateurs
-  if(RV()){camVehOff=wrapAng(camVehOff-dx*0.0028);camYaw-=dx*0.0028;}else{camYawT-=dx*0.0028;camYaw=camYawT;}
-  camPitch=clamp(camPitch-dy*0.0024,-1.2,0.9);
+  const sens=SCOPE?0.25:1;
+  if(RV()){camVehOff=wrapAng(camVehOff-dx*0.0028);camYaw-=dx*0.0028;}else{camYawT-=dx*0.0028*sens;camYaw=camYawT;}
+  camPitch=clamp(camPitch-dy*0.0024*sens,-1.2,0.9);
 });
 canvas.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button===2&&canScope()){e.stopImmediatePropagation();e.preventDefault();setScope(true);return;}
   if(e.pointerType!=='mouse'||!FINE_PTR||camMode!=='fp')return;
   if(mouseLocked()){e.stopImmediatePropagation();e.preventDefault();if(e.button===0)fpClick();return;}
   if(cursorFree&&S.mode==='foot'&&!uiOpen()){cursorFree=false;tryLock();}
@@ -175,3 +178,22 @@ function updateMouseLock(){
   if(mouseLocked()&&!wantLock()&&!cursorFree)document.exitPointerLock();
   else if(wantLock()&&!mouseLocked()&&(!navigator.userActivation||navigator.userActivation.isActive))tryLock();
 }
+
+/* ---------- Lunette de la carabine : clic droit (maintenu) ou bouton 🔭 ; zoom ×4 ---------- */
+let SCOPE=false;
+function canScope(){return camMode!=='iso'&&S.mode==='foot'&&TOOL&&TOOL.kind==='rifle'&&!P.carry&&!P.pail;}
+function setScope(on){
+  on=!!on&&canScope();if(on===SCOPE)return;
+  SCOPE=on;
+  if(on&&camMode==='tp')camPitch=0;
+  pcam.fov=on?15:60;pcam.updateProjectionMatrix();
+  $('scope').classList.toggle('hidden',!on);$('btnScope').classList.toggle('on',on);
+  player.g.visible=!on&&camMode!=='fp';
+}
+window.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'&&e.button===2&&SCOPE)setScope(false);});
+$('btnScope').addEventListener('click',()=>setScope(!SCOPE));
+function updateScope(){
+  if(SCOPE&&!canScope())setScope(false);
+  $('btnScope').classList.toggle('hidden',!canScope());
+}
+$('btnRescue').addEventListener('click',()=>rescueMine());

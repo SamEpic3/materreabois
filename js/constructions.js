@@ -26,6 +26,9 @@ function makeFeuModel(){
   });
   return bakeStatic(g);
 }
+// Monte le dessus d'une boîte jusqu'au toit incliné : yTop(z) en coordonnées du modèle
+function slopeTop(geo,yTop){const p=geo.attributes.position;let mx=-1e9;for(let i=0;i<p.count;i++)mx=Math.max(mx,p.getY(i));
+  for(let i=0;i<p.count;i++)if(p.getY(i)>mx-1e-4)p.setY(i,yTop(p.getZ(i)));p.needsUpdate=true;geo.computeVertexNormals();return geo;}
 function makeAbriModel(){
   const g=new T.Group(),post=new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3});
   const boards=texMat(sidingTex('#7a5232','#3e2a1a',true),14,1),dark=mat(0x4d3220);
@@ -34,8 +37,10 @@ function makeAbriModel(){
   g.add(new T.Mesh(mergeGeos(fl),mat(0x9a7a55)));
   // Poteaux ronds, fond et côtés en planches
   g.add(new T.Mesh(mergeGeos([[1.65,1.1,2.55],[-1.65,1.1,2.55],[1.65,-1.12,2.0],[-1.65,-1.12,2.0],[0,-1.12,2.0]].map(([x,z,h])=>new T.CylinderGeometry(0.07,0.08,h,8).translate(x,h/2,z))),post));
-  g.add(new T.Mesh(new T.BoxGeometry(3.4,1.95,0.06).translate(0,1.05,-1.17),boards));
-  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.06,1.95,2.3).translate(-1.72,1.05,0),new T.BoxGeometry(0.06,1.95,2.3).translate(1.72,1.05,0)]),texMat(sidingTex('#7a5232','#3e2a1a',true),10,1)));
+  g.add(new T.Mesh(new T.BoxGeometry(3.4,2.0,0.06).translate(0,1.06,-1.17),boards));
+  // côtés jusqu'au toit (le toit monte vers l'avant)
+  const roofU=z=>2.3+z*Math.tan(0.2)-0.04;
+  g.add(new T.Mesh(mergeGeos([slopeTop(new T.BoxGeometry(0.06,1.95,2.3).translate(-1.72,1.05,0),roofU),slopeTop(new T.BoxGeometry(0.06,1.95,2.3).translate(1.72,1.05,0),roofU)]),texMat(sidingTex('#7a5232','#3e2a1a',true),10,1)));
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(3.5,0.1,0.1).translate(0,2.5,1.1),new T.BoxGeometry(3.5,0.1,0.1).translate(0,2.0,-1.15)]),dark));
   // Toit de tôle incliné vers l'arrière
   const r=new T.Mesh(new T.BoxGeometry(3.9,0.06,2.8),texMat(tinTex(),12,1,{shininess:30}));r.position.set(0,2.3,0);r.rotation.x=-0.2;g.add(r);
@@ -143,7 +148,7 @@ function refreshShed(b){
 // Bécosse (porte avec une lune) : déjà là au départ, mais déplaçable comme les autres constructions
 function makeBecosseModel(){
   const g=new T.Group(),plankV=texMat(sidingTex('#7d5a3a','#4e3622',true),5,1);
-  g.add(new T.Mesh(new T.BoxGeometry(1.3,2.1,1.3).translate(0,1.05,0),plankV));
+  g.add(new T.Mesh(slopeTop(new T.BoxGeometry(1.3,2.1,1.3).translate(0,1.05,0),z=>2.18+z*Math.tan(0.18)),plankV));   // murs jusqu'au toit
   const r=new T.Mesh(new T.BoxGeometry(1.6,0.08,1.7),texMat(tinTex(),4,1,{shininess:30}));r.position.set(0,2.22,0);r.rotation.x=-0.18;g.add(r);
   g.add(new T.Mesh(new T.BoxGeometry(0.8,1.75,0.05).translate(0,0.93,0.66),mat(0x6b4a2c)));
   const moon=new T.Shape();moon.absarc(0,0,0.11,0.6,Math.PI*2-0.6,false);moon.absarc(0.07,0,0.09,Math.PI*2-0.9,0.9,true);

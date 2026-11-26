@@ -8,9 +8,11 @@
 const HUNT_DEER_DAY=2,PERMIT_PRICE=120;
 const MEAT={chevreuil:{n:'Viande de chevreuil',pkg:12},lievre:{n:'Viande de lièvre',pkg:16}};
 const AMMO={rifle:{id:'balles',n:'balles',range:130,cone:0.035,hit:d=>0.97-d/450,scare:90},bow:{id:'fleches',n:'flèches',range:38,cone:0.05,hit:d=>0.95-d/70,scare:22}};
+// Une vraie flèche (et non un arc) pour la miniature
+const ARROW_ICON='<svg class="emo" viewBox="0 0 32 32" width="1em" height="1em" style="width:1.15em;height:1.15em"><path d="M5 27 L24 8" stroke="#7a4a26" stroke-width="2.6" stroke-linecap="round"/><path d="M27 5 L19.5 7.5 L24.5 12.5 Z" fill="#9aa3a8" stroke="#555" stroke-width="0.8"/><path d="M5 27 L4 21 L8 23 Z M5 27 L11 28 L9 24 Z" fill="#c23a2e"/><path d="M8 24 L6.5 19.5 L10 21 Z M8 24 L12.5 25.5 L11 22 Z" fill="#c23a2e"/></svg>';
 const HUNT_GEAR=[
   {id:'balles',name:'Boîte de balles (×20)',n:20,price:45,emo:'📦',desc:'Des cartouches pour la carabine.'},
-  {id:'fleches',name:'Flèches (×6)',n:6,price:30,emo:'🏹',desc:'Des flèches pour l\'arc. Une flèche qui touche est perdue.'},
+  {id:'fleches',name:'Flèches (×6)',n:6,price:30,emo:'➶',desc:'Des flèches pour l\'arc. Une flèche qui touche est perdue.'},
   {id:'collet',name:'Collets à lièvre (×5)',n:5,price:25,emo:'➰',desc:'À poser au pied d\'un arbre en forêt. Reviens voir : un lièvre s\'y prend de temps en temps.'}
 ];
 S.hunt={permit:false,day:0,deer:0};   // propre à chaque joueur
@@ -30,7 +32,7 @@ const _itemIconH=itemIcon;
 itemIcon=function(it){
   if(!it)return '';
   const d=itemDef(it.id);
-  if(d.kind==='ammo')return `<span class="emo">${it.id==='balles'?'📦':'🏹'}</span>`;
+  if(d.kind==='ammo')return it.id==='balles'?'<span class="emo">📦</span>':ARROW_ICON;
   if(d.kind==='snare')return '<span class="emo">➰</span>';
   if(d.kind==='meat')return '<span class="emo">🥩</span>';
   return _itemIconH(it);
@@ -101,6 +103,7 @@ function deerLeft(){huntDayCheck();return Math.max(0,HUNT_DEER_DAY-S.hunt.deer);
 
 /* ----- Viser et tirer ----- */
 function aimInfo(){
+  if(SCOPE)return {yaw:camYaw,pitch:camPitch,extra:-0.015};
   if(camMode==='fp')return {yaw:camYaw,pitch:camPitch,extra:0};
   if(camMode==='tp')return {yaw:camYaw,pitch:null,extra:0.09};
   return {yaw:P.rot,pitch:null,extra:0.25};
@@ -217,7 +220,7 @@ function huntContext(){
   if(sn)return {act:sn.caught?{label:'Prendre le lièvre du collet',fn:()=>checkSnare(sn)}:null,act2:{label:'Retirer le collet',fn:()=>takeSnare(sn)},info:sn.caught?'':'Collet tendu : rien encore'};
   const c=nearestCarc(1.8);
   if(c){const nm=c.kind==='deer'?'le chevreuil':'le lièvre',tot=DRESS_N[c.kind];
-    if(!hasKnife())return {info:`Pour dépecer ${nm}, il te faut un couteau (magasin)`};
+    if(!TOOL||TOOL.kind!=='knife')return {info:hasKnife()?`Prends le couteau dans tes mains pour dépecer ${nm}`:`Pour dépecer ${nm}, il te faut un couteau (magasin)`};
     return {act:{label:`Dépecer ${nm} (${Math.round((c.work||0)*tot)}/${tot})`,fn:()=>dressStroke(c),cool:true}};}
   const w=weaponOf();
   if(w){const n=invCount(w.id);
@@ -272,7 +275,7 @@ function renderHuntShop(L,sec){
       ()=>{if(S.money<t.price)return;S.money-=t.price;giveItem({id:t.id,n:1});J.buy(t.name.toLowerCase(),t.price);sfxCash();toast(`${t.name} : dans ton inventaire!`);renderShop();});
   });
   HUNT_GEAR.forEach(g=>{
-    row(`<div class="thumb emoji">${g.emo}</div>`,`<b>${g.name}</b> — ${g.price} $<p>${g.desc}</p><p class="stats">Tu en as ${invCount(g.id)}</p>`,'Acheter',S.money<g.price,
+    row(`<div class="thumb emoji">${g.id==='fleches'?ARROW_ICON:g.emo}</div>`,`<b>${g.name}</b> — ${g.price} $<p>${g.desc}</p><p class="stats">Tu en as ${invCount(g.id)}</p>`,'Acheter',S.money<g.price,
       ()=>{if(S.money<g.price)return;S.money-=g.price;giveItem({id:g.id,n:g.n});J.buy(g.name.toLowerCase(),g.price);sfxCash();toast(`${g.emo} ${g.name} : dans ton inventaire`);renderShop();});
   });
 }

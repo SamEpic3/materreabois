@@ -14,7 +14,7 @@ function frame(){
   if(S.mode==='foot')updateFoot(dt);
   if(S.mode==='pass')updatePassenger();
   updateFishing(dt);updateDrops(dt);
-  updateMapCursor(dt);updatePlacement();updatePick();updateMouseLock();
+  updateMapCursor(dt);updatePlacement();updatePick();updateMouseLock();updateScope();
   updateNet(dt);updateVTT(dt);
   updateFalling(dt);updateSplitters(dt);updateYardSales(dt);
   updateCamp(dt);updateCabin(dt);tickPlants(dt);
@@ -26,15 +26,15 @@ function frame(){
   const mc=mapCursor();
   if(mc){gx=mc.cx;gz=mc.cz;}else if(S.mode==='foot'||S.mode==='sit'||S.mode==='sleep'){gx=P.x;gz=P.z;}else if(S.mode==='crane'){const g=gripWorld(P.crTr);gx=(P.x+g.x)/2;gz=(P.z+g.z)/2;}else{const W=RVc||V;gx=W.x+Math.sin(W.th)*W.v*0.35;gz=W.z+Math.cos(W.th)*W.v*0.35;}
   if(camMode!=='iso'&&S.mode!=='crane'){gx=RVc?RVc.x:P.x;gz=RVc?RVc.z:P.z;}
-  const goal=new T.Vector3(gx,walkH(gx,gz),gz);
+  const goal=new T.Vector3(gx,RVc&&RVc.spec.boat?RVc.mesh.g.position.y:walkH(gx,gz),gz);   // en chaloupe : niveau de l'eau, pas le fond du lac
   camT.lerp(goal,1-Math.exp(-(camMode!=='iso'?14:6)*dt));
   if(camMode!=='iso'&&S.mode==='crane'){
     const g=gripWorld(P.crTr),ey=H(P.x,P.z)+1.68;
     if(camMode==='fp'){pcam.position.set(P.x,ey,P.z);}
     else{let dx=g.x-P.x,dz=g.z-P.z;const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;pcam.position.set(P.x-dx*5*chaseDist,ey+1.8,P.z-dz*5*chaseDist);}
     pcam.lookAt(g.x,g.y-0.6,g.z);
-  }else if(camMode==='fp'){
-    if(RVc){
+  }else if(camMode==='fp'||SCOPE){
+    if(RVc&&!SCOPE){
       const vg=RVc.mesh.g,e=S.mode==='pass'?RVc.spec.passEye:RVc.spec.eye;vg.updateMatrixWorld();pcam.position.copy(vg.localToWorld(_v.set(e[0],e[1],e[2])));
       const cp=Math.cos(camPitch+0.075);
       pcam.lookAt(vg.localToWorld(_v.set(e[0]+Math.sin(camVehOff)*cp*12,e[1]+Math.sin(camPitch+0.075)*12-0.3,e[2]+Math.cos(camVehOff)*cp*12)));

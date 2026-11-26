@@ -30,8 +30,8 @@ const CAMP_FLAT=24;
 // Village le long d'une rue : repère local (lx vers la droite, lz vers le camp) et rectangle aplani
 const VIL_A=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z),VIL_S=Math.sin(VIL_A),VIL_C=Math.cos(VIL_A);
 function vilLocal(x,z){const dx=x-VILLAGE.x,dz=z-VILLAGE.z;return [dx*VIL_C-dz*VIL_S,dx*VIL_S+dz*VIL_C];}
-const VIL_RECT={x0:-28,x1:29,z0:-23,z1:34};
-function vilOut(x,z){const [a,b]=vilLocal(x,z);return Math.hypot(Math.max(VIL_RECT.x0-a,0,a-VIL_RECT.x1),Math.max(VIL_RECT.z0-b,0,b-VIL_RECT.z1));}
+const VIL_RECTS=[{x0:-19,x1:29,z0:-32,z1:12},{x0:-36,x1:25,z0:8,z1:38}];   // rue et maisons / scierie et concessionnaire
+function vilOut(x,z){const [a,b]=vilLocal(x,z);let m=1e9;for(const R of VIL_RECTS)m=Math.min(m,Math.hypot(Math.max(R.x0-a,0,a-R.x1),Math.max(R.z0-b,0,b-R.z1)));return m;}
 const CAP=6;
 
 const SEGS=[];
@@ -270,8 +270,8 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const n=0.5+0.5*Math.sin(x*0.21+Math.cos(z*0.17)*2)*Math.cos(z*0.13);
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP_FLAT-1,CAMP_FLAT-7,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
-    const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-26,-22,vl[1])*smoothstep(37,33,vl[1]);
-    const patch=Math.max(road*0.95,smoothstep(6,3.5,Math.hypot(vl[0]+8.5,vl[1]-20))*0.6);
+    const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-37,-33,vl[1])*smoothstep(41,37,vl[1]);
+    const patch=Math.max(road*0.95,smoothstep(9,6,Math.hypot((vl[0]+14)*0.85,vl[1]-22))*0.7);
     const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
     dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);
@@ -421,7 +421,7 @@ const VF={x:Math.sin(VROT),z:Math.cos(VROT)},VR={x:Math.cos(VROT),z:-Math.sin(VR
 function vpos(lx,lz){return {x:VILLAGE.x+VR.x*lx+VF.x*lz,z:VILLAGE.z+VR.z*lx+VF.z*lz};}
 function bldCols(lx,lz,hw,hd){for(let a=-hw+1.4;a<=hw-1.39;a+=Math.max(0.01,(2*hw-2.8)/Math.max(1,Math.round((2*hw-2.8)/2.4))))for(let b=-hd+1.4;b<=hd-1.39;b+=Math.max(0.01,(2*hd-2.8)/Math.max(1,Math.round((2*hd-2.8)/2.4)))){const p=vpos(lx+a,lz+b);addCol(p.x,p.z,1.55);}}
 function gableRoof(g,w,d,y,m){const r1=box(w+0.6,0.18,d/2+0.5,m,0,y,d/4+0.1,g);r1.rotation.x=0.62;const r2=box(w+0.6,0.18,d/2+0.5,m,0,y,-d/4-0.1,g);r2.rotation.x=-0.62;}
-let STORE_DOOR,MILL_DOOR;
+let STORE_DOOR,MILL_DOOR,DEALER_DOOR;
 const VIL_WIN=new T.MeshBasicMaterial({color:0x9fb8c8});        // vitres du village
 const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de rue
 const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,214,140,1)');g.addColorStop(0.5,'rgba(255,190,110,0.35)');g.addColorStop(1,'rgba(255,170,90,0)');c.fillStyle=g;c.fillRect(0,0,w,h);}),transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending});
@@ -487,16 +487,11 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     const ice=new T.Mesh(new T.PlaneGeometry(0.9,0.35),textSign('GLACE',0.9,0.35,'#f2f2f2','#2d5b9a',0.7));ice.position.set(3.0,1.0,D/2+0.91);g.add(ice);
     g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.12,0.1,0.28,8).translate(0,2.95,D/2+0.45),new T.BoxGeometry(0.04,0.3,0.32).translate(0,3.12,D/2+0.3)]),black));
     const lampG=new T.Mesh(new T.CylinderGeometry(0.08,0.08,0.18,8).translate(0,2.95,D/2+0.45),VIL_LAMP);g.add(lampG);
-    // Vieille pompe à essence rouge, à côté
-    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.6,1.7,0.45).translate(7.9,0.85,D/2+3.2),new T.CylinderGeometry(0.22,0.22,0.12,12).translate(7.9,1.76,D/2+3.2)]),vmat(0xb3241f)));
-    g.add(new T.Mesh(new T.SphereGeometry(0.22,12,8).translate(7.9,2.0,D/2+3.2),vmat(0xf6f1e4)));
-    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.45,0.4,0.03).translate(7.9,1.25,D/2+3.43),new T.BoxGeometry(0.06,0.5,0.06).translate(8.25,1.0,D/2+3.3)]),vmat(0xe8e0cc)));
-    g.add(new T.Mesh(new T.BoxGeometry(1.2,0.12,1.0).translate(7.9,0.06,D/2+3.2),vmat(0x8a857c)));
     // Cheminée de briques sur le côté
     g.add(new T.Mesh(stoneStack(0.7,0.7,Hh+3.3,-W/2+1.4,0,-2,31),new T.MeshPhongMaterial({color:0x9a5a46,flatShading:true,vertexColors:true,shininess:3})));
     const SX=-13.5,SZ=2,p=placeB(g,SX,SZ,LEFT),bl=BL(SX,SZ,LEFT);
-    // Collisions : bâtiment, poteaux de la galerie, pompe, barils
-    bl.b(0,0,6,4.5);[-6.3,-3.3,-1.4,1.4,3.3,6.3].forEach(x=>bl.c(x,D/2+2.65,0.2));bl.c(7.9,D/2+3.2,0.5);bl.c(-6,D/2+1.55,0.4);
+    // Collisions : bâtiment, poteaux de la galerie, barils
+    bl.b(0,0,6,4.5);[-6.3,-3.3,-1.4,1.4,3.3,6.3].forEach(x=>bl.c(x,D/2+2.65,0.2));bl.c(-6,D/2+1.55,0.4);
     STORE_DOOR=vpos(...bl.at(0,D/2+2.4));
     label('Magasin général',p.x,VIL_H+10.6,p.z);
   }
@@ -557,7 +552,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
   }
 
   /* ===== Maisons : déclin coloré, volets, galerie, cheminée ===== */
-  [[-12,-14,'#4f6f8f','#2e4458','#8e2b22',0,LEFT],[12,-14,'#efe9dc','#c9c0ae','#8e2b22',2,RIGHT],[12,22,'#d8b84a','#9a7a2a','#2f5a3a',1,RIGHT]].forEach(([lx,lz,wc,lc,dc,k,r])=>{
+  [[-12,-28,'#4f6f8f','#2e4458','#8e2b22',0,LEFT],[12,-14,'#efe9dc','#c9c0ae','#8e2b22',2,RIGHT]].forEach(([lx,lz,wc,lc,dc,k,r])=>{
     const h=new T.Group();h.add(new T.Mesh(new T.BoxGeometry(6,3.0,5).translate(0,1.5,0),texMat(sidingTex(wc,lc),1,14)));
     h.add(new T.Mesh(mergeGeos([gable(6,5,3.0,1.6,3),gable(6,5,3.0,1.6,-3)]),texMat(sidingTex(wc,lc),1,7)));
     roofTex(h,6,5,3.8,texMat(shingleTex('#3a3430','#262220'),9,7),0.6,0.45);
@@ -619,15 +614,75 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     s.add(new T.Mesh(mergeGeos(pl),vmat(0xd9b27c)));
     // Cheminée de la bouilloire
     s.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.32,0.36,11,12).translate(W/2-1.6,5.5,-D/2+0.9),new T.CylinderGeometry(0.45,0.45,0.25,12).translate(W/2-1.6,11,-D/2+0.9)]),new T.MeshPhongMaterial({color:0x3a3d40,shininess:40})));
-    const p=placeB(s,-17,20,LEFT),bl=BL(-17,20,LEFT);
+    const p=placeB(s,-27,22,LEFT),bl=BL(-27,22,LEFT);
     bl.b(0,0,6.5,4);[-3.4,0,3.4].forEach(z=>bl.c(LX-1.9,z,0.25));bl.b(LX,-0.3,1.5,3.4);bl.c(W/2-1.6,-D/2+0.9,0.45);
     MILL_DOOR=vpos(...bl.at(5.6,D/2+0.9));
     label('Scierie',p.x,VIL_H+8.5,p.z);
   }
 
+  /* ===== Concessionnaire : grand bâtiment d'acier, salle de montre vitrée, porte de garage ===== */
+  {
+    const g=new T.Group(),W=18,D=12,Hh=6.6;
+    const steel=texMat(tinTex(),20,1,{shininess:30}),bodyM=vmat(0xd9d6cf),red=vmat(0xb3241f),glassM=new T.MeshPhongMaterial({color:0x5d7a8c,shininess:90,specular:0x99aabb});
+    g.add(new T.Mesh(new T.BoxGeometry(W,Hh,D).translate(0,Hh/2,0),bodyM));
+    g.add(new T.Mesh(mergeGeos([gable(W,D+0.1,Hh,1.2,W/2),gable(W,D+0.1,Hh,1.2,-W/2)]),bodyM));
+    roofTex(g,W,D,Hh+0.5,steel,0.2,0.4);
+    // bandeau rouge et enseigne
+    g.add(new T.Mesh(new T.BoxGeometry(W+0.2,0.9,0.2).translate(0,Hh-0.55,D/2+0.1),red));
+    const sg=new T.Mesh(new T.PlaneGeometry(12,0.8),textSign('CONCESSIONNAIRE · ÉQUIPEMENT FORESTIER',12,0.8,'#b3241f','#ffffff',0.55));sg.position.set(-1.5,Hh-0.55,D/2+0.21);g.add(sg);
+    // salle de montre : grandes vitrines + porte vitrée
+    const fr=[],gl=[];
+    gl.push(new T.PlaneGeometry(10,3.6).translate(-3.5,2.2,D/2+0.02));
+    for(let x=-8.5;x<=1.51;x+=2.5)fr.push(new T.BoxGeometry(0.12,3.8,0.12).translate(x,2.2,D/2+0.06));
+    fr.push(new T.BoxGeometry(10.2,0.14,0.14).translate(-3.5,4.05,D/2+0.06),new T.BoxGeometry(10.2,0.14,0.14).translate(-3.5,0.35,D/2+0.06));
+    g.add(new T.Mesh(mergeGeos(fr),vmat(0x2b2f33)),new T.Mesh(mergeGeos(gl),glassM));
+    // intérieur vu à travers la vitre : plancher pâle et un VTT en montre
+    g.add(new T.Mesh(new T.BoxGeometry(W-0.4,0.05,D-0.4).translate(0,0.03,0),vmat(0xbdb8ad)));
+    // grande porte de garage (atelier) à droite
+    const gd=[];for(let k=0;k<8;k++)gd.push(new T.BoxGeometry(4.2,0.5,0.08).translate(5.6,0.3+k*0.52,D/2+0.05));
+    g.add(new T.Mesh(mergeGeos(gd),vmat(0xe8e6e0)));
+    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.2,4.4,0.2).translate(3.4,2.2,D/2+0.06),new T.BoxGeometry(0.2,4.4,0.2).translate(7.8,2.2,D/2+0.06),new T.BoxGeometry(4.6,0.2,0.2).translate(5.6,4.4,D/2+0.06)]),vmat(0x2b2f33)));
+    const sv=new T.Mesh(new T.PlaneGeometry(2.6,0.45),textSign('SERVICE',2.6,0.45,'#2b2f33','#ffffff',0.6));sv.position.set(5.6,4.85,D/2+0.12);g.add(sv);
+    // fenêtres sur les côtés
+    const sf=[],sgl=[];[-1,1].forEach(sd=>[-3,1,4].forEach(z=>{const w=windowGeo(1.4,1.1,sd*(W/2+0.06),3.2,z,sd*Math.PI/2);sf.push(w.frame);sgl.push(w.glass);}));
+    g.add(new T.Mesh(mergeGeos(sf),trim),new T.Mesh(mergeGeos(sgl),VIL_WIN));
+    // marquise au-dessus de l'entrée
+    g.add(new T.Mesh(new T.BoxGeometry(4,0.12,1.6).translate(-6.5,4.35,D/2+0.8),red));
+    // pylône près de la rue
+    const py=new T.Group();py.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.25,4.2,0.25).translate(-1,2.1,0),new T.BoxGeometry(0.25,4.2,0.25).translate(1,2.1,0)]),vmat(0x2b2f33)));
+    py.add(new T.Mesh(new T.BoxGeometry(2.6,1.3,0.3).translate(0,4.6,0),red));
+    const pt=new T.Mesh(new T.PlaneGeometry(2.4,1.1),textSign('MACHINERIE',2.4,1.1,'#b3241f','#ffffff',0.32));pt.position.set(0,4.6,0.16);py.add(pt);
+    const pt2=pt.clone();pt2.rotation.y=Math.PI;pt2.position.z=-0.16;py.add(pt2);
+    py.position.set(8.5,0,D/2+4.6);py.rotation.y=Math.PI/2;g.add(py);
+    const DX=16,DZ=24,p=placeB(g,DX,DZ,RIGHT),bl=BL(DX,DZ,RIGHT);
+    bl.b(0,0,9,6);bl.c(8.5-1,D/2+4.6,0.25);bl.c(8.5+1,D/2+4.6,0.25);
+    DEALER_DOOR=vpos(...bl.at(-6.5,D/2+1.6));
+    label('Concessionnaire',p.x,VIL_H+9.5,p.z);
+  }
+
+  /* ===== Asphalte : la rue, le stationnement (vente de véhicules) et le devant du concessionnaire ===== */
+  {
+    const asph=canvasTex(256,256,(c,w,h)=>{c.fillStyle='#3d3f42';c.fillRect(0,0,w,h);for(let i=0;i<3500;i++){const v=40+Math.random()*50|0;c.fillStyle=`rgba(${v},${v+2},${v+5},0.55)`;c.fillRect(Math.random()*w,Math.random()*h,2,2);}});
+    asph.wrapS=asph.wrapT=T.RepeatWrapping;
+    const am=new T.MeshLambertMaterial({map:asph,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+    const rects=[[-4.4,4.4,-34,37],[-17.5,-4.4,-21.5,-5.5],[4.4,10,15,33]];
+    const gs=rects.map(([x0,x1,z0,z1])=>{const g=new T.PlaneGeometry(x1-x0,z1-z0).rotateX(-Math.PI/2).translate((x0+x1)/2,0.04,(z0+z1)/2);
+      const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(x1-x0)/6,uv.getY(i)*(z1-z0)/6);return g;});
+    const road=new T.Mesh(mergeGeos(gs),am);road.receiveShadow=true;
+    // lignes : jaune pointillée au centre, blanches au stationnement
+    const lineY=[],lineW=[];
+    for(let z=-33;z<36;z+=6)lineY.push(new T.PlaneGeometry(0.15,3).rotateX(-Math.PI/2).translate(0,0.06,z+1.5));
+    for(let z=-21;z<=-5.9;z+=3)lineW.push(new T.PlaneGeometry(5,0.12).rotateX(-Math.PI/2).translate(-15,0.06,z));
+    lineW.push(new T.PlaneGeometry(0.12,15).rotateX(-Math.PI/2).translate(-17.4,0.06,-13.5));
+    const lm=(c)=>new T.MeshBasicMaterial({color:c,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
+    const lines=new T.Group();lines.add(new T.Mesh(mergeGeos(lineY),lm(0xe8c23a)),new T.Mesh(mergeGeos(lineW),lm(0xf2f2f2)),road);
+    const q=vpos(0,0);lines.position.set(q.x,VIL_H,q.z);lines.rotation.y=VROT;scene.add(lines);
+  }
+
   /* ===== Grands lampadaires de chaque côté de la rue ===== */
+  const VIL_LAMPS=[[-5.2,-24],[-5.2,-3],[-5.2,10],[-5.2,34],[5.2,-22],[5.2,-6],[5.2,12],[5.2,35]];
   {const g=new T.Group(),pole=[],glow=[];
-   [[-5.2,-20],[-5.2,-8],[-5.2,11],[-5.2,30],[5.2,-20],[5.2,-8],[5.2,14],[5.2,30]].forEach(([lx,lz])=>{
+   VIL_LAMPS.forEach(([lx,lz])=>{
      const s=lx<0?1:-1;            // le bras s'avance au-dessus de la rue
      pole.push(new T.CylinderGeometry(0.1,0.16,6.2,8).translate(lx,3.1,lz),new T.CylinderGeometry(0.22,0.26,0.5,8).translate(lx,0.25,lz),
        new T.BoxGeometry(1.7,0.08,0.08).translate(lx+s*0.8,6.0,lz),new T.BoxGeometry(0.9,0.06,0.06).rotateZ(s*0.6).translate(lx+s*0.38,5.7,lz),
@@ -635,11 +690,11 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
      glow.push(new T.CylinderGeometry(0.2,0.24,0.12,10).translate(lx+s*1.6,5.68,lz));colL(lx,lz,0.25);});
    g.add(new T.Mesh(mergeGeos(pole),vmat(0x2b2f33)),new T.Mesh(mergeGeos(glow),VIL_LAMP));placeB(g,0,0);
    // Flaques de lumière au sol (une seule géométrie, additive) ; l'opacité suit la nuit (ciel.js)
-   const pools=[];[[-5.2,-20],[-5.2,-8],[-5.2,11],[-5.2,30],[5.2,-20],[5.2,-8],[5.2,14],[5.2,30]].forEach(([lx,lz])=>pools.push(new T.PlaneGeometry(9,9).rotateX(-Math.PI/2).translate(lx+(lx<0?1.6:-1.6),0.06,lz)));
+   const pools=[];VIL_LAMPS.forEach(([lx,lz])=>pools.push(new T.PlaneGeometry(9,9).rotateX(-Math.PI/2).translate(lx+(lx<0?1.6:-1.6),0.06,lz)));
    const pm=new T.Mesh(mergeGeos(pools),VIL_POOL);const q=vpos(0,0);pm.position.set(q.x,VIL_H,q.z);pm.rotation.y=VROT;pm.renderOrder=2;scene.add(pm);}
   {const q=vpos(0,6);label('Village',q.x,VIL_H+14,q.z,30);}
 }
-Object.assign(YARD,vpos(-8.5,20));
+Object.assign(YARD,vpos(-14,22));
 const yardRing=groundRing(YARD.x,YARD.z,YARD.r-0.35,YARD.r,48,0xffd27a,0.55);
 // Billots déjà vendus, cordés derrière la scierie
 const YARD_STACK=vpos(-25,20);

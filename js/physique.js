@@ -86,3 +86,33 @@ function updateVTT(dt){
   skidMark.visible=false;
   if(S.mode==='vtt'&&V.type==='skid'&&!V.drag){const c=skidCandidate(V);if(c){skidMark.visible=true;skidMark.position.set(c.p.x,H(c.p.x,c.p.z)+0.1,c.p.z);}}
 }
+
+/* ---------- Véhicule coincé : le replacer à l'endroit libre le plus proche ---------- */
+function vehSpotFree(v,x,z,th){
+  if(outW(x,z,3))return false;
+  const list=vehCircles(v,x,z,th).map(c=>[c[0],c[1],c[2]+0.25]);
+  return !circlesHit(list,bodyCircles(v));
+}
+function rescueVehicle(v,quiet){
+  if(!v||v.spec.boat)return false;
+  for(let r=0;r<=24;r+=0.75)for(let k=0,n=Math.max(1,Math.round(r*3));k<n;k++){
+    const a=k/n*Math.PI*2,x=v.x+Math.cos(a)*r,z=v.z+Math.sin(a)*r;
+    for(const dth of [0,Math.PI/2,-Math.PI/2,Math.PI]){const th=v.th+dth;
+      if(!vehSpotFree(v,x,z,th))continue;
+      const dx=x-v.x,dz=z-v.z;v.x=x;v.z=z;v.th=th;v.v=0;
+      trailers.forEach(t=>{if(t.hitch===v){const f=trailerFollow(t,x-Math.sin(th)*(v.spec.hitch?v.spec.hitch:2),z-Math.cos(th)*(v.spec.hitch?v.spec.hitch:2),th);t.x=f.x;t.z=f.z;t.th=f.th;}});
+      if(V===v){P.x=x;P.z=z;}
+      if(!quiet)toast(r<0.1?'Le véhicule n\'est pas coincé':`${v.spec.name} replacé à ${Math.round(r)} m`);
+      return true;}
+  }
+  if(!quiet)toast('Aucun endroit libre trouvé autour');return false;
+}
+// Bouton 🛟 : ton véhicule (ou le plus proche à moins de 15 m)
+function rescueMine(){
+  let v=S.mode==='vtt'?V:null;
+  if(!v){let bd=15;vehicles.forEach(o=>{if(o.spec.boat||o.driver&&o.driver!==ME.id)return;const d=Math.hypot(o.x-P.x,o.z-P.z);if(d<bd){bd=d;v=o;}});}
+  if(!v){toast('Aucun véhicule à moins de 15 m');return;}
+  rescueVehicle(v);
+}
+// Au chargement : un véhicule pris dans un bâtiment est replacé tout seul
+function rescueStuckAll(){vehicles.forEach(v=>{if(!v.spec.boat&&!vehSpotFree(v,v.x,v.z,v.th))rescueVehicle(v,true);});}

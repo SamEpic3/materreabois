@@ -1,7 +1,11 @@
 /* Magasin général et messages à l'écran */
 /* ---------- Magasin ---------- */
 function secs(x){return (Math.round(x*10)/10).toString().replace('.',',')+' s';}
-function openShop(){renderShop();$('shop').classList.remove('hidden');for(const k in keys)keys[k]=false;}
+// Deux comptoirs : le magasin général (nourriture : commandes, poisson, viande) et le concessionnaire (tout le reste)
+let SHOP_MODE='store';
+const STORE_SECS=['Commande en cours','Vendre tes poissons','Vendre ta viande'];
+function shopDoor(){return SHOP_MODE==='dealer'?DEALER_DOOR:STORE_DOOR;}
+function openShop(mode){SHOP_MODE=mode==='dealer'?'dealer':'store';renderShop();$('shop').classList.remove('hidden');for(const k in keys)keys[k]=false;}
 function closeShop(){$('shop').classList.add('hidden');}
 $('shopClose').addEventListener('click',closeShop);
 let thumbR=null;const thumbCache={};
@@ -43,6 +47,7 @@ function toolThumbModel(t){
 }
 function imgTag(src){return src?`<img class="thumb" src="${src}" alt="">`:'';}
 function renderShop(){
+  $('shopTitle').textContent=SHOP_MODE==='dealer'?'🚜 Concessionnaire':'🏪 Magasin général';
   $('shopMoney').textContent=`Ton argent : ${S.money} $`;
   const L=$('shopList');L.innerHTML='';
   const sec=txt=>{const h=document.createElement('div');h.className='shopSec';h.textContent=txt;L.appendChild(h);};
@@ -93,7 +98,7 @@ function renderShop(){
     d.innerHTML=imgTag(thumb('seau',()=>{const g=new T.Group();g.add(makePail());return g;}))+`<div class="txt"><b>Seau de collecte</b> — 15 $<p>Pour vider les chaudières et transporter l'eau d'érable ou le sirop (30 L).</p><p class="stats">Il te sera remis en main, ou posé devant la porte</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<15;
     b.onclick=()=>{if(S.money<15)return;S.money-=15;J.buy('un seau',15);
-      if(!P.pail&&!P.carry)setPail({kind:'eau',L:0});else addGroundPail(STORE_DOOR.x+(Math.random()-0.5)*1.5,STORE_DOOR.z+1.2,'eau',0);
+      if(!P.pail&&!P.carry)setPail({kind:'eau',L:0});else addGroundPail(shopDoor().x+(Math.random()-0.5)*1.5,shopDoor().z+1.2,'eau',0);
       toast('Seau acheté');renderShop();};
     d.appendChild(b);L.appendChild(d);
   }
@@ -127,3 +132,17 @@ function renderShop(){
 /* ---------- Messages ---------- */
 let toastTimer=0;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1800);}
+
+// Garde seulement les rayons de ce comptoir
+const _renderShopAll=renderShop;
+renderShop=function(){
+  _renderShopAll();
+  const L=$('shopList');let keep=true,any=false;
+  [...L.children].forEach(el=>{
+    if(el.classList.contains('shopSec')){const inStore=STORE_SECS.includes(el.textContent);keep=SHOP_MODE==='dealer'?!inStore:inStore;}
+    if(!keep)el.remove();else any=true;
+  });
+  if(SHOP_MODE==='store'){const d=document.createElement('div');d.className='item';
+    d.innerHTML='<div class="thumb emoji">🛒</div><div class="txt"><b>Épicerie</b><p>Bientôt : des articles d\'épicerie et d\'autres articles généraux. Pour les outils, les véhicules, la chasse et les constructions, va au concessionnaire, de l\'autre côté de la rue.</p></div>';
+    L.appendChild(d);}
+};

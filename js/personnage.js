@@ -212,7 +212,7 @@ const fpTool=(()=>{
   return {g,arm,tools};
 })();
 function updateFpTool(){
-  const show=camMode==='fp'&&S.mode==='foot'&&TOOL&&TOOL.kind!=='plant'&&!P.carry&&!P.pail;
+  const show=camMode==='fp'&&!SCOPE&&S.mode==='foot'&&TOOL&&TOOL.kind!=='plant'&&!P.carry&&!P.pail;
   fpTool.g.visible=!!show;if(!show)return;
   for(const k in fpTool.tools)fpTool.tools[k].visible=k===TOOL.kind;
   if(TOOL.kind==='axe'){fpTool.tools.axe.scale.setScalar(TOOL.id==='hachette'?0.78:1);axeColors(fpTool.tools.axe,TOOL.id);}

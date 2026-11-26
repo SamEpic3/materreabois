@@ -74,7 +74,8 @@ function loadGame(given){
   S.drops.slice().forEach(removeDrop);(d.drops||[]).forEach(o=>dropItem(o.it,o.x,o.z,o.id));
   const same=d.sig===WORLD_SIG;
   if(same){
-    (d.trees||[]).forEach(([i,f,x])=>{const t=treeList[i];if(!t)return;if(f){hideTree(t);if(x)t.stumpGone=true;else makeStump(t);}else t.work=x;});
+    (d.trees||[]).forEach(([i,f,x])=>{const t=treeList[i];if(!t||t.cleared)return;   // terrain dégagé (village, camp…) : pas de souche qui revient
+      if(f){hideTree(t);if(x)t.stumpGone=true;else makeStump(t);}else t.work=x;});
     (d.campStumps||[]).forEach(([i,f,w])=>{const s=campStumps[i];if(!s)return;if(f)removeStump(s,true);else s.work=w;});
   }
   (d.extraStumps||[]).forEach(o=>{const st=makeStump({id:o.id,x:o.x,z:o.z,y:H(o.x,o.z),s:o.s,type:o.type,planted:true});st.work=o.work||0;});
@@ -120,6 +121,7 @@ function beginWorld(d){
   started=true;
   const r=loadGame(d);saveOff=false;
   applyCamMode('tp');            // 3e personne par défaut
+  if(leadsWorld())rescueStuckAll();
   if(r){
     camT.set(P.x,H(P.x,P.z),P.z);
     const bits=[];

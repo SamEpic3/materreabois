@@ -47,7 +47,8 @@ function context(){
   const extra=(!P.carry&&!P.pail)?footExtras():null;
   if(P.pail){const r=pailContext();act=r.act;act2=r.act2;info=r.info||'';}
   else if(!P.carry&&nearestDrop()){const dr=nearestDrop();act={label:`Ramasser : ${itemLabel(dr.it)}`,fn:()=>pickUpDrop(dr)};}
-  else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:openShop};
+  else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:()=>openShop('store')};
+  else if(!P.carry&&Math.hypot(P.x-DEALER_DOOR.x,P.z-DEALER_DOOR.z)<3.2)act={label:'Entrer chez le concessionnaire',fn:()=>openShop('dealer')};
   else if(!P.carry&&!P.pail&&landContext()){const r=landContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&boatContext()){const r=boatContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&huntContext()){const r=huntContext();act=r.act||null;act2=r.act2||null;info=r.info||'';}
@@ -127,6 +128,7 @@ function dropLog(){
 }
 let yardCount=0;
 function addYardLog(c,i){
+  return;   // le bois vendu part à la scierie : plus de pile derrière
   const stack=Math.floor(i/15)%4,j=i%15,layer=Math.floor(j/5),slot=j%5;
   if(!yardStackCols[stack]){const p=vpos(-25,20-(stack*2.9-4.3));yardStackCols[stack]=addCol(p.x,p.z,1.3);}
   const l=makePieceMesh(c);l.rotation.y=Math.PI/2;l.position.set(stack*2.9-4.3,0.22+layer*0.4,(slot-2)*0.46+(layer%2)*0.1);yardStack.add(l);
