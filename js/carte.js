@@ -39,7 +39,9 @@ function bakeMapImage(){
 
 // ---- Vue (centre en mètres + échelle en pixels par mètre) ----
 const mapCv=$('carteCv'),mctx=mapCv.getContext('2d');
-function mapSize(){const r=mapCv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);if(mapCv.width!==Math.round(r.width*d)||mapCv.height!==Math.round(r.height*d)){mapCv.width=Math.round(r.width*d);mapCv.height=Math.round(r.height*d);}return {w:r.width,h:r.height,d};}
+function mapSize(){const r={width:mapCv.clientWidth||viewW(),height:mapCv.clientHeight||viewH()},d=Math.min(window.devicePixelRatio||1,2);if(mapCv.width!==Math.round(r.width*d)||mapCv.height!==Math.round(r.height*d)){mapCv.width=Math.round(r.width*d);mapCv.height=Math.round(r.height*d);}return {w:r.width,h:r.height,d};}
+// Coordonnées du doigt dans la carte (le jeu peut être tourné de 90° sur iPhone)
+function mapPt(e){const v=toView(e.clientX,e.clientY);return {x:v.x,y:v.y};}
 function mapFit(){const {w,h}=mapSize();CARTE.fit=Math.min(w/MAP_W,h/MAP_H)*0.96;}
 function clampView(){const {w,h}=mapSize();const s=CARTE.s=clamp(CARTE.s,CARTE.fit,Math.max(CARTE.fit*10,9));
   const hx=w/2/s,hz=h/2/s,mx=(WB.x0+WB.x1)/2,mz=(WB.z0+WB.z1)/2;
@@ -118,7 +120,7 @@ function openMap(){
   $('carte').classList.remove('hidden');CARTE.open=true;
   if(performance.now()-CARTE.imgT>20000){$('carteWait').classList.remove('hidden');
     requestAnimationFrame(()=>requestAnimationFrame(()=>{try{bakeMapImage();}catch(e){console.warn(e);}$('carteWait').classList.add('hidden');}));}
-  mapFit();CARTE.s=CARTE.fit;centerOnMe();mapLoop();
+  mapFit();{const {w,h}=mapSize();CARTE.s=CARTE.fit*(w>h*1.3?1.8:1);}centerOnMe();mapLoop();   // écran large : on part un peu zoomé sur soi
 }
 function closeMap(){CARTE.open=false;cancelAnimationFrame(CARTE.raf);$('carte').classList.add('hidden');CARTE.ptrs.clear();CARTE.pinch=null;CARTE.drag=null;}
 $('btnMap').addEventListener('click',openMap);
@@ -127,13 +129,13 @@ $('carteIn').addEventListener('click',()=>{const {w,h}=mapSize();zoomAt(1.6,w/2,
 $('carteOut').addEventListener('click',()=>{const {w,h}=mapSize();zoomAt(1/1.6,w/2,h/2);});
 $('carteMe').addEventListener('click',()=>{CARTE.s=Math.max(CARTE.s,CARTE.fit*3.5);clampView();centerOnMe();});
 $('carteAll').addEventListener('click',()=>{mapFit();CARTE.s=CARTE.fit;clampView();});
-window.addEventListener('resize',()=>{if(CARTE.open){mapFit();clampView();}});
-mapCv.addEventListener('wheel',e=>{e.preventDefault();const r=mapCv.getBoundingClientRect();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
-mapCv.addEventListener('pointerdown',e=>{mapCv.setPointerCapture(e.pointerId);CARTE.ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(CARTE.ptrs.size===2){const [a,b]=[...CARTE.ptrs.values()];CARTE.pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};CARTE.drag=null;}else CARTE.drag={x:e.clientX,y:e.clientY};});
-mapCv.addEventListener('pointermove',e=>{if(!CARTE.ptrs.has(e.pointerId))return;CARTE.ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(CARTE.pinch&&CARTE.ptrs.size===2){const [a,b]=[...CARTE.ptrs.values()],dd=Math.hypot(a.x-b.x,a.y-b.y),r=mapCv.getBoundingClientRect();
-    zoomAt(dd/Math.max(CARTE.pinch.d,1),(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);CARTE.pinch.d=dd;}
-  else if(CARTE.drag){CARTE.cx-=(e.clientX-CARTE.drag.x)/CARTE.s;CARTE.cz-=(e.clientY-CARTE.drag.y)/CARTE.s;CARTE.drag={x:e.clientX,y:e.clientY};clampView();}});
+window.addEventListener('resize',()=>setTimeout(()=>{if(CARTE.open){mapFit();clampView();}},250));
+mapCv.addEventListener('wheel',e=>{e.preventDefault();const q=mapPt(e);zoomAt(Math.exp(-e.deltaY*0.0015),q.x,q.y);},{passive:false});
+mapCv.addEventListener('pointerdown',e=>{mapCv.setPointerCapture(e.pointerId);CARTE.ptrs.set(e.pointerId,mapPt(e));
+  if(CARTE.ptrs.size===2){const [a,b]=[...CARTE.ptrs.values()];CARTE.pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};CARTE.drag=null;}else CARTE.drag=mapPt(e);});
+mapCv.addEventListener('pointermove',e=>{if(!CARTE.ptrs.has(e.pointerId))return;CARTE.ptrs.set(e.pointerId,mapPt(e));
+  if(CARTE.pinch&&CARTE.ptrs.size===2){const [a,b]=[...CARTE.ptrs.values()],dd=Math.hypot(a.x-b.x,a.y-b.y);
+    zoomAt(dd/Math.max(CARTE.pinch.d,1),(a.x+b.x)/2,(a.y+b.y)/2);CARTE.pinch.d=dd;}
+  else if(CARTE.drag){const q=mapPt(e);CARTE.cx-=(q.x-CARTE.drag.x)/CARTE.s;CARTE.cz-=(q.y-CARTE.drag.y)/CARTE.s;CARTE.drag=q;clampView();}});
 const _mapUp=e=>{CARTE.ptrs.delete(e.pointerId);if(CARTE.ptrs.size<2)CARTE.pinch=null;if(CARTE.ptrs.size===1){const p=[...CARTE.ptrs.values()][0];CARTE.drag={x:p.x,y:p.y};}else if(!CARTE.ptrs.size)CARTE.drag=null;};
 mapCv.addEventListener('pointerup',_mapUp);mapCv.addEventListener('pointercancel',_mapUp);
