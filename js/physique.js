@@ -93,16 +93,17 @@ function vehSpotFree(v,x,z,th){
   const list=vehCircles(v,x,z,th).map(c=>[c[0],c[1],c[2]+0.25]);
   return !circlesHit(list,bodyCircles(v));
 }
-function rescueVehicle(v,quiet){
+function rescueVehicle(v,quiet,force){
   if(!v||v.spec.boat)return false;
-  for(let r=0;r<=24;r+=0.75)for(let k=0,n=Math.max(1,Math.round(r*3));k<n;k++){
+  // force : même s'il n'est pas coincé, on le déplace dans un endroit libre tout près (au moins 3 m)
+  for(let r=force?3:0;r<=24;r+=0.75)for(let k=0,n=Math.max(1,Math.round(r*3));k<n;k++){
     const a=k/n*Math.PI*2,x=v.x+Math.cos(a)*r,z=v.z+Math.sin(a)*r;
     for(const dth of [0,Math.PI/2,-Math.PI/2,Math.PI]){const th=v.th+dth;
       if(!vehSpotFree(v,x,z,th))continue;
       const dx=x-v.x,dz=z-v.z;v.x=x;v.z=z;v.th=th;v.v=0;
       trailers.forEach(t=>{if(t.hitch===v){const f=trailerFollow(t,x-Math.sin(th)*(v.spec.hitch?v.spec.hitch:2),z-Math.cos(th)*(v.spec.hitch?v.spec.hitch:2),th);t.x=f.x;t.z=f.z;t.th=f.th;}});
       if(V===v){P.x=x;P.z=z;}
-      if(!quiet)toast(r<0.1?'Le véhicule n\'est pas coincé':`${v.spec.name} replacé à ${Math.round(r)} m`);
+      if(!quiet)toast(r<0.1?'Le véhicule n\'est pas coincé':`${v.spec.name} replacé à ${Math.round(r)} m`);   // (r=0 : rien à faire)
       return true;}
   }
   if(!quiet)toast('Aucun endroit libre trouvé autour');return false;
@@ -122,9 +123,9 @@ function hitchRoom(t,x,z,th){
   const others=[];vehicles.forEach(v=>others.push(...vehCircles(v,v.x,v.z,v.th)));trailers.forEach(o=>{if(o!==t)others.push(...trCircles(o,o.x,o.z,o.th));});
   return !circlesHit(list,others);
 }
-function rescueTrailer(t,quiet){
+function rescueTrailer(t,quiet,force){
   if(t.hitch){if(!quiet)toast('Dételle la remorque ou replace le véhicule qui la tire');return false;}
-  for(let r=0;r<=24;r+=0.75)for(let k=0,n=Math.max(1,Math.round(r*3));k<n;k++){
+  for(let r=force?3:0;r<=24;r+=0.75)for(let k=0,n=Math.max(1,Math.round(r*3));k<n;k++){
     const a=k/n*Math.PI*2,x=t.x+Math.cos(a)*r,z=t.z+Math.sin(a)*r;
     for(const dth of [0,Math.PI/2,-Math.PI/2,Math.PI]){const th=t.th+dth;
       if(!trSpotFree(t,x,z,th)||!hitchRoom(t,x,z,th))continue;
@@ -136,12 +137,13 @@ function rescueTrailer(t,quiet){
 }
 // Bouton 🛟 : ton véhicule, sinon le véhicule ou la remorque dételée le plus proche (moins de 15 m)
 function rescueMine(){
-  if(S.mode==='vtt'&&V){rescueVehicle(V);return;}
+  if(S.mode==='vtt'&&V){rescueVehicle(V,false,true);return;}
   let best=null,bd=15,kind='';
   vehicles.forEach(o=>{if(o.spec.boat||o.driver&&o.driver!==ME.id)return;const d=Math.hypot(o.x-P.x,o.z-P.z);if(d<bd){bd=d;best=o;kind='v';}});
   trailers.forEach(o=>{if(o.hitch)return;const d=Math.hypot(o.x-P.x,o.z-P.z);if(d<bd){bd=d;best=o;kind='t';}});
   if(!best){toast('Aucun véhicule ni remorque à moins de 15 m');return;}
-  if(kind==='v')rescueVehicle(best);else rescueTrailer(best);
+  // Toujours déplacé, même s'il n'est pas coincé (pratique pour le remettre dans un meilleur angle)
+  if(kind==='v')rescueVehicle(best,false,true);else rescueTrailer(best,false,true);
 }
 // Au chargement : véhicules et remorques pris dans un bâtiment sont replacés tout seuls
 function rescueStuckAll(){
