@@ -181,14 +181,15 @@ function updateMouseLock(){
 
 /* ---------- Lunette de la carabine : clic droit (maintenu) ou bouton 🔭 ; zoom ×4 ---------- */
 let SCOPE=false;
-function canScope(){return camMode!=='iso'&&S.mode==='foot'&&TOOL&&TOOL.kind==='rifle'&&!P.carry&&!P.pail;}
+function canScope(){return camMode!=='iso'&&S.mode==='foot'&&TOOL&&(TOOL.kind==='rifle'||TOOL.kind==='binoc')&&!P.carry&&!P.pail;}
 function setScope(on){
   on=!!on&&canScope();if(on===SCOPE)return;
   SCOPE=on;
   if(on&&camMode==='tp')camPitch=0;
   pcam.fov=on?15:60;pcam.updateProjectionMatrix();scopeTool=TOOL;
   $('cross').classList.toggle('scoped',on);
-  $('scope').classList.toggle('hidden',!on);$('btnScope').classList.toggle('on',on);
+  const bin=on&&TOOL&&TOOL.kind==='binoc';
+  $('scope').classList.toggle('hidden',!on||bin);$('binoc').classList.toggle('hidden',!bin);$('btnScope').classList.toggle('on',on);
   player.g.visible=!on&&camMode!=='fp';
 }
 $('btnScope').addEventListener('click',()=>setScope(!SCOPE));

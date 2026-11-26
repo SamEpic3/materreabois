@@ -65,6 +65,12 @@ function makeBowModel(){
   g.add(new T.Mesh(new T.CylinderGeometry(0.003,0.003,tip*2,4).translate(0,0,back),mat(0xe8e0cc)));
   return g;
 }
+function makeBinocModel(){
+  const g=new T.Group(),blk=new T.MeshPhongMaterial({color:0x242628,shininess:50}),gl=new T.MeshPhongMaterial({color:0x4a6a8a,shininess:100});
+  g.add(new T.Mesh(mergeGeos([-0.045,0.045].map(x=>new T.CylinderGeometry(0.03,0.034,0.14,12).rotateX(Math.PI/2).translate(x,0,0.05)).concat([new T.BoxGeometry(0.05,0.03,0.06).translate(0,0,0.04)])),blk));
+  g.add(new T.Mesh(mergeGeos([-0.045,0.045].map(x=>new T.CircleGeometry(0.028,12).translate(x,0,0.121))),gl));
+  return g;
+}
 function makeKnifeModel(){
   const g=new T.Group();
   g.add(new T.Mesh(new T.BoxGeometry(0.03,0.03,0.12).translate(0,0,-0.02),mat(0x5a3a22)));
@@ -76,23 +82,26 @@ function makeKnifeModel(){
   const r=makeRifleModel();r.position.set(0,-0.66,0.05);r.rotation.x=-0.15;player.armR.add(r);player.rifle=r;
   const b=makeBowModel();b.position.set(0,-0.66,0.04);player.armR.add(b);player.bow=b;
   const k=makeKnifeModel();k.position.set(0,-0.68,0.03);player.armR.add(k);player.knife=k;
-  [r,b,k].forEach(m=>{m.visible=false;shadows(m);});
+  const bn=makeBinocModel();bn.position.set(0,-0.7,0.06);player.armR.add(bn);player.binoc=bn;
+  [r,b,k,bn].forEach(m=>{m.visible=false;shadows(m);});
   const fr=makeRifleModel();fr.rotation.y=Math.PI;fr.position.set(-0.05,0.02,-0.05);
   const fb=makeBowModel();fb.rotation.y=Math.PI;fb.position.set(-0.12,0.05,-0.2);fb.rotation.z=0.25;
   const fk=makeKnifeModel();fk.rotation.y=Math.PI;fk.position.set(0,0,-0.12);
-  Object.assign(fpTool.tools,{rifle:fr,bow:fb,knife:fk});
-  [fr,fb,fk].forEach(m=>{m.visible=false;fpTool.arm.add(m);m.traverse(o=>{if(o.isMesh)o.castShadow=false;});});
+  const fn=makeBinocModel();fn.rotation.y=Math.PI;fn.position.set(-0.05,0.02,-0.1);fn.scale.setScalar(1.4);
+  Object.assign(fpTool.tools,{rifle:fr,bow:fb,knife:fk,binoc:fn});
+  [fr,fb,fk,fn].forEach(m=>{m.visible=false;fpTool.arm.add(m);m.traverse(o=>{if(o.isMesh)o.castShadow=false;});});
 }
 const _updToolVisH=updateToolVisual;
 updateToolVisual=function(){
   _updToolVisH();
   const show=S.mode==='foot'&&!P.carry&&!P.pail,k=TOOL?TOOL.kind:null;
-  player.rifle.visible=show&&k==='rifle';player.bow.visible=show&&k==='bow';player.knife.visible=show&&k==='knife';
+  player.rifle.visible=show&&k==='rifle';player.bow.visible=show&&k==='bow';player.knife.visible=show&&k==='knife';player.binoc.visible=show&&k==='binoc';
 };
 const _thumbH=toolThumbModel;
 toolThumbModel=function(t){
   if(t.kind==='rifle'){const g=new T.Group(),m=makeRifleModel();m.rotation.y=Math.PI/2;g.add(m);return g;}
   if(t.kind==='bow'){const g=new T.Group(),m=makeBowModel();m.rotation.y=-Math.PI/2;g.add(m);return g;}
+  if(t.kind==='binoc'){const g=new T.Group(),m=makeBinocModel();m.scale.setScalar(4);m.rotation.set(0.6,0.5,0);g.add(m);return g;}
   if(t.kind==='knife'){const g=new T.Group(),m=makeKnifeModel();m.rotation.y=Math.PI/2;g.add(m);g.rotation.z=0.5;return g;}
   return _thumbH(t);
 };
@@ -230,6 +239,7 @@ function huntContext(){
   if(it&&it.id==='collet'){const t=nearestTree(1.6);
     return t?{act:{label:'Poser un collet au pied de l\'arbre',fn:()=>setSnare(t)}}:{info:'Approche-toi d\'un arbre en forêt pour poser le collet'};}
   if(TOOL&&TOOL.kind==='knife')return {info:'Le couteau sert à dépecer le gibier'};
+  if(TOOL&&TOOL.kind==='binoc')return {info:SCOPE?'Jumelles ×4 · clic droit (ou 🔭) pour arrêter':'Clic droit (ou 🔭) pour regarder aux jumelles'};
   return null;
 }
 

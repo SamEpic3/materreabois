@@ -170,3 +170,4 @@ body.touch #order{top:calc(170px + var(--pad-t))}
 #btnScope.on{background:rgba(200,129,31,.9)}
 @media (pointer:fine){#btnScope{display:none}}
 #cross.scoped{display:none}
+#binoc{position:fixed;inset:0;pointer-events:none;z-index:4}#binoc svg{width:100%;height:100%;display:block}

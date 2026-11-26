@@ -69,7 +69,8 @@ function detailH(x,z){return 0.32*Math.sin(x*0.33)*Math.cos(z*0.29)+0.15*Math.si
 const CAMP_H=baseH(CAMP.x,CAMP.z),VIL_H=baseH(VILLAGE.x,VILLAGE.z);
 /* ---------- Le mont du Loup (colline avec belvédère) et la rivière (territoire public) ---------- */
 const HILL={x:75,z:-140,r:40,h:22};
-function hillH(x,z){const d=Math.hypot(x-HILL.x,z-HILL.z);return d<HILL.r?HILL.h*(0.5+0.5*Math.cos(Math.PI*d/HILL.r)):0;}
+// petit plateau plat au sommet (5 m) pour que le belvédère et son panneau reposent sur le sol
+function hillH(x,z){const d=Math.max(0,Math.hypot(x-HILL.x,z-HILL.z)-5);return d<HILL.r-5?HILL.h*(0.5+0.5*Math.cos(Math.PI*d/(HILL.r-5))):0;}
 const RIVER=[[128,-182],[122,-158],[129,-134],[119,-110],[123,-86],[115,-62],[113,-36],[113,-22]];
 const RIVER_L=(()=>{const a=[0];for(let i=1;i<RIVER.length;i++)a.push(a[i-1]+Math.hypot(RIVER[i][0]-RIVER[i-1][0],RIVER[i][1]-RIVER[i-1][1]));return a;})();
 function riverInfo(x,z){
@@ -439,7 +440,8 @@ const VIL_LAMP=new T.MeshBasicMaterial({color:0x6a6450});       // lanternes de 
 const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,214,140,1)');g.addColorStop(0.5,'rgba(255,190,110,0.35)');g.addColorStop(1,'rgba(255,170,90,0)');c.fillStyle=g;c.fillRect(0,0,w,h);}),transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending});
 {
   const VMC={},vmat=c=>VMC[c]||(VMC[c]=mat(c));
-  const textSign=(txt,w,h,bg,fg,font)=>{const t=canvasTex(512,Math.max(32,Math.round(512*h/w)),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=Math.max(3,H*0.06);c.strokeRect(H*0.08,H*0.08,W-H*0.16,H-H*0.16);c.fillStyle=fg;c.font=`bold ${Math.round(H*(font||0.46))}px Georgia,serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(txt,W/2,H/2+2);});return new T.MeshBasicMaterial({map:t});};
+  // (le texte rapetisse au besoin pour toujours tenir dans l'affiche)
+  const textSign=(txt,w,h,bg,fg,font)=>{const CW=w/h>8?1024:512;const t=canvasTex(CW,Math.max(32,Math.round(CW*h/w)),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=Math.max(3,H*0.06);c.strokeRect(H*0.08,H*0.08,W-H*0.16,H-H*0.16);c.fillStyle=fg;let fs=Math.round(H*(font||0.46));c.font=`bold ${fs}px Georgia,serif`;const tw=c.measureText(txt).width,mx=W-H*0.6;if(tw>mx){fs=Math.floor(fs*mx/tw);c.font=`bold ${fs}px Georgia,serif`;}c.textAlign='center';c.textBaseline='middle';c.fillText(txt,W/2,H/2+2);});return new T.MeshBasicMaterial({map:t});};
   // r : rotation en plus (π/2 = façade vers +lx, -π/2 = façade vers -lx, c.-à-d. vers la rue)
   const placeB=(g,lx,lz,r=0)=>{const p=vpos(lx,lz);g.position.set(p.x,VIL_H,p.z);g.rotation.y=VROT+r;bakeStatic(g);shadows(g);g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});scene.add(g);return p;};
   const colL=(lx,lz,r)=>{const p=vpos(lx,lz);addCol(p.x,p.z,r);};
@@ -641,7 +643,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     roofTex(g,W,D,Hh+0.5,steel,0.2,0.4);
     // bandeau rouge et enseigne
     g.add(new T.Mesh(new T.BoxGeometry(W+0.2,0.9,0.2).translate(0,Hh-0.55,D/2+0.1),red));
-    const sg=new T.Mesh(new T.PlaneGeometry(12,0.8),textSign('CONCESSIONNAIRE · ÉQUIPEMENT FORESTIER',12,0.8,'#b3241f','#ffffff',0.55));sg.position.set(-1.5,Hh-0.55,D/2+0.21);g.add(sg);
+    const sg=new T.Mesh(new T.PlaneGeometry(12,0.8),textSign('ÉQUIPEMENT FORESTIER · CHASSE ET PÊCHE',12,0.8,'#b3241f','#ffffff',0.6));sg.position.set(-1.5,Hh-0.55,D/2+0.21);g.add(sg);
     // porte d'entrée vitrée (porte d'homme), entre la salle de montre et la porte de garage
     {const dd=doorGeo(1.0,2.2,2.45,D/2+0.04);g.add(new T.Mesh(dd.door,glassM),new T.Mesh(dd.frame,vmat(0x2b2f33)),new T.Mesh(dd.knob,gold));
      const ds=new T.Mesh(new T.PlaneGeometry(1.1,0.3),textSign('ENTRÉE',1.1,0.3,'#2b2f33','#ffffff',0.6));ds.position.set(2.45,2.55,D/2+0.1);g.add(ds);}
@@ -1024,5 +1026,4 @@ function updateCulling(f){
   g.position.set(HILL.x,H(HILL.x,HILL.z),HILL.z);shadows(g);scene.add(g);
   // Garde-corps : on ne tombe pas du belvédère
   for(let k=-w/2;k<=w/2;k+=0.5){addCol(HILL.x+k,HILL.z-d/2,0.12);addCol(HILL.x-w/2,HILL.z+k,0.12);addCol(HILL.x+w/2,HILL.z+k,0.12);}
-  label('Belvédère',HILL.x,B.y+3,HILL.z);
 }
