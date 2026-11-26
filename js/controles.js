@@ -7,6 +7,7 @@ addEventListener('keydown',e=>{
   if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;   // on écrit (nom, code, clavardage)
   if((e.code==='Enter'||e.code==='KeyT')&&!e.repeat&&typeof NET!=='undefined'&&NET.on&&NET.ready&&$('help').classList.contains('hidden')&&!CHAT.open){e.preventDefault();openChat();return;}
   if(!$('look').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'){closeLook();e.preventDefault();}return;}
+  if(typeof CARTE!=='undefined'&&CARTE.open){if(e.code==='Escape'||e.code==='KeyK'||e.code==='KeyE'){closeMap();e.preventDefault();}return;}
   if(invOpen()){if(e.code==='Escape'||e.code==='KeyI'||e.code==='Tab'||e.code==='KeyE'){closeInv();e.preventDefault();}return;}
   if(!$('shop').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE')closeShop();return;}
   if(!$('journal').classList.contains('hidden')){if(e.code==='Escape'||e.code==='KeyE'||e.code==='Space'||e.code==='KeyJ')closeJournal();e.preventDefault();return;}
@@ -23,6 +24,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyC')rotateCam(1);
   if(e.code==='KeyV'&&!e.repeat)toggleCam();
   if(e.code==='KeyJ'&&!e.repeat)openJournal();
+  if(e.code==='KeyK'&&!e.repeat)openMap();
   if(e.code==='KeyM'&&!e.repeat)setSound(!AU.on);
   if((e.code==='KeyI'||e.code==='Tab')&&!e.repeat){e.preventDefault();openInv();}
   if(e.code==='KeyQ'&&!e.repeat)dropHeld();
@@ -148,7 +150,7 @@ $('btnMenu').addEventListener('click',()=>$('camBtns').classList.toggle('open'))
 const FINE_PTR=matchMedia('(pointer:fine)').matches&&!matchMedia('(pointer:coarse)').matches;
 let cursorFree=false,lockTry=0;
 function mouseLocked(){return document.pointerLockElement===canvas;}
-function uiOpen(){return ['look','shop','journal','proj','board','help'].some(id=>{const el=$(id);return el&&!el.classList.contains('hidden');})||invOpen()||(typeof CHAT!=='undefined'&&CHAT.open);}
+function uiOpen(){return ['look','shop','journal','proj','board','help','carte'].some(id=>{const el=$(id);return el&&!el.classList.contains('hidden');})||invOpen()||(typeof CHAT!=='undefined'&&CHAT.open);}
 function wantLock(){return FINE_PTR&&started&&(camMode==='fp'||SCOPE)&&!cursorFree&&!uiOpen()&&S.mode!=='place'&&S.mode!=='pick';}
 function tryLock(){if(!wantLock()||mouseLocked()||performance.now()-lockTry<600)return;lockTry=performance.now();try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(_){}}
 function toggleCursor(){

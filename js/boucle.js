@@ -68,7 +68,7 @@ function frame(){
   vehicles.forEach(v=>{const gl=v.mesh.g.userData.glass;if(gl){const hide=camMode==='fp'&&RVc===v;gl.forEach(m=>m.visible=!hide);}});
   if(sky.visible){sky.position.copy(pcam.position);skyMat.uniforms.uTime.value=S.time;}
   updateCulling(camT);
-  renderer.render(scene,activeCam);
+  if(!(typeof CARTE!=='undefined'&&CARTE.open))renderer.render(scene,activeCam);   // la carte couvre tout l'écran
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

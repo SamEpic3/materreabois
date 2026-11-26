@@ -37,6 +37,14 @@
   #help ul{padding-left:18px;margin:4px 0}
   #help kbd{background:#e3d6bb;border-radius:4px;padding:0 5px;font-family:inherit;font-weight:600}
   #help button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:12px;background:#3f7a3a;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+  #carte{position:fixed;inset:0;background:#3d5230;z-index:60;touch-action:none}
+  #carteCv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #carte .ctop{position:absolute;top:calc(8px + env(safe-area-inset-top));left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+  #carte .ctop b{background:rgba(20,24,18,.72);color:#fff;padding:6px 12px;border-radius:10px;font-size:16px}
+  #carte .ctop .xclose{position:static;pointer-events:auto;width:42px;height:42px;border-radius:50%;border:0;background:rgba(20,24,18,.78);color:#fff;font-size:20px;cursor:pointer}
+  #carte .cbtns{position:absolute;right:10px;bottom:calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+  #carte .cbtns button{width:46px;height:46px;border-radius:12px;border:0;background:rgba(20,24,18,.78);color:#fff;font-size:22px;cursor:pointer}
+  #carteWait{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(20,24,18,.8);color:#fff;padding:10px 16px;border-radius:10px}
   #shop,#board,#proj,#journal{position:fixed;inset:0;background:rgba(20,18,14,.55);display:flex;align-items:center;justify-content:center;padding:16px}
   #shop .card,#board .card,#proj .card,#journal .card{background:#f6efe0;color:#2b2418;border-radius:16px;max-width:520px;width:100%;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-height:88vh;overflow:auto}
   #shop h1,#board h1,#proj h1,#journal h1{margin:0;font-size:21px}

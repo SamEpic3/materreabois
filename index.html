@@ -37,6 +37,7 @@
   <button class="sbtn" id="btnCam" title="Vue rapprochée (V)">🎥</button>
   <button class="sbtn hidden" id="btnChat" title="Clavarder (Entrée ou T)">💬</button>
   <button class="sbtn hidden" id="btnOrder" title="Commande en cours">📋</button>
+  <button class="sbtn" id="btnMap" title="Carte (K)">🗺️</button>
   <button class="sbtn" id="btnInv" title="Inventaire (I)">🎒</button>
   <button class="sbtn more" id="btnCash" title="Ajouter 10 000 $ (pour tester)">💵</button>
   <button class="sbtn more" id="btnSound" title="Son (M)">🔊</button>
@@ -111,6 +112,7 @@
       <li><b>Chaloupe :</b> vendue sur sa remorque. Recule la remorque au bord du lac pour la mettre à l'eau, embarque (<kbd>E</kbd>), rame avec <kbd>W</kbd>/<kbd>S</kbd> et tourne avec <kbd>A</kbd>/<kbd>D</kbd>. Deux places, et on peut y pêcher.</li>
       <li><b>Nouvelles terres :</b> l'érablière au nord et la terre à bois du Sud sont à vendre (panneau à la barrière). Le mont du Loup et la rivière sont sur le territoire public : on s'y promène et on y pêche, mais on n'y bûche pas.</li>
       <li><b>Apparence :</b> dans l'inventaire (🎒), le bouton 👕 change ta chemise, ton chapeau et ta barbe.</li>
+      <li><b>Carte (🗺️ ou <kbd>K</kbd>) :</b> tout le territoire vu du ciel, avec toi, les autres joueurs et les véhicules. Glisse pour te déplacer, pince ou roule la molette pour zoomer.</li>
       <li><b>Journal (📜 ou <kbd>J</kbd>) :</b> tout ce que chacun fait sur la terre y est noté.</li>
       <li><b>Clavardage (💬, <kbd>Entrée</kbd> ou <kbd>T</kbd>) :</b> en partie à plusieurs, écris à ton partenaire. Son message apparaît aussi au-dessus de sa tête.</li>
       <li><b>Vendre un véhicule :</b> amène-le dans le cercle vert « Vente de véhicules » près du magasin, arrête-toi et appuie deux fois sur le bouton de vente. Une remorque doit être vide.</li>
@@ -141,6 +143,12 @@
     <div class="money" id="boardSub"></div>
     <div id="boardList"></div>
   </div>
+</div>
+<div id="carte" class="hidden">
+  <canvas id="carteCv"></canvas>
+  <div class="ctop"><b>🗺️ Carte</b><button id="carteClose" class="xclose" title="Fermer (K)" aria-label="Fermer">✕</button></div>
+  <div class="cbtns"><button id="carteMe" title="Centrer sur moi">⌖</button><button id="carteAll" title="Tout le territoire">⛶</button><button id="carteIn" title="Zoom avant">＋</button><button id="carteOut" title="Zoom arrière">－</button></div>
+  <div id="carteWait" class="hidden">Préparation de la carte…</div>
 </div>
 <div id="journal" class="hidden">
   <div class="card">
@@ -202,6 +210,7 @@
 <script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>
 <script src="js/reseau.js"></script>
+<script src="js/carte.js"></script>
 <script src="js/boucle.js"></script>
 <script src="js/pwa.js"></script>
 </body>
