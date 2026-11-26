@@ -29,13 +29,24 @@ function itemLabel(it){const d=itemDef(it.id);return it.n>1?`${d.name} ×${it.n}
 function fishInfo(it){if(!it.w||!it.w.length)return '';const t=it.w.reduce((a,b)=>a+b,0);return it.w.length>1?`${it.w.length} poissons, ${kg(t)} en tout (le plus gros : ${kg(Math.max(...it.w))})`:`${kg(it.w[0])}`;}
 function kg(w){return (Math.round(w*100)/100).toString().replace('.',',')+' kg';}
 
+/* ----- Contenu d'un objet (seau, chaudière) : un objet qui contient quelque chose ne s'empile pas ----- */
+function cloneD(d){return d?JSON.parse(JSON.stringify(d)):undefined;}
+function canStack(a,b){return a.id===b.id&&!a.d&&!b.d;}
+// Y a-t-il assez de place pour cet objet (sans rien changer)?
+function invRoom(item){
+  const d=itemDef(item.id),n=item.n||1;let room=0;
+  for(let i=0;i<INV_N;i++){const s=INV[i];if(!s)room+=item.d?1:d.stack;else if(!item.d&&canStack(s,item))room+=Math.max(0,d.stack-s.n);}
+  return room>=n;
+}
+// Achat : refusé (avec un message) s'il n'y a pas de place
+function buyCheck(item){if(invRoom(item))return true;toast('🎒 Plus de place dans ton inventaire : libère une case avant d\'acheter');sfxKnock&&sfxKnock(P.x,P.z,0.2);return false;}
 /* ----- Ajouter, retirer ----- */
 // Ajoute dans les cases qui ont déjà le même objet, puis dans la première case libre (barre d'abord). Retourne ce qui reste.
 function invAdd(item){
-  const d=itemDef(item.id);let left={id:item.id,n:item.n||1,w:item.w?item.w.slice():undefined};
+  const d=itemDef(item.id);let left={id:item.id,n:item.n||1,w:item.w?item.w.slice():undefined,d:cloneD(item.d)};
   const take=(slot,k)=>{const n=Math.min(k,left.n);slot.n+=n;if(left.w){slot.w=(slot.w||[]).concat(left.w.splice(0,n));}left.n-=n;};
-  for(let i=0;i<INV_N&&left.n>0;i++){const s=INV[i];if(s&&s.id===item.id&&s.n<d.stack)take(s,d.stack-s.n);}
-  for(let i=0;i<INV_N&&left.n>0;i++){if(!INV[i]){INV[i]={id:item.id,n:0,w:left.w?[]:undefined};take(INV[i],d.stack);}}
+  if(!left.d)for(let i=0;i<INV_N&&left.n>0;i++){const s=INV[i];if(s&&canStack(s,left)&&s.n<d.stack)take(s,d.stack-s.n);}
+  for(let i=0;i<INV_N&&left.n>0;i++){if(!INV[i]){INV[i]={id:item.id,n:0,w:left.w?[]:undefined,d:cloneD(left.d)};take(INV[i],left.d?1:d.stack);}}
   syncTool();renderInv();
   return left.n>0?left:null;
 }
@@ -44,7 +55,7 @@ function giveItem(item){
   const left=invAdd(item);
   if(left){dropItem(left,P.x+Math.sin(P.rot)*0.8,P.z+Math.cos(P.rot)*0.8);toast('Inventaire plein : déposé par terre');}
 }
-function invTake(i,n){const s=INV[i];if(!s)return null;n=Math.min(n||s.n,s.n);const out={id:s.id,n,w:s.w?s.w.splice(0,n):undefined};s.n-=n;if(s.n<=0)INV[i]=null;syncTool();renderInv();return out;}
+function invTake(i,n){const s=INV[i];if(!s)return null;n=Math.min(n||s.n,s.n);const out={id:s.id,n,w:s.w?s.w.splice(0,n):undefined,d:cloneD(s.d)};s.n-=n;if(s.n<=0)INV[i]=null;syncTool();renderInv();return out;}
 function heldItem(){return INV[S.hot];}
 function invCount(id){return INV.reduce((a,s)=>a+(s&&s.id===id?s.n:0),0);}
 
@@ -116,7 +127,7 @@ function renderInv(){
 function placeAt(i){
   const c=INVC.item,s=INV[i];if(!c)return;
   if(!s){INV[i]=c;INVC.item=null;}
-  else if(s.id===c.id){const st=itemDef(s.id).stack,n=Math.min(st-s.n,c.n);s.n+=n;if(c.w)s.w=(s.w||[]).concat(c.w.splice(0,n));c.n-=n;if(c.n<=0)INVC.item=null;}
+  else if(canStack(s,c)){const st=itemDef(s.id).stack,n=Math.min(st-s.n,c.n);s.n+=n;if(c.w)s.w=(s.w||[]).concat(c.w.splice(0,n));c.n-=n;if(c.n<=0)INVC.item=null;}
   else{INV[i]=c;INVC.item=s;}
   syncTool();renderInv();
 }
@@ -163,7 +174,7 @@ function spawnDrop(dr){
 }
 function dropItem(it,x,z,id){
   if(!it||!it.n)return null;
-  const dr={id:id||uid(),it:{id:it.id,n:it.n,w:it.w?it.w.slice():undefined},x,z,t:Date.now()};
+  const dr={id:id||uid(),it:{id:it.id,n:it.n,w:it.w?it.w.slice():undefined,d:cloneD(it.d)},x,z,t:Date.now()};
   if(waterDepth(x,z)>0.2&&!onDock(x,z)){dr.x=P.x;dr.z=P.z;}   // pas dans le lac
   S.drops.push(dr);spawnDrop(dr);return dr;
 }

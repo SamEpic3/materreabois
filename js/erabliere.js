@@ -5,7 +5,7 @@ const SAP_PER_SYRUP=40;             // 40 L d'eau d'érable pour 1 L de sirop
 const BOIL_RATE=0.3;                // L d'eau évaporés par seconde quand le feu est pris
 const PAN_CAP=60;                   // capacité de la bouilloire (eau d'érable)
 const FUEL_MAX=600;
-S.taps=4;                           // ensembles chaudière + chalumeau prêts à installer
+S.taps=0;                           // (anciennes sauvegardes : les chaudières sont maintenant des objets d'inventaire)
 const taps=[];                      // {t,sap,mesh}
 const pails=[];                     // seaux posés au sol {x,z,kind,L,mesh}
 const SAP_COL=0xcfe3ea,SYRUP_COL=0xb5651d;
@@ -67,9 +67,71 @@ function addGroundPail(x,z,kind,L,id){
   const m=makePail(),p={id:id||uid(),x,z,kind,L,mesh:m};m.position.set(x,H(x,z),z);setPailLook(m,p);scene.add(m);pails.push(p);return p;
 }
 
-/* Seau tenu par le joueur */
+/* ----- Seaux et chaudières : des objets d'inventaire.
+   Vides, ils s'empilent (seaux par 5, chaudières par 10) ; pleins, chacun prend sa case. ----- */
+const _itemDefE=itemDef;
+itemDef=function(id){
+  if(id==='seau')return {kind:'pail',name:'Seau de collecte',stack:5};
+  if(id==='chaudiere')return {kind:'tap',name:'Chaudière et chalumeau',stack:10};
+  return _itemDefE(id);
+};
+const _itemIconE=itemIcon;
+itemIcon=function(it){
+  if(!it)return '';
+  if(it.id==='seau'){const f=it.d&&it.d.L>0.05,k=f?(it.d.kind==='sirop'?'seauS':'seauE'):'seau';
+    const src=thumb(k,()=>{const g=new T.Group(),m=makePail();setPailLook(m,{kind:f?it.d.kind:'eau',L:f?PAIL_CAP*0.85:0});g.add(m);return g;});return src?`<img src="${src}" alt="">`:'🪣';}
+  if(it.id==='chaudiere'){const src=thumb('chaudiere',()=>{const g=new T.Group();g.add(makeTapBucket());return g;});return (src?`<img src="${src}" alt="">`:'🪣')+(it.d&&it.d.sap>0.05?'<span class="fill">💧</span>':'');}
+  return _itemIconE(it);
+};
+const _itemLabelE=itemLabel;
+itemLabel=function(it){
+  if(it.id==='seau'&&it.d)return `Seau (${pailTxt(it.d)})`;
+  if(it.id==='chaudiere'&&it.d)return `Chaudière (${fmtL(it.d.sap)} d'eau d'érable)`;
+  return _itemLabelE(it);
+};
+const _dropModelE=dropModel;
+dropModel=function(it){
+  if(it.id==='seau'){const m=makePail();setPailLook(m,it.d||{kind:'eau',L:0});return m;}
+  if(it.id==='chaudiere'){const g=new T.Group(),m=makeTapBucket();m.position.set(0,-0.08,-0.2);g.add(m);return g;}
+  return _dropModelE(it);
+};
+// Partie gratuite : 4 chaudières pour commencer
+if(!INV[1])INV[1]={id:'chaudiere',n:4};
+
+/* Seau tenu : c'est le seau de la case choisie */
 const handPail=makePail();handPail.position.set(0,-0.98,0.05);handPail.visible=false;player.armR.add(handPail);
-function setPail(p){P.pail=p;handPail.visible=!!p;if(p)setPailLook(handPail,p);updateToolVisual();}
+function heldPail(){const s=INV[S.hot];return s&&s.id==='seau'?s:null;}
+function refreshPail(){
+  const s=heldPail();
+  P.pail=s?(s.d||{kind:'eau',L:0}):null;
+  handPail.visible=!!P.pail;if(P.pail)setPailLook(handPail,P.pail);
+}
+const _syncToolE=syncTool;
+syncTool=function(){_syncToolE();refreshPail();updateToolVisual();};
+// setPail(null) : le seau tenu quitte l'inventaire (posé, rangé…) ; setPail(P.pail) : son contenu a changé ;
+// setPail({kind,L}) : on prend un seau du monde (faux s'il n'y a pas de place)
+function setPail(p){
+  const s=heldPail();
+  if(p===null){if(s)invTake(S.hot,1);syncTool();return true;}
+  if(s&&p===P.pail){
+    if(p.L>0.05){
+      if(!s.d){s.d={kind:p.kind,L:p.L};
+        if(s.n>1){const rest={id:'seau',n:s.n-1};s.n=1;const left=invAdd(rest);if(left){dropItem(left,P.x+Math.sin(P.rot)*0.8,P.z+Math.cos(P.rot)*0.8);toast('Plus de place : les seaux vides sont déposés par terre');}}}
+      else{s.d.kind=p.kind;s.d.L=p.L;}
+    }else delete s.d;
+    syncTool();renderInv();return true;
+  }
+  const d=p.L>0.05?{kind:p.kind,L:p.L}:undefined;
+  let i=-1;
+  if(!INV[S.hot])i=S.hot;
+  else if(!d)i=INV.findIndex(x=>x&&x.id==='seau'&&!x.d&&x.n<5);
+  if(i<0)i=INV.findIndex((x,j)=>!x&&j<HOT_N);
+  if(i<0)i=INV.findIndex(x=>!x);
+  if(i<0){toast('🎒 Plus de place dans ton inventaire pour ce seau');return false;}
+  if(INV[i])INV[i].n++;else INV[i]={id:'seau',n:1,d};
+  if(i<HOT_N)S.hot=i;else toast('Seau rangé dans ton sac');
+  syncTool();renderInv();return true;
+}
 
 /* ----- Proximité ----- */
 function nearestSugar(){return nearestBuild('sucres',2.4);}
@@ -80,22 +142,29 @@ function nearestGroundPail(){let b=null,bd=1.3;pails.forEach(p=>{const d=Math.hy
 
 /* ----- Entailles ----- */
 function tapTree(t){
-  if(S.taps<=0||tapOf(t))return;
-  S.taps--;
-  placeTap(t,Math.atan2(P.x-t.x,P.z-t.z),0);
-  toast(`Érable entaillé 🍁 (il te reste ${S.taps} chaudière${S.taps>1?'s':''})`);
+  if(tapOf(t))return;
+  // une chaudière vide d'abord, sinon une qui contient déjà de l'eau
+  let i=INV.findIndex(s=>s&&s.id==='chaudiere'&&!s.d);if(i<0)i=INV.findIndex(s=>s&&s.id==='chaudiere');if(i<0)return;
+  const o=invTake(i,1);
+  placeTap(t,Math.atan2(P.x-t.x,P.z-t.z),o.d?o.d.sap:0);
+  const n=invCount('chaudiere');toast(`Érable entaillé 🍁 (il te reste ${n} chaudière${n>1?'s':''})`);
 }
 function placeTap(t,a,sap){
   const dx=Math.sin(a),dz=Math.cos(a),m=makeTapBucket();
   m.position.set(t.x+dx*0.28*t.s,t.y+1.05,t.z+dz*0.28*t.s);m.rotation.y=a;scene.add(m);
   taps.push({t,sap,mesh:m});
 }
-function untap(tp){scene.remove(tp.mesh);taps.splice(taps.indexOf(tp),1);S.taps++;toast('Chaudière retirée');}
+function untap(tp){
+  const it={id:'chaudiere',n:1,d:tp.sap>0.05?{sap:Math.round(tp.sap*100)/100}:undefined};
+  if(!invRoom(it)){toast('🎒 Plus de place dans ton inventaire pour la chaudière');return;}
+  scene.remove(tp.mesh);taps.splice(taps.indexOf(tp),1);giveItem(it);
+  toast(it.d?`Chaudière retirée avec ${fmtL(it.d.sap)} d'eau d'érable`:'Chaudière retirée');
+}
 function treeContext(t){
   if(t.planted&&t.grow<1)return {info:saplingInfo(t)};
   const tp=tapOf(t);
   if(tp)return {act:{label:'Retirer la chaudière',fn:()=>untap(tp)},info:`Érable entaillé · chaudière : ${fmtL(tp.sap)} / ${TAP_CAP} L`+(TOOL?' · retire la chaudière avant de l\'abattre':'')};
-  const tapAct=(t.type==='erable'&&S.taps>0)?{label:`Entailler l'érable (${S.taps} chaudière${S.taps>1?'s':''})`,fn:()=>tapTree(t)}:null;
+  const nT=invCount('chaudiere'),tapAct=(t.type==='erable'&&nT>0)?{label:`Entailler l'érable (${nT} chaudière${nT>1?'s':''})`,fn:()=>tapTree(t)}:null;
   if(!TOOL)return {act:tapAct,info:tapAct?'':'Mains vides : choisis un outil pour bûcher (touches 1 à 9)'};
   if(TOOL.kind==='shovel')return {act:tapAct,info:tapAct?'':'La pelle sert à essoucher : choisis un outil de coupe pour bûcher'};
   if(!TOOL.fell)return {act:tapAct,info:tapAct?'':'Choisis un outil de coupe pour bûcher'};
@@ -114,8 +183,8 @@ function putPailIn(cont){
   m.position.set(sl[0],0,sl[1]);setPailLook(m,p);cont.cargo.add(m);cont.pails.push({kind:p.kind,L:p.L,mesh:m});
   setPail(null);toast(`Seau rangé dans la ${cont.name} (${cont.pails.length}/${cont.pslots.length})`);
 }
-function takePailFrom(cont){const pp=cont.pails.pop();cont.cargo.remove(pp.mesh);setPail({kind:pp.kind,L:pp.L});}
-function pickPail(gp){scene.remove(gp.mesh);pails.splice(pails.indexOf(gp),1);setPail({kind:gp.kind,L:gp.L});}
+function takePailFrom(cont){const pp=cont.pails[cont.pails.length-1];if(!setPail({kind:pp.kind,L:pp.L}))return;cont.pails.pop();cont.cargo.remove(pp.mesh);}
+function pickPail(gp){if(!setPail({kind:gp.kind,L:gp.L}))return;scene.remove(gp.mesh);pails.splice(pails.indexOf(gp),1);}
 function fuelOf(c){return Math.round(c.len/FT*25);}
 function boilInfo(b){
   const fire=b.fuel>0?`feu : ${Math.floor(b.fuel/60)} min ${String(Math.floor(b.fuel%60)).padStart(2,'0')} s`:'feu éteint (apporte du bois)';
@@ -173,6 +242,15 @@ function updateSugar(dt){
   for(let i=puffs.length-1;i>=0;i--){const p=puffs[i];p.life-=dt;p.m.position.y+=dt*0.9;p.m.position.x+=p.vx*dt;p.m.position.z+=p.vz*dt;p.m.scale.setScalar(0.5+(1-p.life/p.max)*1.6);p.m.material.opacity=Math.max(0,p.life/p.max)*0.5;if(p.life<=0){scene.remove(p.m);puffs.splice(i,1);}}
 }
 
+/* Chaudière pleine tenue en main : la verser dans la bouilloire ou dans un seau au sol, ou la vider */
+function tapItemContext(){
+  const it=heldItem();if(!it||it.id!=='chaudiere'||!it.d)return null;
+  const sap=it.d.sap,b=nearestSugar(),gp=nearestGroundPail();
+  const spill={label:'Vider la chaudière par terre',fn:()=>{delete it.d;syncTool();renderInv();toast('Chaudière vidée');}};
+  if(b){const put=Math.min(sap,PAN_CAP-b.sap);return {act:put>0.01?{label:`Verser la chaudière dans la bouilloire (${fmtL(sap)})`,fn:()=>{b.sap+=put;it.d.sap-=put;if(it.d.sap<0.05)delete it.d;syncTool();renderInv();toast(`Versé ${fmtL(put)} dans la bouilloire`);}}:null,act2:spill,info:put>0.01?'':'La bouilloire est pleine'};}
+  if(gp&&gp.kind!=='sirop'&&gp.L<PAIL_CAP-0.05){const put=Math.min(sap,PAIL_CAP-gp.L);return {act:{label:`Verser la chaudière dans le seau (${fmtL(put)})`,fn:()=>{gp.L+=put;gp.kind='eau';setPailLook(gp.mesh,gp);it.d.sap-=put;if(it.d.sap<0.05)delete it.d;syncTool();renderInv();}},act2:spill};}
+  return {info:`Chaudière : ${fmtL(sap)} d'eau d'érable · verse-la dans la bouilloire ou dans un seau posé par terre`,act2:spill};
+}
 /* Actions à pied propres à ces nouveautés (priorité sur le reste quand on est tout près) */
 function footExtras(){
   if(nearSign())return {act:{label:'Voir les prix du bois (scierie)',fn:openBoard}};

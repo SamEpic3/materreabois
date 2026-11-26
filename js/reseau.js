@@ -120,8 +120,8 @@ const COLS=[
    del:()=>{},get:()=>S.camp},
   // Inventaire de chacun (personnel) : gardé sur le serveur pour le retrouver en revenant
   {c:'iv',items:()=>{const a=[[ME.id,{inv:INV,hot:S.hot}]];for(const id in S.others)if(S.others[id].inv)a.push([id,{inv:S.others[id].inv,hot:S.others[id].hot||0}]);return a;},
-   key:o=>JSON.stringify(o.inv)+'|'+o.hot,ser:o=>({inv:o.inv.map(s=>s?{id:s.id,n:s.n,w:s.w}:null),hot:o.hot}),
-   set:(id,d)=>{if(id===ME.id){INV.fill(null);(d.inv||[]).forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined};});S.hot=d.hot||0;syncTool();renderInv();}
+   key:o=>JSON.stringify(o.inv)+'|'+o.hot,ser:o=>({inv:o.inv.map(s=>s?{id:s.id,n:s.n,w:s.w,d:s.d}:null),hot:o.hot}),
+   set:(id,d)=>{if(id===ME.id){INV.fill(null);(d.inv||[]).forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined,d:cloneD(s.d)};});S.hot=d.hot||0;syncTool();renderInv();}
      else S.others[id]=Object.assign(S.others[id]||{},{inv:d.inv,hot:d.hot});},
    del:()=>{},get:id=>id===ME.id?{inv:INV,hot:S.hot}:(S.others[id]&&S.others[id].inv?{inv:S.others[id].inv,hot:S.others[id].hot||0}:null)},
   // Objets par terre

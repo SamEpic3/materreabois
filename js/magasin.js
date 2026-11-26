@@ -82,7 +82,7 @@ function renderShop(){
     d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t),true))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;
     const b=document.createElement('button');
     if(!t.price){b.textContent='Gratuite';b.disabled=invCount(t.id)>0;b.onclick=()=>{giveItem({id:t.id,n:1});renderShop();};}
-    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;giveItem({id:t.id,n:1});J.buy(t.name.toLowerCase(),t.price);toast(`${t.name} : dans ton inventaire !`);sfxCash();renderShop();};}
+    else{b.textContent='Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price||!buyCheck({id:t.id,n:1}))return;S.money-=t.price;giveItem({id:t.id,n:1});J.buy(t.name.toLowerCase(),t.price);toast(`${t.name} : dans ton inventaire !`);sfxCash();renderShop();};}
     d.appendChild(b);L.appendChild(d);
   });
   sec('Érablière');
@@ -90,16 +90,15 @@ function renderShop(){
     const d=document.createElement('div');d.className='item';
     d.innerHTML=imgTag(thumb('chaudiere',()=>{const g=new T.Group();const m=makeTapBucket();g.add(m);return g;}))+`<div class="txt"><b>Chaudière et chalumeau</b> — 25 $<p>Pour entailler un érable : la chaudière se remplit d'eau d'érable toute seule.</p><p class="stats">Tu en as ${S.taps} en réserve · ${taps.length} installée${taps.length>1?'s':''}</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<25;
-    b.onclick=()=>{if(S.money<25)return;S.money-=25;S.taps++;J.buy('une chaudière et un chalumeau',25);toast('Chaudière achetée');renderShop();};
+    b.onclick=()=>{if(S.money<25||!buyCheck({id:'chaudiere',n:1}))return;S.money-=25;giveItem({id:'chaudiere',n:1});J.buy('une chaudière et un chalumeau',25);toast('Chaudière achetée : dans ton inventaire');renderShop();};
     d.appendChild(b);L.appendChild(d);
   }
   {
     const d=document.createElement('div');d.className='item';
     d.innerHTML=imgTag(thumb('seau',()=>{const g=new T.Group();g.add(makePail());return g;}))+`<div class="txt"><b>Seau de collecte</b> — 15 $<p>Pour vider les chaudières et transporter l'eau d'érable ou le sirop (30 L).</p><p class="stats">Il te sera remis en main, ou posé devant la porte</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<15;
-    b.onclick=()=>{if(S.money<15)return;S.money-=15;J.buy('un seau',15);
-      if(!P.pail&&!P.carry)setPail({kind:'eau',L:0});else addGroundPail(shopDoor().x+(Math.random()-0.5)*1.5,shopDoor().z+1.2,'eau',0);
-      toast('Seau acheté');renderShop();};
+    b.onclick=()=>{if(S.money<15||!buyCheck({id:'seau',n:1}))return;S.money-=15;J.buy('un seau',15);giveItem({id:'seau',n:1});
+      toast('Seau acheté : dans ton inventaire');renderShop();};
     d.appendChild(b);L.appendChild(d);
   }
   sec('Plantation');
@@ -107,7 +106,7 @@ function renderShop(){
     const d=document.createElement('div'),pr=SEED_PRICE[k];d.className='item';
     d.innerHTML=`<div class="thumb emoji">🌱</div><div class="txt"><b>Plants ${/^[aeéiouy]/.test(seedName(k))?'d\'':'de '}${seedName(k)} (×${SEED_PACK})</b> — ${pr} $<p>À planter n'importe où de libre. Ils poussent en 3 à 5 heures.</p><p class="stats">Tu en as ${invCount('plant:'+k)}</p></div>`;
     const b=document.createElement('button');b.textContent='Acheter';b.disabled=S.money<pr;
-    b.onclick=()=>{if(S.money<pr)return;S.money-=pr;giveItem({id:'plant:'+k,n:SEED_PACK});J.buy(`${SEED_PACK} plants de ${SPECIES[k].n.toLowerCase()}`,pr);toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
+    b.onclick=()=>{if(S.money<pr||!buyCheck({id:'plant:'+k,n:SEED_PACK}))return;S.money-=pr;giveItem({id:'plant:'+k,n:SEED_PACK});J.buy(`${SEED_PACK} plants de ${SPECIES[k].n.toLowerCase()}`,pr);toast(`🌱 ${SEED_PACK} plants ajoutés à l'inventaire`);renderShop();};
     d.appendChild(b);L.appendChild(d);
   });
   sec('Véhicules et remorques');

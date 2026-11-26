@@ -26,6 +26,7 @@ itemDef=function(id){
   if(id==='fleches')return {kind:'ammo',name:'Flèches',stack:24};
   if(id==='collet')return {kind:'snare',name:'Collet à lièvre',stack:10};
   if(id.startsWith('viande:')){const k=id.slice(7);return {kind:'meat',name:MEAT[k]?MEAT[k].n:'Viande',stack:10,meat:k};}
+  if(id.startsWith('grille:')){const k=id.slice(7);return {kind:'meat',name:(MEAT[k]?MEAT[k].n:'Viande')+' grillée',stack:10,meat:k,cooked:true};}
   return _itemDefH(id);
 };
 const _itemIconH=itemIcon;
@@ -34,7 +35,7 @@ itemIcon=function(it){
   const d=itemDef(it.id);
   if(d.kind==='ammo')return it.id==='balles'?'<span class="emo">📦</span>':ARROW_ICON;
   if(d.kind==='snare')return '<span class="emo">➰</span>';
-  if(d.kind==='meat')return '<span class="emo">🥩</span>';
+  if(d.kind==='meat')return `<span class="emo">${d.cooked?'🍖':'🥩'}</span>`;
   return _itemIconH(it);
 };
 const _dropModelH=dropModel;
@@ -45,7 +46,8 @@ dropModel=function(it){
   if(d.kind==='snare'){const g=new T.Group();g.add(new T.Mesh(new T.TorusGeometry(0.1,0.008,4,16).translate(0,0.12,0),mat(0x9aa0a6)));return g;}
   return _dropModelH(it);
 };
-function meatValue(s){const d=itemDef(s.id);return Math.round((s.w||[1]).reduce((a,w)=>a+w*MEAT[d.meat].pkg,0));}
+// grillée : vaut 1,8 fois plus, comme le poisson cuit
+function meatValue(s){const d=itemDef(s.id);return Math.round((s.w||[1]).reduce((a,w)=>a+w*MEAT[d.meat].pkg,0)*(d.cooked?1.8:1));}
 function hasKnife(){return invCount('couteau')>0;}
 
 /* ----- Modèles : carabine, arc, couteau ----- */
@@ -268,11 +270,11 @@ function onNetFx(from,e){const a=NET.avatars[from];if(!a)return;if(e==='fx:shot'
 function renderHuntShop(L,sec){
   const row=(icon,html,btnTxt,dis,fn)=>{const d=document.createElement('div');d.className='item';d.innerHTML=icon+`<div class="txt">${html}</div>`;
     const b=document.createElement('button');b.textContent=btnTxt;b.disabled=dis;b.onclick=fn;d.appendChild(b);L.appendChild(d);return d;};
-  const meat=INV.map((s,i)=>[s,i]).filter(([s])=>s&&s.id.startsWith('viande:'));
+  const meat=INV.map((s,i)=>[s,i]).filter(([s])=>s&&(s.id.startsWith('viande:')||s.id.startsWith('grille:')));
   if(meat.length){
     sec('Vendre ta viande');
     meat.forEach(([s,i])=>{const v=meatValue(s),w=(s.w||[]).reduce((a,b)=>a+b,0),d=itemDef(s.id);
-      row('<div class="thumb emoji">🥩</div>',`<b>${itemLabel(s)}</b> — ${v} $<p>${kg(w)} à ${MEAT[d.meat].pkg} $/kg</p>`,'Vendre',false,()=>{INV[i]=null;S.money+=v;J.sell(`${kg(w)} de ${d.name.toLowerCase()}`,v);syncTool();renderInv();sfxCash();toast(`🥩 +${v} $`);renderShop();});});
+      row(`<div class="thumb emoji">${d.cooked?'🍖':'🥩'}</div>`,`<b>${itemLabel(s)}</b> — ${v} $<p>${kg(w)} à ${Math.round(MEAT[d.meat].pkg*(d.cooked?1.8:1)*10)/10} $/kg</p>`,'Vendre',false,()=>{INV[i]=null;S.money+=v;J.sell(`${kg(w)} de ${d.name.toLowerCase()}`,v);syncTool();renderInv();sfxCash();toast(`🥩 +${v} $`);renderShop();});});
   }
   sec('Chasse et piégeage');
   huntDayCheck();
@@ -282,10 +284,10 @@ function renderHuntShop(L,sec){
   TOOLS.filter(t=>t.hunt).forEach(t=>{
     const have=invCount(t.id);
     row(imgTag(thumb(t.id,()=>toolThumbModel(t),true)),`<b>${t.name}</b> — ${t.price} $<p>${t.desc}</p>`+(have?'<p class="stats">Tu en as un</p>':''),'Acheter',S.money<t.price,
-      ()=>{if(S.money<t.price)return;S.money-=t.price;giveItem({id:t.id,n:1});J.buy(t.name.toLowerCase(),t.price);sfxCash();toast(`${t.name} : dans ton inventaire!`);renderShop();});
+      ()=>{if(S.money<t.price||!buyCheck({id:t.id,n:1}))return;S.money-=t.price;giveItem({id:t.id,n:1});J.buy(t.name.toLowerCase(),t.price);sfxCash();toast(`${t.name} : dans ton inventaire!`);renderShop();});
   });
   HUNT_GEAR.forEach(g=>{
     row(`<div class="thumb emoji">${g.id==='fleches'?ARROW_ICON:g.emo}</div>`,`<b>${g.name}</b> — ${g.price} $<p>${g.desc}</p><p class="stats">Tu en as ${invCount(g.id)}</p>`,'Acheter',S.money<g.price,
-      ()=>{if(S.money<g.price)return;S.money-=g.price;giveItem({id:g.id,n:g.n});J.buy(g.name.toLowerCase(),g.price);sfxCash();toast(`${g.emo} ${g.name} : dans ton inventaire`);renderShop();});
+      ()=>{if(S.money<g.price||!buyCheck({id:g.id,n:g.n}))return;S.money-=g.price;giveItem({id:g.id,n:g.n});J.buy(g.name.toLowerCase(),g.price);sfxCash();toast(`${g.emo} ${g.name} : dans ton inventaire`);renderShop();});
   });
 }

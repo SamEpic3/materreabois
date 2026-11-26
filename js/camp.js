@@ -163,7 +163,7 @@ function updateCamp(dt){
 /* ----- Barbecue : couvercle, allumer/éteindre, jusqu'à 4 poissons qui cuisent en 2 minutes ----- */
 const BBQ_COOK=120;
 const BBQ_SLOTS=[-0.3,-0.1,0.1,0.3];
-const _raw=new T.Color(1,1,1),_done=new T.Color(0.62,0.4,0.22),_fc=new T.Color();
+const _raw=new T.Color(1,1,1),_done=new T.Color(0.62,0.4,0.22),_fc=new T.Color(),_mRaw=new T.Color(0xa8383a),_mDone=new T.Color(0x5a3420);
 function updateBbq(b,dt,puff){
   if(!b.fish)b.fish=[null,null,null,null];
   if(b.on)b.fish.forEach(f=>{if(f)f.c=Math.min(BBQ_COOK,(f.c||0)+dt);});
@@ -176,9 +176,13 @@ function updateBbq(b,dt,puff){
   // Poissons sur la grille : refaits seulement quand la liste change
   const key=b.fish.map(f=>f?f.k+f.w:'-').join(',');
   if(key!==o.fishKey){o.fishKey=key;while(o.fishG.children.length)o.fishG.remove(o.fishG.children[0]);
-    b.fish.forEach((f,i)=>{if(!f)return;const m=makeFishModel(f.k,f.w);const bb=new T.Box3().setFromObject(m),len=bb.getSize(new T.Vector3()).z;m.scale.multiplyScalar(Math.min(1,0.4/len));
+    b.fish.forEach((f,i)=>{if(!f)return;
+      if(f.k.startsWith('m:')){const m=new T.Mesh(new T.BoxGeometry(0.14,0.05,0.28),new T.MeshPhongMaterial({color:0xa8383a,flatShading:true,shininess:20}));m.userData.meat=true;m.position.set(BBQ_SLOTS[i],1.19,0);m.rotation.y=(i%2?0.2:-0.2);o.fishG.add(m);return;}
+      const m=makeFishModel(f.k,f.w);const bb=new T.Box3().setFromObject(m),len=bb.getSize(new T.Vector3()).z;m.scale.multiplyScalar(Math.min(1,0.4/len));
       m.rotation.z=Math.PI/2;m.position.set(BBQ_SLOTS[i],1.175,0);o.fishG.add(m);});}
-  o.fishG.children.forEach((m,i)=>{const f=b.fish.filter(Boolean)[i];if(!f)return;const k=f.c/BBQ_COOK;_fc.copy(_raw).lerp(_done,k);m.traverse(x=>{if(x.isMesh&&x.material.color)x.material.color.copy(_fc);});});
+  o.fishG.children.forEach((m,i)=>{const f=b.fish.filter(Boolean)[i];if(!f)return;const k=f.c/BBQ_COOK;
+    if(m.userData.meat){m.material.color.copy(_mRaw).lerp(_mDone,k);return;}
+    _fc.copy(_raw).lerp(_done,k);m.traverse(x=>{if(x.isMesh&&x.material.color)x.material.color.copy(_fc);});});
   if(b.on&&puff&&Math.random()<(b.open?0.35:0.7)){const p=lw(b,0,0);spawnPuffAt(p.x,H(p.x,p.z)+(b.open?1.3:1.45),p.z,b.fish.some(Boolean));}
 }
 function fishTxt(k,cooked){const F=FISH[k];return cooked?`${F.n}${F.fem?' cuite':' cuit'}`:F.n;}
@@ -188,15 +192,19 @@ function bbqContext(q){
   const lid={label:q.open?'Fermer le couvercle':'Ouvrir le couvercle',fn:()=>{q.open=!q.open;sfxKnock(q.x,q.z,0.5);}};
   const n=q.fish.filter(Boolean).length,done=q.fish.filter(f=>f&&f.c>=BBQ_COOK).length;
   let info=q.on?'🔥 Allumé':'Éteint';
-  if(n)info+=` · ${n}/4 poisson${n>1?'s':''} : `+q.fish.filter(Boolean).map(f=>f.c>=BBQ_COOK?'✅ cuit':`${Math.round(f.c/BBQ_COOK*100)} %`).join(', ');
+  if(n)info+=` · ${n}/4 sur la grille : `+q.fish.filter(Boolean).map(f=>f.c>=BBQ_COOK?'✅ cuit':`${Math.round(f.c/BBQ_COOK*100)} %`).join(', ');
   else info+=' · la grille est vide';
   if(!q.open)return {act:lid,act2:onOff,info};
-  const it=heldItem(),raw=it&&it.id.startsWith('poisson:');
+  const it=heldItem(),raw=it&&it.id.startsWith('poisson:'),meat=it&&it.id.startsWith('viande:');
   let fishAct=null;
-  if(raw&&n<4){const k=it.id.slice(8);fishAct={label:`Mettre ${FISH[k].fem?'la':'le'} ${FISH[k].n.toLowerCase()} sur la grille (${n}/4)`,fn:()=>{const o=invTake(S.hot,1);const i=q.fish.indexOf(null);q.fish[i]={k,w:o.w?o.w[0]:1,c:0};if(!q.on)toast('Pense à allumer le barbecue !');}};}
+  if(meat&&n<4){const mk=it.id.slice(7);fishAct={label:`Mettre la viande de ${mk==='lievre'?'lièvre':'chevreuil'} sur la grille (${n}/4)`,fn:()=>{const o=invTake(S.hot,1);const i=q.fish.indexOf(null);q.fish[i]={k:'m:'+mk,w:o.w?o.w[0]:1,c:0};if(!q.on)toast('Pense à allumer le barbecue !');}};}
+  else if(raw&&n<4){const k=it.id.slice(8);fishAct={label:`Mettre ${FISH[k].fem?'la':'le'} ${FISH[k].n.toLowerCase()} sur la grille (${n}/4)`,fn:()=>{const o=invTake(S.hot,1);const i=q.fish.indexOf(null);q.fish[i]={k,w:o.w?o.w[0]:1,c:0};if(!q.on)toast('Pense à allumer le barbecue !');}};}
   else{
     const i=q.fish.findIndex(f=>f&&f.c>=BBQ_COOK),j=i>=0?i:q.fish.findIndex(Boolean);
-    if(j>=0){const f=q.fish[j],cooked=f.c>=BBQ_COOK;
+    if(j>=0&&q.fish[j].k.startsWith('m:')){const f=q.fish[j],cooked=f.c>=BBQ_COOK,mk=f.k.slice(2),nm=mk==='lievre'?'lièvre':'chevreuil';
+      fishAct={label:cooked?`Prendre la viande de ${nm} grillée`:`Retirer la viande de ${nm} (pas encore cuite)`,
+        fn:()=>{q.fish[j]=null;giveItem({id:(cooked?'grille:':'viande:')+mk,n:1,w:[f.w]});if(cooked)toast(`🍖 Viande de ${nm} grillée (${kg(f.w)})`);}};}
+    else if(j>=0){const f=q.fish[j],cooked=f.c>=BBQ_COOK;
       fishAct={label:cooked?`Prendre ${FISH[f.k].fem?'la':'le'} ${fishTxt(f.k,true).toLowerCase()}`:`Retirer ${FISH[f.k].fem?'la':'le'} ${FISH[f.k].n.toLowerCase()} (pas encore ${FISH[f.k].fem?'cuite':'cuit'})`,
         fn:()=>{q.fish[j]=null;giveItem({id:(cooked?'cuit:':'poisson:')+f.k,n:1,w:[f.w]});if(cooked)toast(`🍽️ ${fishTxt(f.k,true)} (${kg(f.w)})`);}};}
   }

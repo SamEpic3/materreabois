@@ -22,9 +22,9 @@ function flatSnapshot(){
     ver:SAVE_VER,sig:WORLD_SIG,t:Date.now(),
     money:S.money,delivered:S.delivered,yardCount,taps:S.taps,
     mkt:S.mkt,mktPrev:S.mktPrev,mktNext:S.mktNext,
-    inv:INV.map(s=>s?{id:s.id,n:s.n,w:s.w?s.w.map(r3):undefined}:null),hot:S.hot,
+    inv:INV.map(s=>s?{id:s.id,n:s.n,w:s.w?s.w.map(r3):undefined,d:cloneD(s.d)}:null),hot:S.hot,
     drops:S.drops.map(d=>({id:d.id,it:d.it,x:r3(d.x),z:r3(d.z)})),
-    player:{x:r3(S.inside?CABIN_DOOR.x:P.x),z:r3(S.inside?CABIN_DOOR.z+0.5:P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:P.pail?{kind:P.pail.kind,L:P.pail.L}:null},
+    player:{x:r3(S.inside?CABIN_DOOR.x:P.x),z:r3(S.inside?CABIN_DOOR.z+0.5:P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:null},   // le seau est dans l'inventaire
     trees:treeList.map((t,i)=>!t.alive?[i,1,t.stumpGone?1:0]:t.work>0?[i,0,r3(t.work)]:null).filter(Boolean),
     campStumps:campStumps.map((s,i)=>s.gone?[i,1]:s.work>0?[i,0,r3(s.work)]:null).filter(Boolean),
     extraStumps:stumpList.filter(s=>s.tree&&s.tree.planted).map(s=>({id:s.id,x:s.x,z:s.z,s:s.size,type:s.tree.type,work:r3(s.work)})),
@@ -60,7 +60,7 @@ function loadGame(given){
     S.journal=d.journal||[];compactJournal();
     d=Object.assign({},d.world,{sig:d.sig,t:d.t,player:me?me.player:null,inv:me?me.inv:null,hot:me?me.hot:0,hunt:me?me.hunt:null});
   }
-  S.money=d.money;S.delivered=d.delivered;S.taps=d.taps;
+  S.money=d.money;S.delivered=d.delivered;S.taps=0;
   if(d.wx)Object.assign(S.wx,d.wx);
   if(d.lands)Object.assign(S.lands,d.lands);refreshLands();
   S.order=d.order||null;S.ordGot=d.ordGot||0;if(d.ordNext!==undefined)S.ordNext=d.ordNext;S.becInit=!!d.becInit;
@@ -69,7 +69,7 @@ function loadGame(given){
   S.snares.slice().forEach(removeSnare);(d.snares||[]).forEach(o=>{const s=Object.assign({},o);S.snares.push(s);spawnSnare(s);});
   yardCount=d.yardCount||0;for(let i=Math.max(0,yardCount-60);i<yardCount;i++)addYardLog({sp:'sapin',len:2.44,ra:0.2,rb:0.17},i);
   if(d.mkt){Object.assign(S.mkt,d.mkt);Object.assign(S.mktPrev,d.mktPrev||{});S.mktNext=d.mktNext||MKT_PERIOD;}
-  if(d.inv){INV.fill(null);d.inv.forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined};});}
+  if(d.inv){INV.fill(null);d.inv.forEach((s,i)=>{if(s&&i<INV_N)INV[i]={id:s.id,n:s.n,w:s.w?s.w.slice():undefined,d:cloneD(s.d)};});}
   else invFromOld(d.owned,d.seeds);           // vieille sauvegarde : outils et plants deviennent des objets
   S.drops.slice().forEach(removeDrop);(d.drops||[]).forEach(o=>dropItem(o.it,o.x,o.z,o.id));
   const same=d.sig===WORLD_SIG;
@@ -97,6 +97,8 @@ function loadGame(given){
     if(c.sucres||!d.campPos)addBuild('sucres',cp.sucres||{x:-10,z:-7,rot:0},{fuel:b.fuel||0,sap:b.sap||0,syrup:b.syrup||0});
   }
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
+  // anciennes sauvegardes : les chaudières comptées deviennent des objets d'inventaire
+  if(typeof d.taps==='number'&&d.taps>0)giveItem({id:'chaudiere',n:d.taps});
   showOthers();
   S.hot=clamp(d.hot||0,0,HOT_N-1);syncTool();
   // Ce qui a avancé pendant l'absence (48 h maximum)

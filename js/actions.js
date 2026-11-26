@@ -51,6 +51,7 @@ function context(){
   else if(!P.carry&&Math.hypot(P.x-DEALER_DOOR.x,P.z-DEALER_DOOR.z)<3.2)act={label:'Entrer chez le concessionnaire',fn:()=>openShop('dealer')};
   else if(!P.carry&&!P.pail&&landContext()){const r=landContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&boatContext()){const r=boatContext();act=r.act||null;info=r.info||'';}
+  else if(!P.carry&&!P.pail&&tapItemContext()){const r=tapItemContext();act=r.act||null;act2=r.act2||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&huntContext()){const r=huntContext();act=r.act||null;act2=r.act2||null;info=r.info||'';}
   else if(!P.carry&&TOOL&&TOOL.kind==='rod'&&(P.fishing||castTarget()||!extra)){const r=fishContext();act=r.act||null;info=r.info||'';}
   else if(extra){act=extra.act||null;act2=extra.act2||null;info=extra.info||'';}

@@ -195,6 +195,7 @@ function setScope(on){
 $('btnScope').addEventListener('click',()=>setScope(!SCOPE));
 let scopeTool=null;
 function updateScope(){
+  $('cross').classList.toggle('ui',uiOpen());   // pas de point de visée quand une fenêtre est ouverte
   if(SCOPE&&(!canScope()||TOOL!==scopeTool))setScope(false);   // changer d'outil sort de la lunette
   if(!SCOPE)scopeTool=TOOL;
   $('btnScope').classList.toggle('hidden',!canScope());
