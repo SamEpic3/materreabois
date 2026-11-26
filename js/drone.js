@@ -96,7 +96,7 @@ function updateDrone(dt){
   DRONE.y=Math.max(DRONE.y,walkH(DRONE.x,DRONE.z)+0.3);
   m.position.set(DRONE.x,DRONE.y,DRONE.z);
   const lf=DRONE.vx*fx+DRONE.vz*fz,ls=DRONE.vx*rx+DRONE.vz*rz;
-  m.rotation.set(0,0,0);m.rotateY(camYaw);m.rotateX(lf/DRONE_SPEED*0.25);m.rotateZ(-ls/DRONE_SPEED*0.25);
+  m.rotation.set(0,0,0);m.rotateY(camYaw);m.rotateX(lf/DRONE_SPEED*0.25);m.rotateZ(ls/DRONE_SPEED*0.25);   // penche du côté où il glisse
   props.forEach((p,i)=>{p.rotation.y+=dt*(i%2?60:-60);});
   // le personnage regarde son drone, manette en main
   P.rot=Math.atan2(DRONE.x-P.x,DRONE.z-P.z);player.g.rotation.y=P.rot;player.g.position.set(P.x,walkH(P.x,P.z),P.z);
