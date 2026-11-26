@@ -42,4 +42,4 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1||(e.scale!==unde
 // Si la page a quand même glissé ou zoomé, on la remet en place
 function resetPageView(){if(scrollX||scrollY)scrollTo(0,0);}
 addEventListener('scroll',resetPageView);
-if(window.visualViewport)visualViewport.addEventListener('resize',()=>{resetPageView();setTimeout(applyLayout,50);});
+if(window.visualViewport)visualViewport.addEventListener("resize",resetPageView);
