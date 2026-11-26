@@ -122,7 +122,7 @@ function openMap(){
     requestAnimationFrame(()=>requestAnimationFrame(()=>{try{bakeMapImage();}catch(e){console.warn(e);}$('carteWait').classList.add('hidden');}));}
   mapFit();{const {w,h}=mapSize();CARTE.s=CARTE.fit*(w>h*1.3?1.8:1);}centerOnMe();mapLoop();   // écran large : on part un peu zoomé sur soi
 }
-function closeMap(){CARTE.open=false;cancelAnimationFrame(CARTE.raf);$('carte').classList.add('hidden');CARTE.ptrs.clear();CARTE.pinch=null;CARTE.drag=null;}
+function closeMap(){if(typeof resetPageView==='function')resetPageView();CARTE.open=false;cancelAnimationFrame(CARTE.raf);$('carte').classList.add('hidden');CARTE.ptrs.clear();CARTE.pinch=null;CARTE.drag=null;}
 $('btnMap').addEventListener('click',openMap);
 $('carteClose').addEventListener('click',closeMap);
 $('carteIn').addEventListener('click',()=>{const {w,h}=mapSize();zoomAt(1.6,w/2,h/2);});

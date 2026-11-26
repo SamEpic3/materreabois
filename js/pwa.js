@@ -35,3 +35,11 @@ applyLayout();
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
   addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
+// iOS ignore « user-scalable=no » : un pincement (ex. sur la carte) pouvait zoomer toute la page,
+// et les boutons de droite restaient ensuite hors de l'écran. On bloque le zoom de la page.
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',e=>{if(e.touches.length>1||(e.scale!==undefined&&e.scale!==1))e.preventDefault();},{passive:false});
+// Si la page a quand même glissé ou zoomé, on la remet en place
+function resetPageView(){if(scrollX||scrollY)scrollTo(0,0);}
+addEventListener('scroll',resetPageView);
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>{resetPageView();setTimeout(applyLayout,50);});
