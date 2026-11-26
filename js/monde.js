@@ -282,7 +282,7 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP_FLAT-1,CAMP_FLAT-7,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
     const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-37,-33,vl[1])*smoothstep(41,37,vl[1]);
-    const yardF=smoothstep(-24,-22.5,vl[0])*smoothstep(-3.6,-5,vl[0])*smoothstep(11.5,13,vl[1])*smoothstep(39,37,vl[1]);   // la cour rejoint le chemin de terre
+    const yardF=smoothstep(-24,-22.5,vl[0])*smoothstep(-3.6,-5,vl[0])*smoothstep(11.5,13,vl[1])*smoothstep(43,41,vl[1]);   // la cour rejoint les chemins de terre (camp et terre du Sud)
     const patch=Math.max(road*0.95,yardF*0.8);
     const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
