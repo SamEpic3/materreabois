@@ -30,6 +30,13 @@ function applyLayout(){
   renderer.setSize(viewW(),viewH());updateProj();
 }
 addEventListener('resize',applyLayout);
+// iOS donne parfois de mauvaises mesures au lancement ou au retour dans l'app, sans événement ensuite :
+// on compare les mesures chaque seconde et on refait la mise en page si elles ont changé.
+let _laySig='';
+function laySig(){const cs=getComputedStyle(probe);return [document.documentElement.clientWidth,document.documentElement.clientHeight,innerWidth,innerHeight,screen.width,screen.height,cs.paddingTop,probe.getBoundingClientRect().height,window.visualViewport?Math.round(visualViewport.height):0].join(',');}
+setInterval(()=>{const s=laySig();if(s!==_laySig){_laySig=s;applyLayout();}},1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){setTimeout(applyLayout,300);setTimeout(applyLayout,1000);}});
+addEventListener('orientationchange',()=>setTimeout(applyLayout,700));
 addEventListener('orientationchange',()=>setTimeout(applyLayout,200));
 applyLayout();
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
