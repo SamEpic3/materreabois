@@ -1010,7 +1010,10 @@ function updateCulling(f){
   g.add(new T.Mesh(new T.BoxGeometry(w,0.1,d).translate(0,y-0.05,0),deck));
   const post=new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3}),rail=mat(0x6e5236);
   const ps=[],rs=[];
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>ps.push(new T.CylinderGeometry(0.09,0.1,y+1.1,7).translate(a*(w/2-0.1),(y+1.1)/2-0.05,b*(d/2-0.1))));
+  // pattes rallongées jusqu'au sol (et un peu dedans), où qu'elles tombent sur la pente
+  const g0=H(HILL.x,HILL.z);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>{const px=a*(w/2-0.1),pz=b*(d/2-0.1),bot=Math.min(0,H(HILL.x+px,HILL.z+pz)-g0)-0.6,top=y+1.05;
+    ps.push(new T.CylinderGeometry(0.09,0.1,top-bot,7).translate(px,(top+bot)/2,pz));});
   // Garde-corps sur trois côtés (ouvert vers le sentier, au sud-ouest)
   [[0,-d/2,w,0],[w/2,0,d,Math.PI/2],[-w/2,0,d,Math.PI/2]].forEach(([x,z,L,r])=>{rs.push(new T.BoxGeometry(L,0.07,0.08).rotateY(r).translate(x,y+1.0,z),new T.BoxGeometry(L,0.05,0.06).rotateY(r).translate(x,y+0.55,z));
     for(let k=-L/2+0.3;k<L/2;k+=0.35)rs.push(new T.BoxGeometry(0.04,0.45,0.04).translate(r?x:x+k,y+0.77,r?z+k:z));});
@@ -1022,7 +1025,7 @@ function updateCulling(f){
   // Panneau
   const pan=new T.Mesh(new T.PlaneGeometry(1.4,0.5),new T.MeshBasicMaterial({map:canvasTex(256,92,(c,W,Hh)=>{c.fillStyle='#4d3220';c.fillRect(0,0,W,Hh);c.fillStyle='#f1e6c8';c.font='bold 34px Georgia,serif';c.textAlign='center';c.textBaseline='middle';c.fillText('Mont du Loup',W/2,Hh/2);})}));
   pan.position.set(-w/2-0.6,1.4,d/2+0.8);pan.rotation.y=-0.8;g.add(pan);
-  g.add(new T.Mesh(new T.BoxGeometry(0.08,1.3,0.08).translate(-w/2-0.6,0.65,d/2+0.8),post));
+  {const sx=-w/2-0.6,sz=d/2+0.8,bot=H(HILL.x+sx,HILL.z+sz)-H(HILL.x,HILL.z)-0.4;pan.position.y=bot+1.8;g.add(new T.Mesh(new T.BoxGeometry(0.08,1.75,0.08).translate(sx,bot+0.875,sz),post));}
   g.position.set(HILL.x,H(HILL.x,HILL.z),HILL.z);shadows(g);scene.add(g);
   // Garde-corps : on ne tombe pas du belvédère
   for(let k=-w/2;k<=w/2;k+=0.5){addCol(HILL.x+k,HILL.z-d/2,0.12);addCol(HILL.x-w/2,HILL.z+k,0.12);addCol(HILL.x+w/2,HILL.z+k,0.12);}

@@ -12,6 +12,7 @@ const TOOLS=[
   ,{id:'pelle',name:'Pelle',kind:'shovel',delay:1.2,fell:null,cut:null,price:60,desc:'Pour creuser autour des souches et les arracher : le terrain est ensuite dégagé.'}
   ,{id:'carabine',name:'Carabine de chasse',kind:'rifle',hunt:true,delay:1.4,fell:null,cut:null,price:650,desc:'Une .308 avec lunette. Porte loin (≈ 130 m). Il faut des balles.'}
   ,{id:'arc',name:'Arc à poulies',kind:'bow',hunt:true,delay:1.1,fell:null,cut:null,price:350,desc:'Silencieux : les bêtes se sauvent moins loin. Il faut s\'approcher (≈ 35 m). Il faut des flèches.'}
+  ,{id:'drone',name:'Drone',kind:'drone',delay:0.5,fell:null,cut:null,price:900,desc:'Un drone avec caméra : Espace pour le faire décoller, WASD pour le piloter, Espace/R et Maj/F pour monter et descendre, E pour le rappeler.'}
   ,{id:'jumelles',name:'Jumelles ×4',kind:'binoc',hunt:true,delay:0.5,fell:null,cut:null,price:120,desc:'Pour repérer le gibier de loin. Clic droit (ou 🔭) pour regarder dedans, encore pour arrêter.'}
   ,{id:'couteau',name:'Couteau de chasse',kind:'knife',hunt:true,delay:0.5,fell:null,cut:null,price:40,desc:'Pour dépecer le gibier. Il suffit de l\'avoir dans l\'inventaire.'}
 ];

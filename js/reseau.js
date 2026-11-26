@@ -256,6 +256,7 @@ function updateAvatars(dt){
     if(p.m==='sit'){legPose(f,'sit');f.g.position.y-=0.45;}
     else{a.phase+=dt*spd*3.2;const sw=Math.min(1,spd/2)*0.6*Math.sin(a.phase);f.legL.rotation.x=sw;f.legR.rotation.x=-sw;f.armL.rotation.x=-sw*0.8;f.armR.rotation.x=p.c?-2.6:sw*0.8;
       if(a.ar!==undefined){f.armR.rotation.x=a.ar;f.armL.rotation.x=a.ar;}}
+    remoteDrone(a,p);
     avatarFishing(a,p,f);
     a.l.position.set(a.x,H(a.x,a.z)+2.6,a.z);
   }
@@ -271,6 +272,7 @@ function posPacket(){
   const p={x:rd(P.x,100),z:rd(P.z,100),rot:rd(P.rot,100),m:S.mode,tool:TOOL?TOOL.id:null};if(P.swing>0)p.ar=rd(player.armR.rotation.x,100);if(P.jumpY>0.01)p.j=rd(P.jumpY,100);p.lk=lookKey(LOOK);if(S.mode==='pass'&&P.ride)p.pv=P.ride.id;if(inBoat())p.boat=1;if(P.fishing&&P.fishing.state!=='cast')p.fb=[rd(P.fishing.x,100),rd(P.fishing.z,100),P.fishing.state==='bite'?1:0];
   if(P.carry)p.c={len:P.carry.len,ra:P.carry.ra,rb:P.carry.rb,split:P.carry.split||0,sp:P.carry.sp};
   if(P.pail)p.pl=1;
+  if(S.mode==='drone')p.dr=[rd(DRONE.x,100),rd(DRONE.y,100),rd(DRONE.z,100),rd(camYaw,100)];
   if(S.mode==='vtt'&&V){p.v={id:V.id,x:rd(V.x,100),z:rd(V.z,100),th:rd(V.th,1000),sp:rd(V.v,10)};const tw=towed(V);if(tw)p.v.tw={id:tw.id,x:rd(tw.x,100),z:rd(tw.z,100),th:rd(tw.th,1000)};}
   return p;
 }

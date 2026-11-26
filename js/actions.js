@@ -42,13 +42,18 @@ function context(){
   if(S.mode==='sit')return sitContext();
   if(S.mode==='place')return placeContext();
   if(S.mode==='pick')return pickContext();
+  if(S.mode==='drone')return droneContext();
   let act=null,act2=null,full=false,preview=null,info='',plant=null;
   const cont=nearestContainer();
   const extra=(!P.carry&&!P.pail)?footExtras():null;
   if(P.pail){const r=pailContext();act=r.act;act2=r.act2;info=r.info||'';}
   else if(!P.carry&&nearestDrop()){const dr=nearestDrop();act={label:`Ramasser : ${itemLabel(dr.it)}`,fn:()=>pickUpDrop(dr)};}
-  else if(!P.carry&&Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3)act={label:'Entrer au magasin',fn:()=>openShop('store')};
-  else if(!P.carry&&Math.hypot(P.x-DEALER_DOOR.x,P.z-DEALER_DOOR.z)<3.2)act={label:'Entrer chez le concessionnaire',fn:()=>openShop('dealer')};
+  else if(!P.carry&&(Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3||Math.hypot(P.x-DEALER_DOOR.x,P.z-DEALER_DOOR.z)<3.2)){
+    const st=Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3,door=st?{label:'Entrer au magasin',fn:()=>openShop('store')}:{label:'Entrer chez le concessionnaire',fn:()=>openShop('dealer')};
+    // un seau ou un objet par terre juste là : on le ramasse d'abord (Espace), la porte passe au 2e bouton (F)
+    if(extra&&extra.act){act=extra.act;act2=door;info=extra.info||'';}else act=door;
+  }
+  else if(!P.carry&&!P.pail&&TOOL&&TOOL.kind==='drone')act={label:'Faire voler le drone',fn:launchDrone};
   else if(!P.carry&&!P.pail&&landContext()){const r=landContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&boatContext()){const r=boatContext();act=r.act||null;info=r.info||'';}
   else if(!P.carry&&!P.pail&&tapItemContext()){const r=tapItemContext();act=r.act||null;act2=r.act2||null;info=r.info||'';}

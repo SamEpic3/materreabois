@@ -1,6 +1,7 @@
 /* Embarquer, débarquer, opérer la grue, boutons d'action */
 function doEnter(){
   const c=context();if(!c.enter)return;
+  if(c.enterDrone){recallDrone();return;}
   if(c.wake){wakeUp();return;}
   if(S.mode==='pass'){leavePassenger();return;}
   if(c.enterPass){boardPassenger(c.enterPass);return;}
