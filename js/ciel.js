@@ -147,7 +147,7 @@ function updateSky(dt,focus){
     fireLight.position.set(p.x,CAMP_H+(lit?0.8:1.4),p.z);fireLight.color.setHex(lit?0xff9a48:0xffcf80);
     fireLight.intensity=(lit?1.4+0.2*Math.sin(S.time*13):0.9)*(0.5+0.6*(1-dayK));
   }else if(f){fireLight.color.setHex(0xff9a48);fireLight.position.set(f[0],f[1],f[2]);fireLight.intensity=Math.max(0,night)*(1.6+0.25*Math.sin(S.time*13)+0.15*Math.sin(S.time*7.3));}else fireLight.intensity=0;
-  if(S.mode==='vtt'&&V&&night>0.05){
+  if(S.mode==='vtt'&&V&&!V.spec.boat&&night>0.05){   // pas de phares sur la chaloupe
     const fx=Math.sin(V.th),fz=Math.cos(V.th),y=H(V.x,V.z)+1.1;
     headLight.position.set(V.x+fx*1.6,y,V.z+fz*1.6);headLight.target.position.set(V.x+fx*12,y-1.6,V.z+fz*12);headLight.target.updateMatrixWorld();
     headLight.intensity=night*2.2;

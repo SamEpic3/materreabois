@@ -19,7 +19,7 @@ const TRAILS=[
   [[22,-28],[44,-24],[58,-6]],
   [[0,0],[-4,12],[-20,26],[-36,38],[-44,41]]
 ];
-const MUD=[{x:22,z:-28,r:4.5},{x:-20,z:-35,r:4},{x:38,z:-25.5,r:3.6},{x:29,z:-42,r:3.2}];
+const MUD=[];   // plus de trous de boue sur les sentiers
 const PILE_DEF=[{x:18,z:-65},{x:-49,z:-28},{x:60,z:-3}];
 const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (position fixée plus bas)
 const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même forêt pour les sauvegardes

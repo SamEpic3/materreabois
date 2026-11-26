@@ -21,13 +21,15 @@ function makeBoatModel(){
   const hull=new T.BufferGeometry();hull.setAttribute('position',new T.Float32BufferAttribute(pos,3));hull.computeVertexNormals();
   g.add(new T.Mesh(hull,alu));
   const fs=new T.Shape(pts.map(p=>new T.Vector2(p.x*0.8,p.y*0.96)));
-  g.add(new T.Mesh(new T.ShapeGeometry(fs).rotateX(-Math.PI/2).translate(0,0.16,0),inner));                       // plancher (bien au-dessus de l'eau, même quand ça berce)
+  // plancher : la forme est inversée (y → -y) pour que la pointe reste à l'avant une fois couchée à plat
+  const ff=new T.Shape(pts.map(p=>new T.Vector2(p.x*0.8,-p.y*0.96)));
+  g.add(new T.Mesh(new T.ShapeGeometry(ff).rotateX(-Math.PI/2).translate(0,0.16,0),inner));                       // plancher (bien au-dessus de l'eau, même quand ça berce)
   g.add(new T.Mesh(new T.ShapeGeometry(fs).rotateX(Math.PI/2).translate(0,H0,0),alu));                          // dessous de la coque
   // Membrures du plancher
-  g.add(new T.Mesh(mergeGeos([-1.3,-0.6,0.1,0.8].map(z=>new T.BoxGeometry(1.0,0.03,0.05).translate(0,0.18,z))),new T.MeshPhongMaterial({color:0x6a7378,flatShading:true})));
+  g.add(new T.Mesh(mergeGeos([[-1.3,0.72],[-0.6,0.86],[0.1,0.86],[0.8,0.62]].map(([z,w])=>new T.BoxGeometry(w,0.03,0.05).translate(0,0.18,z))),new T.MeshPhongMaterial({color:0x6a7378,flatShading:true})));
   // Plat-bord, bancs, tolets
   const rim=[];for(let i=0;i<n-1;i++){const a=pts[i],b=pts[i+1],L=Math.hypot(b.x-a.x,b.y-a.y);rim.push(new T.BoxGeometry(0.05,0.05,L+0.02).rotateY(Math.atan2(b.x-a.x,b.y-a.y)).translate((a.x+b.x)/2,H1,(a.y+b.y)/2));}
-  rim.push(new T.BoxGeometry(1.24,0.04,0.28).translate(0,0.33,-1.2),new T.BoxGeometry(1.3,0.04,0.28).translate(0,0.33,0.1),new T.BoxGeometry(0.92,0.04,0.26).translate(0,0.33,1.05));
+  rim.push(new T.BoxGeometry(1.06,0.04,0.28).translate(0,0.33,-1.2),new T.BoxGeometry(1.16,0.04,0.28).translate(0,0.33,0.1),new T.BoxGeometry(0.78,0.04,0.26).translate(0,0.33,1.05));
   [-1,1].forEach(sd=>rim.push(new T.CylinderGeometry(0.02,0.02,0.1,5).translate(sd*0.64,H1+0.05,0.2)));
   g.add(new T.Mesh(mergeGeos(rim),new T.MeshPhongMaterial({color:0x6e767a,shininess:50})));
   // Rames : pivot au tolet
@@ -85,7 +87,6 @@ function updateBoat(v,dt){
   }
   const pr=Math.floor((v.row||0)/Math.PI);
   v.row=(v.row||0)+dt*((driving?Math.abs(thr)+Math.abs(turn)*0.6:(v.net?Math.min(1,Math.abs(v.net.sp||0)):0))*6);
-  if(Math.floor(v.row/Math.PI)!==pr)sfxSplash(v.x,v.z,0.12);
   const m=v.mesh,bob=Math.sin(S.time*1.3+v.x)*0.03;
   m.g.position.set(v.x,LAKE_Y+0.03+bob,v.z);
   m.g.rotation.set(Math.sin(S.time*1.1+v.z)*0.025,v.th,Math.sin(S.time*0.9)*0.03-turn*0.04);
