@@ -26,16 +26,19 @@ function thumb(id,build,side){   // side : outils vus de profil, en entier
   }catch(e){thumbCache[id]='';}
   return thumbCache[id];
 }
-function findSpawn(cols,th,pref){
-  const fx=Math.sin(th),fz=Math.cos(th),others=bodyCircles(null);
-  const free=(x,z)=>{const list=cols.map(([o,r])=>[x+fx*o,z+fz*o,r+0.4]);
+// Orientation à l'apparition : dos au bâtiment le plus proche, le devant (ou le timon) vers la rue
+function spawnHeading(x,z){const [lx]=vilLocal(x,z);return lx>2?VROT-Math.PI/2:lx<-2?VROT+Math.PI/2:VROT;}
+function findSpawn(cols,th0,pref){
+  const others=bodyCircles(null);
+  const free=(x,z)=>{const th=spawnHeading(x,z),fx=Math.sin(th),fz=Math.cos(th);const list=cols.map(([o,r])=>[x+fx*o,z+fz*o,r+0.4]);
     if(circlesHit(list,others))return false;
     if(list.some(c=>inSale(c[0],c[1])||Math.hypot(c[0]-YARD.x,c[1]-YARD.z)<YARD.r+c[2]))return false;
     return list.every(c=>Math.hypot(c[0]-P.x,c[1]-P.z)>c[2]+0.6);};
   const cand=[[14.6,15.6],[14.6,32.4],[-14.5,-19.5],[-14.5,-7.5],pref,[0,-18],[1,-7],[0,14],[0,27],[2,9],[-1,-22]];   // stationnements, puis la rue
-  for(const [lx,lz] of cand){const p=vpos(lx,lz);if(free(p.x,p.z))return p;}
-  for(let r=4;r<30;r+=2)for(let a=0;a<Math.PI*2;a+=0.4){const x=VILLAGE.x+Math.cos(a)*r,z=VILLAGE.z+Math.sin(a)*r;if(free(x,z))return {x,z};}
-  return vpos(pref[0],pref[1]);
+  const out=p=>({x:p.x,z:p.z,th:spawnHeading(p.x,p.z)});
+  for(const [lx,lz] of cand){const p=vpos(lx,lz);if(free(p.x,p.z))return out(p);}
+  for(let r=4;r<30;r+=2)for(let a=0;a<Math.PI*2;a+=0.4){const x=VILLAGE.x+Math.cos(a)*r,z=VILLAGE.z+Math.sin(a)*r;if(free(x,z))return out({x,z});}
+  return out(vpos(pref[0],pref[1]));
 }
 function toolThumbModel(t){
   const g=new T.Group();let m;
@@ -121,7 +124,7 @@ function renderShop(){
     if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
     {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;J.buy(t.name.toLowerCase(),t.price);
       const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,[0,-13]);
-      if(isT)makeTrailerObj(t.id,p.x,p.z,th);else makeVehicle(t.id,p.x,p.z,th);
+      if(isT)makeTrailerObj(t.id,p.x,p.z,p.th);else makeVehicle(t.id,p.x,p.z,p.th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);
   });

@@ -291,9 +291,9 @@ function updatePreview(pv){
 }
 function tongue(t){return {x:t.x+Math.sin(t.th)*t.spec.tl,z:t.z+Math.cos(t.th)*t.spec.tl};}
 function vHitch(v){return {x:v.x-Math.sin(v.th)*v.spec.hitch,z:v.z-Math.cos(v.th)*v.spec.hitch};}
-function canAttach(v,t){if(!v||!t||t.hitch||!v.spec.hitch||towed(v))return false;const p=tongue(t),h=vHitch(v);return Math.hypot(p.x-h.x,p.z-h.z)<1.0&&Math.abs(wrapAng(t.th-v.th))<1.1;}
+function canAttach(v,t){if(!v||!t||t.hitch||!v.spec.hitch||towed(v))return false;const p=tongue(t),h=vHitch(v);return Math.hypot(p.x-h.x,p.z-h.z)<1.3&&Math.abs(wrapAng(t.th-v.th))<1.1;}
 function hitchCtx(){
-  if(P.carry||S.mode!=='foot')return null;
+  if(S.mode!=='foot'&&S.mode!=='vtt')return null;if(S.mode==='foot'&&P.carry)return null;
   if(S.mode==='vtt'){
     if(Math.abs(V.v)>=0.8)return null;
     const tw=towed(V);

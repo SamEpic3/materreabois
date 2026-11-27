@@ -7,7 +7,7 @@ function fmtM3(v){return (Math.round(v*100)/100).toString().replace('.',',')+' m
 function makeChipper(){
   const g=new T.Group(),green=new T.MeshPhongMaterial({color:0x2f6b3a,shininess:50,specular:0x333333}),dark=mat(0x262626),steel=new T.MeshPhongMaterial({color:0x8a9196,shininess:70,specular:0x777777}),blk=mat(0x1b1b1b),yel=mat(0xe8c23a);
   // Châssis et timon
-  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.2,0.14,2.6).translate(0,0.62,-0.2),new T.BoxGeometry(0.08,0.08,1.4).rotateY(0.28).translate(0.2,0.6,1.55),new T.BoxGeometry(0.08,0.08,1.4).rotateY(-0.28).translate(-0.2,0.6,1.55),
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.2,0.14,2.6).translate(0,0.62,-0.2),new T.BoxGeometry(0.08,0.08,1.5).rotateY(-0.3).translate(0.22,0.6,1.52),new T.BoxGeometry(0.08,0.08,1.5).rotateY(0.3).translate(-0.22,0.6,1.52),
     new T.CylinderGeometry(0.05,0.05,0.06,10).translate(0,0.62,2.25),new T.BoxGeometry(0.06,0.4,0.06).translate(0,0.42,1.9)]),dark));
   // Moteur et capot à l'avant
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(1.1,0.8,0.95).translate(0,1.1,0.55),new T.BoxGeometry(1.0,0.12,0.85).translate(0,1.56,0.55)]),green));
@@ -30,8 +30,8 @@ function makeChipper(){
   const cargo=new T.Group();g.add(cargo);
   return {g,wheels,cargo};
 }
-TSPECS.dechiq={name:'déchiqueteuse',label:'Déchiqueteuse',build:makeChipper,tl:2.25,cols:[[0.6,0.7],[-0.9,0.7]],hl:1.4,hw:0.75,cap:0,r:2.2,wr:0.36,tilt:0.04,chipper:true,slots:[]};
-VEH_SHOP.push({id:'dechiq',kind:'trailer',name:'Déchiqueteuse à copeaux',price:9000,desc:'Attelle-la au pick-up. Passe-lui des billots, des tiges ou des cimes par la goulotte arrière : elle en fait des copeaux. (Comment entreposer les copeaux : à venir!)'});
+TSPECS.dechiq={name:'déchiqueteuse',label:'Déchiqueteuse',build:makeChipper,tl:2.25,cols:[[0.45,0.62],[-0.9,0.7]],hl:1.4,hw:0.75,cap:0,r:2.2,wr:0.36,tilt:0.04,chipper:true,slots:[]};
+VEH_SHOP.push({id:'dechiq',kind:'trailer',name:'Déchiqueteuse à copeaux',price:9000,desc:'Attelle-la au pick-up ou au VTT. Passe-lui des billots, des tiges ou des cimes par la goulotte arrière : elle en fait des copeaux. (Comment entreposer les copeaux : à venir!)'});
 
 /* ----- Alimenter la machine ----- */
 function chipIntake(t){return {x:t.x-Math.sin(t.th)*1.9,z:t.z-Math.cos(t.th)*1.9};}
