@@ -72,9 +72,9 @@ function updateHUD(){
   const loadTxt=Object.entries(grp).map(([k,g])=>`${k}${g.n>1?' ×'+g.n:''} : `+(g.p?`${g.p} seau${g.p>1?'x':''}`:`${g.l}/${g.c}`)).join(' · ')||'Aucune remorque';
   const hud=`${S.money}|${TOOL?TOOL.id:''}|${S.hot}|${heldItem()?itemLabel(heldItem()):''}|${S.delivered}|${loadTxt}|${S.mode}|${V?Math.round(Math.abs(V.v)*3.6):0}|${hint}`;
   if(hud===lastHud)return;lastHud=hud;
-  $('sMoney').textContent=S.money.toLocaleString('fr-CA')+' $';{const h=heldItem();$('sTool').textContent=h?itemLabel(h):'Mains vides';}
+  moneyTo(S.money);{const h=heldItem();$('sTool').textContent=h?itemLabel(h):'Mains vides';}
   $('sSpeedWrap').classList.toggle('hidden',S.mode!=='vtt');$('sSpeed').textContent=V?Math.round(Math.abs(V.v)*3.6):0;
-  const he=$('hint');if(he.textContent!==hint){he.textContent=hint;he.classList.remove('faded');clearTimeout(he._t);if(hint)he._t=setTimeout(()=>he.classList.add("faded"),8000);}
+  const he=$('hint');if(he.textContent!==hint){he.textContent=hint;he.classList.remove('faded','in');void he.offsetWidth;he.classList.add('in');clearTimeout(he._t);if(hint)he._t=setTimeout(()=>he.classList.add("faded"),8000);}
 }
 
 // Bouton de test : ajoute de l'argent (à retirer plus tard)

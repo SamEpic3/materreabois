@@ -317,3 +317,39 @@ body.touch .shopGrid .item p{font-size:12px}
 #stats{flex-wrap:nowrap;max-width:min(62vw,560px)}
 body.rot #stats{max-width:calc(var(--appW,100vw) * .6)}
 #netStatus{min-width:0;flex:0 1 auto}
+
+/* ================= Animations ================= */
+@keyframes winIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#help:not(.hidden),#shop:not(.hidden),#board:not(.hidden),#proj:not(.hidden),#journal:not(.hidden),#inv:not(.hidden),#look:not(.hidden),#carte:not(.hidden){animation:fadeIn .18s ease-out}
+#help:not(.hidden) .card,#shop:not(.hidden) .card,#board:not(.hidden) .card,#proj:not(.hidden) .card,#journal:not(.hidden) .card,#inv:not(.hidden) .card,#look:not(.hidden) .card{animation:winIn .24s cubic-bezier(.2,.9,.3,1.15)}
+/* Messages : glissent du haut */
+#toast{transition:opacity .25s,transform .25s;transform:translate(-50%,calc(-50% - 12px))}
+#toast.show{transform:translate(-50%,-50%)}
+/* Boutons : s'enfoncent au toucher */
+.item button,.shopTab,.lookOpt,.lookBtn,.projTools button,.invBtns button,#help button,.slot,.islot,#carte .cbtns button,.xclose{transition:transform .08s,background-color .15s,filter .15s}
+.item button:active,.shopTab:active,.lookOpt:active,.lookBtn:active,.projTools button:active,.invBtns button:active,#help button:active,.slot:active,.islot:active,#carte .cbtns button:active,.xclose:active{transform:scale(.93)}
+.item button:hover:not(:disabled),.shopTab:hover,#help button:hover{filter:brightness(1.08)}
+.sbtn,.abtn{transition:transform .08s,background-color .2s}
+/* Boutons d'action : apparaissent en douceur */
+@keyframes btnIn{from{opacity:0;transform:translateY(10px) scale(.9)}to{opacity:1;transform:none}}
+.abtn:not(.hidden){animation:btnIn .2s ease-out}
+/* Argent : éclair vert ou rouge, et montant qui s'envole */
+@keyframes gainFlash{0%{box-shadow:0 0 0 0 rgba(120,220,110,.0)}25%{box-shadow:0 0 0 3px rgba(120,220,110,.8),0 0 18px rgba(120,220,110,.6)}100%{box-shadow:0 4px 14px rgba(0,0,0,.3)}}
+@keyframes lossFlash{0%{box-shadow:0 0 0 0 rgba(255,110,90,0)}25%{box-shadow:0 0 0 3px rgba(255,110,90,.8),0 0 18px rgba(255,110,90,.55)}100%{box-shadow:0 4px 14px rgba(0,0,0,.3)}}
+#stats.gain{animation:gainFlash .9s ease-out}
+#stats.loss{animation:lossFlash .9s ease-out}
+@keyframes flyUp{0%{opacity:0;transform:translate(-50%,-6px) scale(.8)}15%{opacity:1;transform:translate(-50%,0) scale(1.1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,26px) scale(1)}}
+.moneyFly{position:absolute;z-index:70;pointer-events:none;font-weight:900;font-size:18px;white-space:nowrap;text-shadow:0 2px 6px rgba(0,0,0,.6);animation:flyUp 1.3s ease-out forwards}
+.moneyFly.gain{color:#8fe07a}.moneyFly.loss{color:#ff8f80}
+/* Changement d'outil : rebond */
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes popName{0%{transform:translateX(-50%) scale(1)}40%{transform:translateX(-50%) scale(1.1)}100%{transform:translateX(-50%) scale(1)}}
+.slot.pop{animation:pop .25s ease-out}
+#toolName.pop{animation:popName .25s ease-out}
+/* Consigne : apparaît en douceur */
+@keyframes hintIn{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+/* Point rouge du clavardage */
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#hint.in{animation:hintIn .3s ease-out}
