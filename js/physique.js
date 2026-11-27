@@ -50,11 +50,14 @@ function updateVehicle(v,dt){
         st.tr={x:hx-Math.sin(th2)*tw.spec.tl,z:hz-Math.cos(th2)*tw.spec.tl,th:th2,rel:sg*JACK};
       }
     }
-    const others=bodyCircles(v);
-    if(circlesHit(vehCircles(v,st.nx,st.nz,st.nth),others)||(st.tr&&circlesHit(trCircles(tw,st.tr.x,st.tr.z,st.tr.th),others))){
+    const mine=vehCircles(v,st.nx,st.nz,st.nth).concat(st.tr?trCircles(tw,st.tr.x,st.tr.z,st.tr.th):[]);
+    // Le conducteur pousse ce qu'il touche (véhicules, remorques, billots); sinon, collision simple comme avant
+    const slow=driving?tryPush(v,tw,mine):(circlesHit(mine,bodyCircles(v))?null:0);
+    if(slow===null){
       if(driving&&Math.abs(v.v)>4)toast('Bang ! 💥');
       v.v=Math.abs(v.v)<1.5?0:-v.v*0.25;
-    }else{v.x=st.nx;v.z=st.nz;v.th=st.nth;if(st.tr){tw.x=st.tr.x;tw.z=st.tr.z;tw.th=st.tr.th;}}
+    }else{v.x=st.nx;v.z=st.nz;v.th=st.nth;if(st.tr){tw.x=st.tr.x;tw.z=st.tr.z;tw.th=st.tr.th;}
+      if(slow>0)v.v*=1-Math.min(0.9,slow*6*dt);}
   }
   v.spin+=v.v*dt/sp.wr;
   const g1=ground(v.x,v.z,v.th,sp.hl,sp.hw,_q);

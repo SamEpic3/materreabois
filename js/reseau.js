@@ -42,7 +42,9 @@ const COLS=[
   {c:'pc',items:()=>pieces.map(p=>[p.id,p]),
    key:p=>`${rd(p.cx,50)},${rd(p.cz,50)},${rd(p.rot,50)},${rd(p.len,1000)},${p.split||0},${p.crown?1:0}`,
    ser:p=>({cx:rd(p.cx,1000),cz:rd(p.cz,1000),rot:rd(p.rot,1000),len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,crown:p.crown?1:0}),
-   set:(id,d)=>{const o=pieces.find(p=>p.id===id);if(o)removePiece(o);addPiece(Object.assign({id},d,{crown:!!d.crown}));},
+   set:(id,d)=>{const o=pieces.find(p=>p.id===id);
+     if(o&&o.len===d.len&&(o.split||0)===(d.split||0)&&o.sp===d.sp&&!!o.crown===!!d.crown){o.cx=d.cx;o.cz=d.cz;o.rot=d.rot;placePiece(o);return;}
+     if(o)removePiece(o);addPiece(Object.assign({id},d,{crown:!!d.crown}));},
    del:id=>{const o=pieces.find(p=>p.id===id);if(o)removePiece(o);},
    get:id=>pieces.find(p=>p.id===id)},
   {c:'tr',items:()=>{const sm=stumpOfTree(),a=[];treeList.forEach((t,i)=>{if(t.alive&&!t.work)return;a.push(['t'+i,t,sm.get(t)]);});return a;},

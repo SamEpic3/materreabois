@@ -1,7 +1,7 @@
 /* Service worker : le jeu s'installe comme une app et fonctionne hors ligne.
    Fichiers du jeu : réseau d'abord (pour recevoir les mises à jour), copie locale si hors ligne.
    Three.js (CDN) : copie locale d'abord, puisqu'il ne change jamais. */
-const VERSION='terre-a-bois-v66';
+const VERSION='terre-a-bois-v67';
 const FICHIERS=[
   './',
   'index.html',
@@ -26,7 +26,7 @@ const FICHIERS=[
   'js/fendeuse.js','js/dechiqueteuse.js','js/chaloupe.js','js/constructions.js','js/camp.js','js/cabane.js','js/peche.js','js/commandes.js','js/terres.js',
   'js/plantation.js',
   'js/joueur.js',
-  'js/physique.js',
+  'js/physique.js','js/poussee.js',
   'js/hud.js',
   'js/ciel.js',
   'js/sons.js',
