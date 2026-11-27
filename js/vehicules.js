@@ -166,6 +166,14 @@ function addTandem(g,wr,ww,wx,dz){
 }
 /* Remorque chargeuse : châssis en poutre, ranchers, garde-boue des roues jumelées, timon avec béquille,
    stabilisateurs, poste de l'opérateur et grue (colonne, flèche avec vérin, grappin à griffes courbes). */
+// Bras articulé à deux segments : angles d'élévation (par rapport à l'horizontale) pour atteindre (dh, dy)
+function armIK(L1,L2,dh,dy){
+  const r=clamp(Math.hypot(dh,dy),Math.abs(L1-L2)+0.01,L1+L2-0.01),th=Math.atan2(dy,dh);
+  const a=th+Math.acos(clamp((L1*L1+r*r-L2*L2)/(2*L1*r),-1,1));   // coude en haut
+  const ex=L1*Math.cos(a),ey=L1*Math.sin(a);
+  return {a,b:Math.atan2(dy-ey,dh-ex)};
+}
+function armBeam(L,w,h,mat,dir){return new T.Mesh(mergeGeos([new T.BoxGeometry(w,h,L).translate(0,0,(dir||1)*L/2),new T.CylinderGeometry(h*0.55,h*0.55,w+0.06,10).rotateZ(Math.PI/2)]),mat);}
 function clawGeo(){
   const sh=new T.Shape();sh.moveTo(-0.04,0);sh.lineTo(0.04,0);sh.quadraticCurveTo(0.1,-0.3,0.0,-0.55);sh.lineTo(-0.06,-0.52);sh.quadraticCurveTo(0.02,-0.3,-0.04,0);
   const g=new T.ExtrudeGeometry(sh,{depth:0.3,bevelEnabled:false,curveSegments:8});g.translate(0,0,-0.15);return g;   // pivot en haut, griffe vers -y : le dos bombé du côté +x, la pointe revient vers x=0
@@ -194,10 +202,16 @@ function makeLoader(){
   slew.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.32,0.36,0.14,16).translate(0,0.07,0),new T.CylinderGeometry(0.15,0.17,1.9,12).translate(0,1.05,0),
     new T.BoxGeometry(0.3,0.36,0.46).translate(0,1.95,0.1),new T.CylinderGeometry(0.06,0.06,0.36,10).rotateZ(Math.PI/2).translate(0,1.95,0.0)]),yel));
   slew.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.045,0.045,1.2,8).rotateX(0.62).translate(0,1.45,0.35),new T.CylinderGeometry(0.03,0.03,0.6,8).rotateX(0.62).translate(0,1.75,0.62)]),chrome));
-  const bg=mergeGeos([new T.BoxGeometry(0.2,0.22,1).translate(0,0,0),new T.BoxGeometry(0.22,0.04,1).translate(0,0.12,0)]);
-  const boom=new T.Mesh(bg,yel);boom.position.set(0,1.95,0.5);slew.add(boom);
-  const link=new T.Mesh(new T.CylinderGeometry(0.03,0.03,1,8),metal);link.position.set(0,1.5,1);slew.add(link);
-  const grapple=new T.Group();slew.add(grapple);
+  // Flèche et balancier articulés (le grappin pend au bout, toujours vertical)
+  const LB=3.4,LS=3.3;
+  const boom=new T.Group();boom.position.set(0,1.95,0);slew.add(boom);
+  boom.add(armBeam(LB,0.22,0.26,yel));
+  boom.add(new T.Mesh(new T.CylinderGeometry(0.05,0.05,1.5,8).rotateX(Math.PI/2).translate(0,-0.22,0.95),chrome));
+  const stick=new T.Group();stick.position.set(0,0,LB);boom.add(stick);
+  stick.add(armBeam(LS,0.18,0.22,yel));
+  stick.add(new T.Mesh(new T.CylinderGeometry(0.04,0.04,1.1,8).rotateX(Math.PI/2).translate(0,0.2,0.7),chrome));
+  const link=new T.Group();
+  const grapple=new T.Group();grapple.position.set(0,0,LS);stick.add(grapple);
   grapple.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.1,0.12,0.16,12).translate(0,0.08,0),new T.BoxGeometry(0.36,0.1,0.2).translate(0,-0.02,0)]),dark));
   const cg=clawGeo();
   const clawL=new T.Mesh(cg,yel);clawL.position.set(0.14,-0.04,0);grapple.add(clawL);
@@ -205,10 +219,17 @@ function makeLoader(){
   const hold=new T.Group();hold.position.y=-0.32;grapple.add(hold);
   shadows(g);addSilhouette(g);
   const cargo=new T.Group();cargo.position.set(0,0.87,0);g.add(cargo);
-  return {g,wheels,cargo,crane:{slew,boom,link,grapple,clawL,clawR,hold}};
+  return {g,wheels,cargo,crane:{slew,boom,stick,link,grapple,clawL,clawR,hold,LB,LS}};
 }
 /* Débusqueuse articulée : capot moteur incliné avec calandre et cheminée, lame, cabine à arceaux vitrée,
    arche et grappin à griffes courbes, gros pneus forestiers. */
+// Bras de la débusqueuse (repère de la partie arrière, vers l'arrière = -z)
+const SKA={L1:1.05,L2:1.15,px:0,py:2.5,pz:-2.0,hz:-3.15,yLow:0.5,yHigh:1.35,hold:0.42};
+function skidHoldY(k){return SKA.yLow+(SKA.yHigh-SKA.yLow)*k;}
+function skidArmPose(m,k){
+  const sy=skidHoldY(k)+SKA.hold,ik=armIK(SKA.L1,SKA.L2,-(SKA.hz-SKA.pz),sy-SKA.py);
+  m.boom.rotation.x=ik.a;m.stick.rotation.x=ik.b-ik.a;m.grapple.rotation.x=-ik.b;
+}
 function makeSkidder(){
   const g=new T.Group();
   const yel=new T.MeshPhongMaterial({color:0xd9a520,flatShading:true,shininess:35,specular:0x333333}),dark=mat(0x262626),metal=new T.MeshPhongMaterial({color:0x55595d,shininess:40,specular:0x333333});
@@ -237,8 +258,13 @@ function makeSkidder(){
   const arch=new T.TubeGeometry(new T.CatmullRomCurve3([[0.62,1.2,-2.0],[0.65,2.2,-2.08],[0.4,2.62,-2.1],[-0.4,2.62,-2.1],[-0.65,2.2,-2.08],[-0.62,1.2,-2.0]].map(a=>new T.Vector3(...a))),30,0.08,8,false);
   rear.add(new T.Mesh(mergeGeos([arch,new T.CylinderGeometry(0.22,0.22,0.9,14).rotateZ(Math.PI/2).translate(0,1.4,-1.75)]),dark));
   rear.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.16,0.08,0.04).translate(0.6,1.2,-2.39),new T.BoxGeometry(0.16,0.08,0.04).translate(-0.6,1.2,-2.39)]),new T.MeshBasicMaterial({color:0xc0261e})));
-  // Grappin
-  const grapple=new T.Group();grapple.position.set(0,1.5,-2.5);rear.add(grapple);
+  // Bras articulé (flèche + balancier) au-dessus de l'arche, grappin au bout
+  const boom=new T.Group();boom.position.set(0,2.5,-2.0);rear.add(boom);
+  boom.add(armBeam(SKA.L1,0.2,0.22,yel,-1));
+  boom.add(new T.Mesh(new T.CylinderGeometry(0.045,0.045,0.8,8).rotateX(Math.PI/2).translate(0,-0.16,-0.35),metal));
+  const stick=new T.Group();stick.position.set(0,0,-SKA.L1);boom.add(stick);
+  stick.add(armBeam(SKA.L2,0.16,0.18,yel,-1));
+  const grapple=new T.Group();grapple.position.set(0,0,-SKA.L2);stick.add(grapple);
   grapple.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.12,0.14,0.3,12).translate(0,0.2,0),new T.BoxGeometry(0.5,0.14,0.26).translate(0,0.02,0)]),metal));
   const cg=clawGeo();
   const cl=new T.Mesh(cg,dark);cl.position.set(0.18,-0.02,0);cl.scale.set(1.3,1.15,1.2);cl.rotation.z=0.45;grapple.add(cl);
@@ -248,7 +274,8 @@ function makeSkidder(){
   const wheels=[];
   [[front,1.25],[rear,-1.3]].forEach(([grp,z])=>[1.05,-1.05].forEach(x=>{const w=new T.Group();w.add(new T.Mesh(W.tread,tire),new T.Mesh(W.rim,hub));w.position.set(x,0.65,z);grp.add(w);wheels.push(w);}));
   shadows(g);addSilhouette(g);
-  return {g,wheels,pivots:[],front,rear,grapple,clawL:cl,clawR:cr};
+  const m={g,wheels,pivots:[],front,rear,grapple,clawL:cl,clawR:cr,boom,stick};skidArmPose(m,0);
+  return m;
 }
 const SPECS={
   vtt:{name:'VTT',build:makeVTT,hitch:1.15,wb:1.25,wr:0.34,maxF:9,maxR:3.5,acc:6.5,mudLoss:0.6,steer:0.55,hl:0.8,hw:0.55,

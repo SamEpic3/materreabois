@@ -1,6 +1,6 @@
 /* Débusqueuse : agripper, traîner et relâcher une tige */
 /* ---------- Débusqueuse ---------- */
-function skidGrip(v){const a=v.th+(v.mesh&&v.mesh.rear?v.mesh.rear.rotation.y:0);return {x:v.x-Math.sin(a)*2.8,z:v.z-Math.cos(a)*2.8};}   // suit la partie arrière articulée
+function skidGrip(v){const a=v.th+(v.mesh&&v.mesh.rear?v.mesh.rear.rotation.y:0),r=-SKA.hz;return {x:v.x-Math.sin(a)*r,z:v.z-Math.cos(a)*r};}   // suit la partie arrière articulée
 function pieceTop(pc){const b=pieceButt(pc);return {x:b.x+Math.sin(pc.rot)*pc.len,z:b.z+Math.cos(pc.rot)*pc.len};}
 function skidCandidate(v){
   const g=skidGrip(v);let best=null,bd=1.8;
@@ -12,11 +12,11 @@ function skidGrab(v,c){
   const pc=c.pc,free=c.end==='butt'?pieceTop(pc):pieceButt(pc);
   removePiece(pc);
   const d={len:pc.len,ra:pc.ra,rb:pc.rb,sp:pc.sp,end:c.end,fx:free.x,fz:free.z,mesh:makePieceMesh(pc)};
-  d.mesh.rotation.order='YXZ';scene.add(d.mesh);v.drag=d;updateDrag(v);toast('Tige agrippée');
+  d.mesh.rotation.order='YXZ';scene.add(d.mesh);v.armK=0;v.drag=d;updateDrag(v);toast('Tige agrippée');
 }
 function dragEnds(v){
   const d=v.drag,g=skidGrip(v);
-  const A={x:g.x,z:g.z,y:H(g.x,g.z)+0.85},F={x:d.fx,z:d.fz,y:H(d.fx,d.fz)+(d.end==='butt'?d.rb:d.ra)};
+  const A={x:g.x,z:g.z,y:H(g.x,g.z)+skidHoldY(v.armK??1)},F={x:d.fx,z:d.fz,y:H(d.fx,d.fz)+(d.end==='butt'?d.rb:d.ra)};
   return d.end==='butt'?{butt:A,top:F}:{butt:F,top:A};
 }
 function updateDrag(v){
@@ -35,8 +35,10 @@ function skidRelease(v){
   toast('Tige relâchée');
 }
 // Griffes : fermées quand une tige est prise, ouvertes sinon (mouvement progressif)
-function skidClaws(v,dt){const m=v.mesh;if(!m||!m.clawL)return;const goal=v.drag?-0.22:0.45;
-  const c=m.clawL.rotation.z+(goal-m.clawL.rotation.z)*Math.min(1,(dt||0.016)*6);m.clawL.rotation.z=c;m.clawR.rotation.z=-c;}
+function skidClaws(v,dt){const m=v.mesh;if(!m||!m.clawL)return;const goal=v.drag?-0.22:0.45,f=Math.min(1,(dt||0.016)*6);
+  const c=m.clawL.rotation.z+(goal-m.clawL.rotation.z)*f;m.clawL.rotation.z=c;m.clawR.rotation.z=-c;
+  // Le bras soulève la tige une fois les griffes fermées, et redescend quand elle est relâchée
+  const kg=v.drag&&c<0.05?1:0;v.armK=v.armK??0;v.armK+=clamp(kg-v.armK,-dt*1.6,dt*1.6);skidArmPose(m,v.armK);}
 /* Arracher une souche d'un coup avec la pince */
 function skidStump(v){const g=skidGrip(v);let b=null,bd=2.2;stumpList.forEach(st=>{const d=Math.hypot(g.x-st.x,g.z-st.z);if(d<bd){bd=d;b=st;}});return b;}
 function skidPullStump(v,st){if(!stumpList.includes(st))return;for(let k=0;k<3;k++)spawnChips(st.x,H(st.x,st.z)+0.25,st.z,dirtMat);removeStump(st);sfxKnock(st.x,st.z,1.6);}

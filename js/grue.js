@@ -79,9 +79,9 @@ function updateCrane(t,dt){
   if(cr.phase==='down'){cr.y-=3*dt;if(cr.y<=cr.target){cr.y=cr.target;const f=cr.onDone;cr.onDone=null;if(f)f();cr.phase='up';}}
   else if(cr.phase==='up'){cr.y+=3*dt;if(cr.y>=CR_IDLE){cr.y=CR_IDLE;cr.phase='idle';}}
   m.slew.rotation.y=cr.slew;
-  m.boom.position.z=cr.reach/2;m.boom.scale.z=cr.reach;
-  const drop=Math.max(0.05,CR_TOP-cr.y);
-  m.link.scale.y=drop;m.link.position.set(0,1.95-drop/2,cr.reach);
-  m.grapple.position.set(0,1.95-drop,cr.reach);m.grapple.rotation.y=cr.grip;
+  // Bras articulé : la pointe va au même endroit qu'avant (portée cr.reach, hauteur cr.y)
+  const drop=Math.max(0.05,CR_TOP-cr.y),k=armIK(m.LB,m.LS,cr.reach,-drop);
+  m.boom.rotation.x=-k.a;m.stick.rotation.x=-(k.b-k.a);
+  m.grapple.rotation.set(k.b,cr.grip,0);   // annule l'inclinaison : le grappin pend à la verticale
   const cl=cr.held?-0.06:0.45;m.clawL.rotation.z=cl;m.clawR.rotation.z=-cl;   // griffes pivotant en haut : ouvertes vers l'extérieur
 }
