@@ -14,8 +14,16 @@ function overlapAny(list,others){for(const c of list)for(const o of others){cons
 // Pénétration maximale entre mes cercles et un groupe de cercles : vecteur pour sortir le groupe
 function deepest(mine,theirs){let best=null;
   for(const c of mine)for(const o of theirs){const dx=o[0]-c[0],dz=o[1]-c[1],d=Math.hypot(dx,dz),pen=c[2]+o[2]-d;
-    if(pen>0&&(!best||pen>best.pen)){const n=d>1e-4?[dx/d,dz/d]:[1,0];best={pen,x:n[0]*pen,z:n[1]*pen};}}
+    if(pen>0&&(!best||pen>best.pen)){const n=d>1e-4?[dx/d,dz/d]:[1,0];best={pen,x:n[0]*pen,z:n[1]*pen,o};}}
   return best;}
+// Nouvelle position d'un corps poussé à l'endroit (ox,oz) : poussé loin du centre, il pivote plus qu'il ne glisse
+function pushPose(b,p,ox,oz){
+  const cols=b.spec.cols,h=Math.max(...cols.map(c=>Math.abs(c[0])+c[1]*0.6));
+  const ax=Math.sin(b.th),az=Math.cos(b.th),ux=Math.cos(b.th),uz=-Math.sin(b.th);
+  const s=(ox-b.x)*ax+(oz-b.z)*az,pp=p.x*ux+p.z*uz,pa=p.x*ax+p.z*az;
+  const k=Math.abs(s)>0.05?0.85*Math.pow(Math.min(1,Math.abs(s)/h),2):0,dr=k?pp*k/s:0;
+  return {x:b.x+ax*pa+ux*pp*(1-k),z:b.z+az*pa+uz*pp*(1-k),th:b.th+dr};
+}
 // Groupes poussables : véhicule (+ sa remorque attelée) ou remorque libre
 function pushGroups(v,tw){
   const G=[];
@@ -30,13 +38,19 @@ function tryPush(v,tw,mine){
   const mV=vehMass(v)+(tw?trailerMass(tw):0),moves=[];let slow=0;
   // Véhicules et remorques
   for(const g of pushGroups(v,tw)){
-    const p=deepest(mine,groupCircles(g,0,0));if(!p)continue;
+    const cur=groupCircles(g,0,0),p=deepest(mine,cur);if(!p)continue;
     if(g.locked||g.mass>7*mV)return null;
-    const moved=groupCircles(g,p.x,p.z);
+    // Pose du véhicule et de sa remorque après la poussée (pivot selon l'endroit touché)
+    const nV=g.veh?g.veh.spec.cols.length:0,onVeh=g.veh&&cur.indexOf(p.o)<nV;
+    let pv=null,pt=null;
+    if(g.veh){pv=onVeh?pushPose(g.veh,p,p.o[0],p.o[1]):{x:g.veh.x+p.x,z:g.veh.z+p.z,th:g.veh.th};
+      if(g.tr){if(onVeh){const hs=g.veh.spec.hitch||2;pt=trailerFollow(g.tr,pv.x-Math.sin(pv.th)*hs,pv.z-Math.cos(pv.th)*hs,pv.th);}else pt={x:g.tr.x+p.x,z:g.tr.z+p.z,th:g.tr.th};}}
+    else pt=pushPose(g.tr,p,p.o[0],p.o[1]);
+    const moved=[];if(pv)moved.push(...vehCircles(g.veh,pv.x,pv.z,pv.th));if(pt)moved.push(...trCircles(g.tr,pt.x,pt.z,pt.th));
     if(staticHit(moved))return null;
-    const rest=bodyCircles(v).filter(c=>!groupCircles(g,0,0).some(o=>o[0]===c[0]&&o[1]===c[1]));
+    const rest=bodyCircles(v).filter(c=>!cur.some(o=>o[0]===c[0]&&o[1]===c[1]));
     if(overlapAny(moved,rest))return null;
-    moves.push(()=>{if(g.veh){g.veh.x+=p.x;g.veh.z+=p.z;}if(g.tr){g.tr.x+=p.x;g.tr.z+=p.z;}});
+    moves.push(()=>{if(pv){g.veh.x=pv.x;g.veh.z=pv.z;g.veh.th=pv.th;}if(pt){g.tr.x=pt.x;g.tr.z=pt.z;g.tr.th=pt.th;}});
     slow=Math.max(slow,g.mass/(mV+g.mass));
   }
   // Billots, tiges et cimes au sol

@@ -57,7 +57,7 @@ function updateVehicle(v,dt){
       if(driving&&Math.abs(v.v)>4)toast('Bang ! 💥');
       v.v=Math.abs(v.v)<1.5?0:-v.v*0.25;
     }else{v.x=st.nx;v.z=st.nz;v.th=st.nth;if(st.tr){tw.x=st.tr.x;tw.z=st.tr.z;tw.th=st.tr.th;}
-      if(slow>0)v.v*=1-Math.min(0.9,slow*6*dt);}
+      if(slow>0)v.v*=1-Math.min(0.9,slow*14*dt);}
   }
   v.spin+=v.v*dt/sp.wr;
   const g1=ground(v.x,v.z,v.th,sp.hl,sp.hw,_q);
