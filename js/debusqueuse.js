@@ -1,6 +1,6 @@
 /* Débusqueuse : agripper, traîner et relâcher une tige */
 /* ---------- Débusqueuse ---------- */
-function skidGrip(v){return {x:v.x-Math.sin(v.th)*2.8,z:v.z-Math.cos(v.th)*2.8};}
+function skidGrip(v){const a=v.th+(v.mesh&&v.mesh.rear?v.mesh.rear.rotation.y:0);return {x:v.x-Math.sin(a)*2.8,z:v.z-Math.cos(a)*2.8};}   // suit la partie arrière articulée
 function pieceTop(pc){const b=pieceButt(pc);return {x:b.x+Math.sin(pc.rot)*pc.len,z:b.z+Math.cos(pc.rot)*pc.len};}
 function skidCandidate(v){
   const g=skidGrip(v);let best=null,bd=1.8;
@@ -34,3 +34,9 @@ function skidRelease(v){
   addPiece({cx:(butt.x+top.x)/2,cz:(butt.z+top.z)/2,rot:Math.atan2(top.x-butt.x,top.z-butt.z),len:d.len,ra:d.ra,rb:d.rb,sp:d.sp,crown:false});
   toast('Tige relâchée');
 }
+// Griffes : fermées quand une tige est prise, ouvertes sinon (mouvement progressif)
+function skidClaws(v,dt){const m=v.mesh;if(!m||!m.clawL)return;const goal=v.drag?-0.22:0.45;
+  const c=m.clawL.rotation.z+(goal-m.clawL.rotation.z)*Math.min(1,(dt||0.016)*6);m.clawL.rotation.z=c;m.clawR.rotation.z=-c;}
+/* Arracher une souche d'un coup avec la pince */
+function skidStump(v){const g=skidGrip(v);let b=null,bd=2.2;stumpList.forEach(st=>{const d=Math.hypot(g.x-st.x,g.z-st.z);if(d<bd){bd=d;b=st;}});return b;}
+function skidPullStump(v,st){if(!stumpList.includes(st))return;for(let k=0;k<3;k++)spawnChips(st.x,H(st.x,st.z)+0.25,st.z,dirtMat);removeStump(st);sfxKnock(st.x,st.z,1.6);}

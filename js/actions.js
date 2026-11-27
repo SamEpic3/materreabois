@@ -324,7 +324,9 @@ function driveContext(){
   if(V.type==='abat'){const r=harvContext(V);act=r.act||null;info=r.info||'';}
   if(V.type==='skid'){
     if(V.drag)act={label:`Relâcher la tige (${ftin(V.drag.len)})`,fn:()=>skidRelease(V)};
-    else{const c=skidCandidate(V);if(c){if(Math.abs(V.v)<1.5)act={label:`Agripper (${ftin(c.pc.len)})`,fn:()=>skidGrab(V,c)};else info='Ralentis pour agripper la tige';}}
+    else{const c=skidCandidate(V),st=skidStump(V),slow=Math.abs(V.v)<1.5;
+      if(c){if(slow)act={label:`Agripper (${ftin(c.pc.len)})`,fn:()=>skidGrab(V,c)};else info='Ralentis pour agripper la tige';}
+      if(st){const a={label:'Arracher la souche',fn:()=>skidPullStump(V,st)};if(!slow)info=info||'Ralentis pour arracher la souche';else if(act)act2=a;else act=a;}}
   }
   return {enter:'Débarquer',act,act2,full:false,info};
 }

@@ -168,7 +168,7 @@ function addTandem(g,wr,ww,wx,dz){
    stabilisateurs, poste de l'opérateur et grue (colonne, flèche avec vérin, grappin à griffes courbes). */
 function clawGeo(){
   const sh=new T.Shape();sh.moveTo(-0.04,0);sh.lineTo(0.04,0);sh.quadraticCurveTo(0.1,-0.3,0.0,-0.55);sh.lineTo(-0.06,-0.52);sh.quadraticCurveTo(0.02,-0.3,-0.04,0);
-  const g=new T.ExtrudeGeometry(sh,{depth:0.3,bevelEnabled:false,curveSegments:8});g.translate(0,0,-0.15);return g;   // pivot en haut, griffe vers -y, courbée vers l'intérieur (+x)
+  const g=new T.ExtrudeGeometry(sh,{depth:0.3,bevelEnabled:false,curveSegments:8});g.translate(0,0,-0.15);return g;   // pivot en haut, griffe vers -y : le dos bombé du côté +x, la pointe revient vers x=0
 }
 function makeLoader(){
   const g=new T.Group();
@@ -200,8 +200,8 @@ function makeLoader(){
   const grapple=new T.Group();slew.add(grapple);
   grapple.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.1,0.12,0.16,12).translate(0,0.08,0),new T.BoxGeometry(0.36,0.1,0.2).translate(0,-0.02,0)]),dark));
   const cg=clawGeo();
-  const clawL=new T.Mesh(cg,yel);clawL.position.set(0.14,-0.04,0);clawL.scale.x=-1;grapple.add(clawL);
-  const clawR=new T.Mesh(cg,yel);clawR.position.set(-0.14,-0.04,0);grapple.add(clawR);
+  const clawL=new T.Mesh(cg,yel);clawL.position.set(0.14,-0.04,0);grapple.add(clawL);
+  const clawR=new T.Mesh(cg,yel);clawR.position.set(-0.14,-0.04,0);clawR.scale.x=-1;grapple.add(clawR);
   const hold=new T.Group();hold.position.y=-0.32;grapple.add(hold);
   shadows(g);addSilhouette(g);
   const cargo=new T.Group();cargo.position.set(0,0.87,0);g.add(cargo);
@@ -222,7 +222,7 @@ function makeSkidder(){
   front.add(new T.Mesh(mergeGeos([0,1,2,3,4].map(k=>new T.BoxGeometry(0.86,0.03,0.03).translate(0,1.04+k*0.08,2.3))),metal));
   front.add(new T.Mesh(new T.BoxGeometry(0.2,0.1,0.04).translate(0.5,1.5,2.26),new T.MeshBasicMaterial({color:0xfff3b0})),new T.Mesh(new T.BoxGeometry(0.2,0.1,0.04).translate(-0.5,1.5,2.26),new T.MeshBasicMaterial({color:0xfff3b0})));
   // Lame avant (profil courbe) et ses bras
-  const bl=new T.Shape();bl.moveTo(0,0.18);bl.quadraticCurveTo(0.16,0.5,0.06,0.92);bl.lineTo(-0.04,0.9);bl.quadraticCurveTo(0.04,0.5,-0.1,0.2);bl.lineTo(0,0.18);
+  const bl=new T.Shape();bl.moveTo(0,0.18);bl.quadraticCurveTo(-0.16,0.5,-0.06,0.92);bl.lineTo(0.04,0.9);bl.quadraticCurveTo(-0.04,0.5,0.1,0.2);bl.lineTo(0,0.18);
   front.add(new T.Mesh(mergeGeos([sideExtrude(bl,2.5,0.02).translate(0,0,2.62),new T.BoxGeometry(0.14,0.14,0.8).rotateX(0.3).translate(0.6,0.62,2.25),new T.BoxGeometry(0.14,0.14,0.8).rotateX(0.3).translate(-0.6,0.62,2.25)]),yel));
   // Arrière : châssis, réservoirs, cabine à arceaux
   const rb=new T.Shape();rb.moveTo(-2.35,0.75);rb.lineTo(-2.35,1.25);rb.lineTo(-0.2,1.4);rb.lineTo(0.2,1.4);rb.lineTo(0.2,0.75);rb.lineTo(-2.35,0.75);
@@ -241,14 +241,14 @@ function makeSkidder(){
   const grapple=new T.Group();grapple.position.set(0,1.5,-2.5);rear.add(grapple);
   grapple.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.12,0.14,0.3,12).translate(0,0.2,0),new T.BoxGeometry(0.5,0.14,0.26).translate(0,0.02,0)]),metal));
   const cg=clawGeo();
-  const cl=new T.Mesh(cg,dark);cl.position.set(0.18,-0.02,0);cl.scale.set(-1.3,1.15,1.2);cl.rotation.z=-0.2;grapple.add(cl);
-  const cr=new T.Mesh(cg,dark);cr.position.set(-0.18,-0.02,0);cr.scale.set(1.3,1.15,1.2);cr.rotation.z=0.2;grapple.add(cr);
+  const cl=new T.Mesh(cg,dark);cl.position.set(0.18,-0.02,0);cl.scale.set(1.3,1.15,1.2);cl.rotation.z=0.45;grapple.add(cl);
+  const cr=new T.Mesh(cg,dark);cr.position.set(-0.18,-0.02,0);cr.scale.set(-1.3,1.15,1.2);cr.rotation.z=-0.45;grapple.add(cr);
   // Gros pneus forestiers, jantes jaunes
   const W=wheelGeo(0.65,0.5),tire=mat(0x1b1b1b),hub=new T.MeshPhongMaterial({color:0xd9a520,shininess:35});
   const wheels=[];
   [[front,1.25],[rear,-1.3]].forEach(([grp,z])=>[1.05,-1.05].forEach(x=>{const w=new T.Group();w.add(new T.Mesh(W.tread,tire),new T.Mesh(W.rim,hub));w.position.set(x,0.65,z);grp.add(w);wheels.push(w);}));
   shadows(g);addSilhouette(g);
-  return {g,wheels,pivots:[],front,rear,grapple};
+  return {g,wheels,pivots:[],front,rear,grapple,clawL:cl,clawR:cr};
 }
 const SPECS={
   vtt:{name:'VTT',build:makeVTT,hitch:1.15,wb:1.25,wr:0.34,maxF:9,maxR:3.5,acc:6.5,mudLoss:0.6,steer:0.55,hl:0.8,hw:0.55,

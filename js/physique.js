@@ -64,7 +64,7 @@ function updateVehicle(v,dt){
   v.mesh.pivots.forEach(p=>p.rotation.y=v.steer);if(v.mesh.bars)v.mesh.bars.rotation.y=v.steer*1.3;
   if(v.mesh.front){v.mesh.front.rotation.y=v.steer*0.7;v.mesh.rear.rotation.y=-v.steer*0.7;}
   if(tw)tw.mesh.wheels.forEach(w=>w.rotation.x+=v.v*dt/tw.spec.wr);
-  updateDrag(v);
+  updateDrag(v);if(v.type==='skid')skidClaws(v,dt);
 }
 const TILT={},HITCH_Y=0.55,_hb=new T.Vector3(),_hb2=new T.Vector3(),_he=new T.Euler();
 const skidMark=new T.Mesh(new T.RingGeometry(0.45,0.7,24),new T.MeshBasicMaterial({color:0x5fe07a,transparent:true,opacity:0.85,side:T.DoubleSide,depthTest:false}));
