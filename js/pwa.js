@@ -17,20 +17,20 @@ function applyLayout(){
   document.body.classList.toggle('rot',ROT);
   const a=$('app');
   if(ROT){
-    // Tout l'écran du téléphone (iOS ne compte pas toujours le bas de l'écran dans clientHeight)
-    // iOS ajoute un flou un peu plus bas que la barre d'état : on garde une petite marge noire en plus
-    // iOS renvoie parfois 0 pour les marges de sécurité (au lancement ou au retour dans l'app) :
-    // sur un iPhone à encoche, on garde au moins la hauteur de la barre d'état et de la barre d'accueil.
+    // Deux états possibles sur iPhone :
+    //  · la page couvre tout l'écran (marge du haut > 0) : on laisse une bande noire sous la barre d'état ;
+    //  · iOS place la page SOUS la barre d'état (marge du haut = 0, page moins haute que l'écran) :
+    //    la page commence déjà sous la barre, il ne faut ni décaler ni dépasser sa hauteur réelle.
     const cs=getComputedStyle(probe),envTop=parseFloat(cs.paddingTop)||0,envBot=parseFloat(cs.paddingBottom)||0;
-    const notch=IOS&&Math.max(screen.width,screen.height)>=812;
-    const top0=notch?Math.max(envTop,54):envTop,bot0=notch?Math.max(envBot,21):envBot;
-    const safeTop=top0+(top0>0?14:0);
-    document.body.style.setProperty('--pad-r',bot0+'px');
-    const full=Math.max(vh,innerHeight,probe.getBoundingClientRect().height-envTop-envBot);
-    vh=screen.height?Math.min(full,Math.max(screen.width,screen.height)):full;   // jamais plus grand que l'écran
+    let safeTop,H;
+    if(envTop>0){
+      safeTop=envTop+14;
+      const full=Math.max(vh,innerHeight,probe.getBoundingClientRect().height-envTop-envBot);
+      vh=screen.height?Math.min(full,Math.max(screen.width,screen.height)):full;   // jamais plus grand que l'écran
+      H=vh-safeTop;
+    }else{safeTop=0;vh=Math.min(document.documentElement.clientHeight||innerHeight,innerHeight||9999);H=vh;}
+    document.body.style.setProperty('--pad-r',envBot+'px');
     vw=Math.max(vw,Math.min(screen.width||vw,screen.height||vw));
-    // On laisse une bande noire unie sous la barre d'état (au lieu du jeu flouté par iOS)
-    const H=vh-safeTop;
     a.style.width=H+'px';a.style.height=vw+'px';a.style.transform=`translate(${vw}px,${safeTop}px) rotate(90deg)`;
     a.style.setProperty('--appH',vw+'px');a.style.setProperty('--appW',H+'px');LAY.w=H;LAY.h=vw;LAY.top=safeTop;
     LAY.diag=`écran ${screen.width}×${screen.height} · client ${document.documentElement.clientWidth}×${document.documentElement.clientHeight} · inner ${innerWidth}×${innerHeight} · encoche ${envTop}/${envBot} · app ${H}×${vw} décalé ${safeTop}`;
