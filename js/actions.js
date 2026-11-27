@@ -117,7 +117,7 @@ function setCarry(c){
   P.carry=c;player.carryLog.visible=!!c;updateToolVisual();
   if(c){const cl=player.carryLog;if(c.split){cl.geometry=splitGeo(c.len,c.ra,c.rb,c.split);cl.material=SPLIT_MATS;}else{cl.geometry=pieceGeo(c.len,c.ra,c.rb);cl.material=logMatsFor(c.sp);}}
 }
-function pickUp(pc){removePiece(pc);const c={sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb};if(pc.split)c.split=pc.split;setCarry(c);P.target=null;}
+function pickUp(pc){removePiece(pc);const c={sp:pc.sp,len:pc.len,ra:pc.ra,rb:pc.rb};if(pc.split)c.split=pc.split;if(pc.hu!==undefined)c.hu=pc.hu;setCarry(c);P.target=null;}
 function nearestVehicle(){let b=null,bd=1e9;for(const v of vehicles){const d=Math.hypot(P.x-v.x,P.z-v.z);if(d<v.spec.enterR&&d<bd){bd=d;b=v;}}return b;}
 function takeFrom(c){const m=c.load.pop();c.cargo.remove(m);setCarry(m.userData.c);}
 function putIn(cont){
@@ -129,7 +129,7 @@ function putIn(cont){
 }
 function dropLog(){
   const r=P.rot+Math.PI/2;
-  halvesOf(P.carry).forEach((c,i)=>{const d=0.9+i*0.4;addPiece({cx:P.x+Math.sin(P.rot)*d,cz:P.z+Math.cos(P.rot)*d,rot:r,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,split:c.split,crown:false});});
+  halvesOf(P.carry).forEach((c,i)=>{const d=0.9+i*0.4;addPiece({cx:P.x+Math.sin(P.rot)*d,cz:P.z+Math.cos(P.rot)*d,rot:r,len:c.len,ra:c.ra,rb:c.rb,sp:c.sp,split:c.split,hu:c.hu,crown:false});});
   setCarry(null);sfxKnock(P.x,P.z,0.8);
 }
 let yardCount=0;

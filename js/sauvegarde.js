@@ -5,7 +5,7 @@ const SAVE_VER=2;   // v2 : monde et joueurs séparés (v1 encore lue)
 const WORLD_SIG=`${ORIG_TREE_N}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[ORIG_TREE_N-1].z*1000)}`;   // forêt de départ seulement
 let saveOff=false;
 const r3=v=>Math.round(v*1000)/1000;
-function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=c.split;return o;}
+function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=c.split;if(c.hu!==undefined&&c.hu<44.9)o.hu=Math.round(c.hu*10)/10;return o;}
 function contSnap(c){return {logs:c.load.map(m=>cOf(m.userData.c)),pails:(c.pails||[]).map(p=>({kind:p.kind,L:p.L}))};}
 function snapshot(){
   const f=flatSnapshot(),me={name:ME.name,player:f.player,inv:f.inv,hot:f.hot,t:f.t,hunt:f.hunt};
@@ -81,7 +81,7 @@ function loadGame(given){
     (d.rocks||[]).forEach(([i,x,z])=>{const r=ROCKS.find(r=>r.i===i);if(r){r.x=x;r.z=z;r.moved=true;placeRock(r);}});
   }
   (d.extraStumps||[]).forEach(o=>{const st=makeStump({id:o.id,x:o.x,z:o.z,y:H(o.x,o.z),s:o.s,type:o.type,planted:true});st.work=o.work||0;});
-  (d.pieces||[]).forEach(p=>addPiece({id:p.id,cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,crown:!!p.crown}));
+  (d.pieces||[]).forEach(p=>addPiece({id:p.id,cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,hu:p.hu,crown:!!p.crown}));
   clearAllVehicles();
   (d.vehicles||[]).forEach(o=>{const v=makeVehicle(o.type,o.x,o.z,o.th,o.id);if(o.resale!==undefined)v.resale=o.resale;if(o.bed&&v.bed)fillCont(v.bed,o.bed);});
   (d.trailers||[]).forEach(o=>{const t=makeTrailerObj(o.kind,o.x,o.z,o.th,o.id);if(o.resale!==undefined)t.resale=o.resale;if(o.boat!==undefined)t.boat=o.boat;if(o.chips)t.chips=o.chips;if(o.hitch>=0&&vehicles[o.hitch])t.hitch=vehicles[o.hitch];fillCont(t.c,o.c||{});});

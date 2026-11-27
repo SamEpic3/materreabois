@@ -45,9 +45,9 @@ const COLS=[
    del:()=>{},get:id=>ROCKS.find(r=>'r'+r.i===id)},
   {c:'pc',items:()=>pieces.map(p=>[p.id,p]),
    key:p=>`${rd(p.cx,50)},${rd(p.cz,50)},${rd(p.rot,50)},${rd(p.len,1000)},${p.split||0},${p.crown?1:0}`,
-   ser:p=>({cx:rd(p.cx,1000),cz:rd(p.cz,1000),rot:rd(p.rot,1000),len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,crown:p.crown?1:0}),
+   ser:p=>({cx:rd(p.cx,1000),cz:rd(p.cz,1000),rot:rd(p.rot,1000),len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,hu:p.hu,crown:p.crown?1:0}),
    set:(id,d)=>{const o=pieces.find(p=>p.id===id);
-     if(o&&o.len===d.len&&(o.split||0)===(d.split||0)&&o.sp===d.sp&&!!o.crown===!!d.crown){o.cx=d.cx;o.cz=d.cz;o.rot=d.rot;placePiece(o);return;}
+     if(o&&o.len===d.len&&(o.split||0)===(d.split||0)&&o.sp===d.sp&&!!o.crown===!!d.crown){o.cx=d.cx;o.cz=d.cz;o.rot=d.rot;o.hu=d.hu;placePiece(o);return;}
      if(o)removePiece(o);addPiece(Object.assign({id},d,{crown:!!d.crown}));},
    del:id=>{const o=pieces.find(p=>p.id===id);if(o)removePiece(o);},
    get:id=>pieces.find(p=>p.id===id)},
@@ -111,7 +111,7 @@ const COLS=[
    set:(id,d)=>{const c=contOf(id);if(!c)return;c.load.forEach(m=>c.cargo.remove(m));c.load.length=0;(c.pails||[]).forEach(p=>c.cargo.remove(p.mesh));if(c.pails)c.pails.length=0;fillCont(c,d);},
    del:()=>{},get:id=>contOf(id)},
   {c:'bu',items:()=>S.builds.map(b=>[b.id,b]),
-   key:b=>`${b.k},${rd(b.x,50)},${rd(b.z,50)},${rd(b.rot,50)}|${b.fuel!==undefined?Math.round(b.fuel/15):''},${b.sap!==undefined?rd(b.sap,2):''},${b.syrup!==undefined?rd(b.syrup,20):''},${b.logs?b.logs.length:''},${b.lit!==undefined?Math.round(b.lit/30):''}|${b.on?1:0}${b.open?1:0}|${b.fish?b.fish.map(f=>f?f.k+Math.floor(f.c/10):'-').join(','):''}`,
+   key:b=>`${b.k},${rd(b.x,50)},${rd(b.z,50)},${rd(b.rot,50)}|${b.fuel!==undefined?Math.round(b.fuel/15):''},${b.sap!==undefined?rd(b.sap,2):''},${b.syrup!==undefined?rd(b.syrup,20):''},${b.logs?b.logs.length+':'+Math.round(b.logs.reduce((s,c)=>s+(c.hu??45),0)/8):''},${b.lit!==undefined?Math.round(b.lit/30):''}|${b.on?1:0}${b.open?1:0}|${b.fish?b.fish.map(f=>f?f.k+Math.floor(f.c/10):'-').join(','):''}`,
    ser:b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):b[k];}return o;},
    set:(id,d)=>{const b=S.builds.find(b=>b.id===id);
      if(!b){const st=Object.assign({},d);delete st.k;delete st.x;delete st.z;delete st.rot;addBuild(d.k,{x:d.x,z:d.z,rot:d.rot},st);return;}

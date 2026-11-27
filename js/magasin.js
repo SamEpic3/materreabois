@@ -79,7 +79,7 @@ function renderShop(){
   }
   if(typeof renderHuntShop==='function')renderHuntShop(L,sec);
   sec('Outils');
-  TOOLS.filter(t=>!t.hunt).forEach(t=>{
+  TOOLS.filter(t=>!t.hunt&&!t.store).forEach(t=>{
     const d=document.createElement('div');d.className='item';
     const stats=t.kind==='rod'?'Pour pêcher au lac, du bord ou du quai':t.kind==='shovel'?`Une souche : ≈ ${secs(12*t.delay)}`:`Arbre moyen : ≈ ${secs(Math.max(1,Math.ceil(9*t.fell))*t.delay)} · Une coupe : ≈ ${secs(t.cut*t.delay)}`;
     d.innerHTML=imgTag(thumb(t.id,()=>toolThumbModel(t),true))+`<div class="txt"><b>${t.name}</b>${t.price?` — ${t.price} $`:''}<p>${t.desc}</p><p class="stats">${stats}</p></div>`;

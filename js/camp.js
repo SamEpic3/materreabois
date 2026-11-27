@@ -104,11 +104,11 @@ function carryExtras(){
   const f=buildNear('feu');if(f)return {act:{label:`Mettre la bûche au feu de camp (+${fuelOf(c)} s)`,fn:()=>feed(f,CAMPFIRE_MAX,'Feu de camp')}};
   const s=buildNear('sucres');if(s)return {act:{label:`Mettre la bûche sous la bouilloire (+${fuelOf(c)} s)`,fn:()=>feed(s,FUEL_MAX,'Bouilloire')}};
   if(nearStove())return {act:{label:`Mettre la bûche dans le poêle (+${fuelOf(c)} s)`,fn:()=>feed(stove,STOVE_MAX,'Poêle')}};
-  const a=buildNear('abri');
+  const a=nearStack();
   if(a){
-    if(c.len>SHED_MAXLEN)return {info:`Bûche de ${ftin(c.len)} : l'abri prend des bûches de 3 pi maximum, recoupe-la`};
-    if(a.logs.length>=SHED_CAP)return {info:'L\'abri à bois est plein'};
-    return {act:{label:`Corder dans l'abri (${a.logs.length}/${SHED_CAP})`,fn:()=>{const left=[];halvesOf(c).forEach(h=>{if(a.logs.length<SHED_CAP)a.logs.push(h);else left.push(h);});setCarry(left[0]||null);refreshShed(a);}}};
+    if(c.len>SHED_MAXLEN)return {info:`Bûche de ${ftin(c.len)} : ${stackName(a)} prend des bûches de 3 pi maximum, recoupe-la`};
+    if(a.logs.length>=stackCap(a))return {info:a.k==='corde'?'La corde est pleine':'L\'abri à bois est plein'};
+    return {act:{label:`Corder dans ${stackName(a)} (${a.logs.length}/${stackCap(a)})`,fn:()=>{const left=[];halvesOf(c).forEach(h=>{if(a.logs.length<stackCap(a))a.logs.push(h);else left.push(h);});setCarry(left[0]||null);refreshShed(a);}}};
   }
   return null;
 }
@@ -117,7 +117,7 @@ function campExtras(){
   if(nearDoor())return {act:{label:'Projets du camp',fn:openProjects},info:S.camp.poele?`Poêle à bois : ${fmtFire(stove.fuel)} · apporte une bûche pour le chauffer`:''};
   const cf=chipFreeContext();if(cf)return cf;
   const fd=nearestSplitter();if(fd)return {info:fd.splitting?'La fendeuse travaille…':`Fendeuse : apporte une bûche de ${Math.round(SPLIT_MAX/INCH)} po maximum pour la fendre`};
-  const a=buildNear('abri');if(a&&a.logs.length)return {act:{label:`Prendre une bûche dans l'abri (${a.logs.length})`,fn:()=>{const c=a.logs.pop();refreshShed(a);setCarry(c);}}};
+  const a=nearStack();if(a&&a.logs.length)return {act:{label:`Prendre une bûche dans ${stackName(a)} (${a.logs.length})`,fn:()=>{const c=a.logs.pop();refreshShed(a);setCarry(c);}},info:`${a.k==='corde'?'Corde':'Abri'} : ${stackSummary(a)}`};
   const q=buildNear('bbq');if(q)return bbqContext(q);
   const f=buildNear('feu');if(f)return {info:`Feu de camp : ${fmtFire(f.fuel)} · apporte du bois de chauffage`};
   return null;

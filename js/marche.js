@@ -32,8 +32,9 @@ function renderBoard(){
   $('boardList').innerHTML=`<table><tr><th>Billot de sciage</th><th class="num">8 pi</th><th class="num">Le pied</th><th></th></tr>${rows}
     <tr><td>Bois de chauffage</td><td></td><td class="num">${(FIREWOOD_FT*mkt('chauffage')).toFixed(2).replace('.',',')} $</td><td>${trend('chauffage')}</td></tr>
     <tr><td>Bois de chauffage fendu</td><td></td><td class="num">${(FIREWOOD_FT*SPLIT_BONUS*mkt('chauffage')).toFixed(2).replace('.',',')} $</td><td>${trend('chauffage')}</td></tr>
+    <tr><td>Bois de chauffage fendu sec</td><td></td><td class="num">${(FIREWOOD_FT*SPLIT_BONUS*1.6*mkt('chauffage')).toFixed(2).replace('.',',')} $</td><td>${trend('chauffage')}</td></tr>
     <tr><td>Sirop d'érable (magasin)</td><td class="num">${syrupPrice()} $ / L</td><td></td><td>${trend('sirop')}</td></tr></table>
-    <p>Billot de sciage : 7 pi 10 po et plus, payé au pied (un 12 pi vaut 1,5 fois un 8 pi). Plus court : bois de chauffage.</p>`;
+    <p>Billot de sciage : 7 pi 10 po et plus, payé au pied (un 12 pi vaut 1,5 fois un 8 pi). Plus court : bois de chauffage. Le bois de chauffage mi-sec se vend ×1,3 et le sec ×1,6.</p>`;
 }
 function openBoard(){renderBoard();$('board').classList.remove('hidden');for(const k in keys)keys[k]=false;}
 function closeBoard(){$('board').classList.add('hidden');}

@@ -139,10 +139,10 @@ function createBbq(b,o){const g=makeBbqModel();o.add(g);Object.assign(o,g.userDa
 function refreshShed(b){
   const o=b._o;if(!o)return;
   const st=o.stack;while(st.children.length)st.remove(st.children[0]);
-  const perRow=SHED_COLS*SHED_LAYERS;
+  const perRow=SHED_COLS*SHED_LAYERS,one=b.k==='corde';
   b.logs.forEach((c,i)=>{
     const row=Math.floor(i/perRow),k=i%perRow,layer=Math.floor(k/SHED_COLS),col=k%SHED_COLS;
-    const m=makePieceMesh(c);m.position.set((col-(SHED_COLS-1)/2)*0.4+(layer%2)*0.1,0.2+layer*0.36,row===0?-0.55:0.48);st.add(m);
+    const m=makePieceMesh(c);m.position.set((col-(SHED_COLS-1)/2)*0.4+(layer%2)*0.1,0.2+layer*0.36,one?0:row===0?-0.55:0.48);st.add(m);
   });
 }
 // Bécosse (porte avec une lune) : déjà là au départ, mais déplaçable comme les autres constructions
@@ -313,7 +313,7 @@ function kdName(k){const kd=KINDS[k];return (kd.art==='l\''?'un ':kd.art==='la'?
 function refundOf(b){return Math.round(KINDS[b.k].price*0.5);}
 let pendingDemo=null;
 function demolish(b){
-  if(b.k==='abri'&&b.logs.length){toast('Vide l\'abri avant de le démolir');return;}
+  if((b.k==='abri'||b.k==='corde')&&b.logs.length){toast(b.k==='corde'?'Vide la corde avant de la démolir':'Vide l\'abri avant de le démolir');return;}
   const kd=KINDS[b.k];
   if(!pendingDemo||pendingDemo.b!==b||S.time-pendingDemo.t>3){pendingDemo={b,t:S.time};toast(`Démolir ${kd.art}${kd.art.endsWith('\'')?'':' '}${kd.name.toLowerCase()} pour ${refundOf(b)} $ ? Appuie encore pour confirmer`);return;}
   pendingDemo=null;
