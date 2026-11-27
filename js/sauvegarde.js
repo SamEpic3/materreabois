@@ -27,6 +27,7 @@ function flatSnapshot(){
     player:{x:r3(S.inside?CABIN_DOOR.x:P.x),z:r3(S.inside?CABIN_DOOR.z+0.5:P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:null},   // le seau est dans l'inventaire
     trees:treeList.map((t,i)=>!t.alive?[i,1,t.stumpGone?1:0]:t.work>0?[i,0,r3(t.work)]:null).filter(Boolean),
     campStumps:campStumps.map((s,i)=>s.gone?[i,1]:s.work>0?[i,0,r3(s.work)]:null).filter(Boolean),
+    rocks:ROCKS.filter(r=>r.moved).map(r=>[r.i,r3(r.x),r3(r.z)]),
     extraStumps:stumpList.filter(s=>s.tree&&s.tree.planted).map(s=>({id:s.id,x:s.x,z:s.z,s:s.size,type:s.tree.type,work:r3(s.work)})),
     pieces:pcs,
     vehicles:vehicles.map(v=>({id:v.id,type:v.type,x:r3(v.x),z:r3(v.z),th:r3(v.th),resale:v.resale,bed:v.bed?contSnap(v.bed):null})),
@@ -77,6 +78,7 @@ function loadGame(given){
     (d.trees||[]).forEach(([i,f,x])=>{const t=treeList[i];if(!t||t.cleared)return;   // terrain dégagé (village, camp…) : pas de souche qui revient
       if(f){hideTree(t);if(x)t.stumpGone=true;else makeStump(t);}else t.work=x;});
     (d.campStumps||[]).forEach(([i,f,w])=>{const s=campStumps[i];if(!s)return;if(f)removeStump(s,true);else s.work=w;});
+    (d.rocks||[]).forEach(([i,x,z])=>{const r=ROCKS.find(r=>r.i===i);if(r){r.x=x;r.z=z;r.moved=true;placeRock(r);}});
   }
   (d.extraStumps||[]).forEach(o=>{const st=makeStump({id:o.id,x:o.x,z:o.z,y:H(o.x,o.z),s:o.s,type:o.type,planted:true});st.work=o.work||0;});
   (d.pieces||[]).forEach(p=>addPiece({id:p.id,cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,crown:!!p.crown}));

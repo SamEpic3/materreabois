@@ -735,7 +735,7 @@ function makeLog(geo){const m=new T.Mesh(geo,logMats);m.castShadow=true;m.receiv
 
 const piles=[];
 
-const stumpList=[],campStumps=[];   // souches qu'on peut arracher à la pelle
+const stumpList=[],campStumps=[],ROCKS=[];   // ROCKS : roches qu'on peut pousser avec un véhicule   // souches qu'on peut arracher à la pelle
 /* ---------- Forêt ---------- */
 const SPECIES={epinette:{n:'Épinette',p:30},sapin:{n:'Sapin',p:25},erable:{n:'Érable',p:45},bouleau:{n:'Bouleau',p:35}};
 const TREE_INST={},REG_INST={};
@@ -897,7 +897,8 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const rockMat=new T.MeshPhongMaterial({color:0xffffff,flatShading:true,vertexColors:true,shininess:4});
   const rockMs=[rockGeo(3),rockGeo(17)].map((gg,j)=>new T.InstancedMesh(gg,rockMat,rocks.filter((r,i)=>i%2===j).length));
   const cnt=[0,0];
-  rocks.forEach((r,i)=>{q.setFromEuler(new T.Euler(rnd(),rnd()*6,rnd()));m4.compose(p.set(r.x,H(r.x,r.z)+0.1*r.s,r.z),q,sc.set(r.s,r.s*0.7,r.s));const rm=rockMs[i%2],n=cnt[i%2]++;const gone=trailDist(r.x,r.z)<2.5||vilOut(r.x,r.z)<1;if(gone)removeCol(r.col);rm.setMatrixAt(n,gone?ZERO_M:m4);rm.setColorAt(n,col.set(rnd()<0.5?0x8a8780:0x76736c));});
+  rocks.forEach((r,i)=>{q.setFromEuler(new T.Euler(rnd(),rnd()*6,rnd()));m4.compose(p.set(r.x,H(r.x,r.z)+0.1*r.s,r.z),q,sc.set(r.s,r.s*0.7,r.s));const rm=rockMs[i%2],n=cnt[i%2]++;const gone=trailDist(r.x,r.z)<2.5||vilOut(r.x,r.z)<1;if(gone)removeCol(r.col);rm.setMatrixAt(n,gone?ZERO_M:m4);
+    r.i=i;r.q=q.clone();r.rm=rm;r.n=n;r.gone=gone;r.x0=r.x;r.z0=r.z;r.col.rock=r;if(!gone)ROCKS.push(r);rm.setColorAt(n,col.set(rnd()<0.5?0x8a8780:0x76736c));});
   rockMs.forEach(rm=>{rm.castShadow=true;rm.receiveShadow=true;scene.add(rm);});
 
   // Souches autour du camp (on a déjà bûché ici)

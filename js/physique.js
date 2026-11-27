@@ -52,7 +52,8 @@ function updateVehicle(v,dt){
     }
     const mine=vehCircles(v,st.nx,st.nz,st.nth).concat(st.tr?trCircles(tw,st.tr.x,st.tr.z,st.tr.th):[]);
     // Le conducteur pousse ce qu'il touche (véhicules, remorques, billots); sinon, collision simple comme avant
-    const slow=driving?tryPush(v,tw,mine):(circlesHit(mine,bodyCircles(v))?null:0);
+    const old=vehCircles(v,v.x,v.z,v.th).concat(tw?trCircles(tw,tw.x,tw.z,tw.th):[]);
+    const slow=driving?tryPush(v,tw,mine,old):(circlesHit(mine,bodyCircles(v))?null:0);
     if(slow===null){
       if(driving&&Math.abs(v.v)>4)toast('Bang ! 💥');
       v.v=Math.abs(v.v)<1.5?0:-v.v*0.25;

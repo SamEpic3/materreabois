@@ -39,6 +39,10 @@ function remoteFell(t,fd){
   makeStump(t);
 }
 const COLS=[
+  {c:'rk',items:()=>ROCKS.filter(r=>r.moved).map(r=>['r'+r.i,r]),
+   key:r=>`${rd(r.x,50)},${rd(r.z,50)}`,ser:r=>({x:rd(r.x,1000),z:rd(r.z,1000)}),
+   set:(id,d)=>{const r=ROCKS.find(r=>'r'+r.i===id);if(r&&(Math.abs(r.x-d.x)>0.005||Math.abs(r.z-d.z)>0.005))moveRock(r,d.x,d.z);},
+   del:()=>{},get:id=>ROCKS.find(r=>'r'+r.i===id)},
   {c:'pc',items:()=>pieces.map(p=>[p.id,p]),
    key:p=>`${rd(p.cx,50)},${rd(p.cz,50)},${rd(p.rot,50)},${rd(p.len,1000)},${p.split||0},${p.crown?1:0}`,
    ser:p=>({cx:rd(p.cx,1000),cz:rd(p.cz,1000),rot:rd(p.rot,1000),len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,crown:p.crown?1:0}),
