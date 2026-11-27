@@ -16,6 +16,16 @@ function deepest(mine,theirs){let best=null;
   for(const c of mine)for(const o of theirs){const dx=o[0]-c[0],dz=o[1]-c[1],d=Math.hypot(dx,dz),pen=c[2]+o[2]-d;
     if(pen>0&&(!best||pen>best.pen)){const n=d>1e-4?[dx/d,dz/d]:[1,0];best={pen,x:n[0]*pen,z:n[1]*pen,o};}}
   return best;}
+// Remorque attelée poussée : elle pivote autour de la boule d'attelage; seule la poussée dans l'axe
+// de la remorque fait bouger le véhicule (les deux restent articulés à l'attelage)
+function pushHitched(veh,tr,p){
+  const ax=Math.sin(tr.th),az=Math.cos(tr.th),ux=Math.cos(tr.th),uz=-Math.sin(tr.th),hp=tongue(tr);
+  const s=(p.o[0]-hp.x)*ax+(p.o[1]-hp.z)*az,pa=p.x*ax+p.z*az,pp=p.x*ux+p.z*uz;
+  const nv={x:veh.x+ax*pa,z:veh.z+az*pa,th:veh.th},hs=veh.spec.hitch||2,hx=nv.x-Math.sin(nv.th)*hs,hz=nv.z-Math.cos(nv.th)*hs;
+  let th=tr.th+(Math.abs(s)>0.2?pp/s:0);
+  if(Math.abs(wrapAng(th-veh.th))>JACK)th=veh.th+Math.sign(wrapAng(th-veh.th))*JACK;   // pas plus que la mise en portefeuille
+  return {v:nv,t:{x:hx-Math.sin(th)*tr.spec.tl,z:hz-Math.cos(th)*tr.spec.tl,th}};
+}
 // Nouvelle position d'un corps poussé à l'endroit (ox,oz) : poussé loin du centre, il pivote plus qu'il ne glisse
 function pushPose(b,p,ox,oz){
   const cols=b.spec.cols,h=Math.max(...cols.map(c=>Math.abs(c[0])+c[1]*0.6));
@@ -44,7 +54,8 @@ function tryPush(v,tw,mine){
     const nV=g.veh?g.veh.spec.cols.length:0,onVeh=g.veh&&cur.indexOf(p.o)<nV;
     let pv=null,pt=null;
     if(g.veh){pv=onVeh?pushPose(g.veh,p,p.o[0],p.o[1]):{x:g.veh.x+p.x,z:g.veh.z+p.z,th:g.veh.th};
-      if(g.tr){if(onVeh){const hs=g.veh.spec.hitch||2;pt=trailerFollow(g.tr,pv.x-Math.sin(pv.th)*hs,pv.z-Math.cos(pv.th)*hs,pv.th);}else pt={x:g.tr.x+p.x,z:g.tr.z+p.z,th:g.tr.th};}}
+      if(g.tr){if(onVeh){const hs=g.veh.spec.hitch||2;pt=trailerFollow(g.tr,pv.x-Math.sin(pv.th)*hs,pv.z-Math.cos(pv.th)*hs,pv.th);}
+        else{const r=pushHitched(g.veh,g.tr,p);pv=r.v;pt=r.t;}}}
     else pt=pushPose(g.tr,p,p.o[0],p.o[1]);
     const moved=[];if(pv)moved.push(...vehCircles(g.veh,pv.x,pv.z,pv.th));if(pt)moved.push(...trCircles(g.tr,pt.x,pt.z,pt.th));
     if(staticHit(moved))return null;
