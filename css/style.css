@@ -314,3 +314,6 @@ body.touch .shopGrid .item p{font-size:12px}
 #players .pl small{color:rgba(255,255,255,.6)}
 .projTools button{background:rgba(255,255,255,.1);color:#fff}
 .projTools button.on{background:var(--acc);color:var(--accInk)}
+#stats{flex-wrap:nowrap;max-width:min(62vw,560px)}
+body.rot #stats{max-width:calc(var(--appW,100vw) * .6)}
+#netStatus{min-width:0;flex:0 1 auto}

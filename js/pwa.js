@@ -8,7 +8,8 @@ if(PWA&&isTouch){
 }
 // Sonde CSS : marges de sécurité (encoche, barre d'état) et hauteur réelle de l'écran
 const probe=document.createElement('div');
-probe.style.cssText='position:fixed;left:0;top:0;width:0;height:100lvh;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';
+probe.style.cssText='position:fixed;left:0;top:0;width:0;height:100lvh;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:content-box;visibility:hidden;pointer-events:none';
+const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 document.body.appendChild(probe);
 function applyLayout(){
   let vw=document.documentElement.clientWidth||innerWidth,vh=document.documentElement.clientHeight||innerHeight;
@@ -18,15 +19,22 @@ function applyLayout(){
   if(ROT){
     // Tout l'écran du téléphone (iOS ne compte pas toujours le bas de l'écran dans clientHeight)
     // iOS ajoute un flou un peu plus bas que la barre d'état : on garde une petite marge noire en plus
-    const cs=getComputedStyle(probe),safeTop=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingTop)>0?14:0);
-    const full=Math.max(vh,innerHeight,probe.getBoundingClientRect().height-(parseFloat(cs.paddingTop)||0));
+    // iOS renvoie parfois 0 pour les marges de sécurité (au lancement ou au retour dans l'app) :
+    // sur un iPhone à encoche, on garde au moins la hauteur de la barre d'état et de la barre d'accueil.
+    const cs=getComputedStyle(probe),envTop=parseFloat(cs.paddingTop)||0,envBot=parseFloat(cs.paddingBottom)||0;
+    const notch=IOS&&Math.max(screen.width,screen.height)>=812;
+    const top0=notch?Math.max(envTop,54):envTop,bot0=notch?Math.max(envBot,21):envBot;
+    const safeTop=top0+(top0>0?14:0);
+    document.body.style.setProperty('--pad-r',bot0+'px');
+    const full=Math.max(vh,innerHeight,probe.getBoundingClientRect().height-envTop-envBot);
     vh=screen.height?Math.min(full,Math.max(screen.width,screen.height)):full;   // jamais plus grand que l'écran
     vw=Math.max(vw,Math.min(screen.width||vw,screen.height||vw));
     // On laisse une bande noire unie sous la barre d'état (au lieu du jeu flouté par iOS)
     const H=vh-safeTop;
     a.style.width=H+'px';a.style.height=vw+'px';a.style.transform=`translate(${vw}px,${safeTop}px) rotate(90deg)`;
-    a.style.setProperty('--appH',vw+'px');LAY.w=H;LAY.h=vw;LAY.top=safeTop;
-  }else{a.style.width='';a.style.height='';a.style.transform='';a.style.removeProperty('--appH');}
+    a.style.setProperty('--appH',vw+'px');a.style.setProperty('--appW',H+'px');LAY.w=H;LAY.h=vw;LAY.top=safeTop;
+    LAY.diag=`écran ${screen.width}×${screen.height} · client ${document.documentElement.clientWidth}×${document.documentElement.clientHeight} · inner ${innerWidth}×${innerHeight} · encoche ${envTop}/${envBot} · app ${H}×${vw} décalé ${safeTop}`;
+  }else{document.body.style.removeProperty('--pad-r');a.style.width='';a.style.height='';a.style.transform='';a.style.removeProperty('--appH');}
   renderer.setSize(viewW(),viewH());updateProj();
 }
 addEventListener('resize',applyLayout);
@@ -58,3 +66,6 @@ function resetZoom(){const vv=window.visualViewport;if(!vv||Math.abs(vv.scale-1)
 if(window.visualViewport){visualViewport.addEventListener("resize",()=>{resetPageView();resetZoom();});visualViewport.addEventListener("scroll",resetPageView);}
 addEventListener('pageshow',()=>{resetZoom();resetPageView();});
 setTimeout(()=>{resetZoom();resetPageView();applyLayout();},400);
+
+// Diagnostic : toucher 4 fois de suite l'argent affiche les mesures de l'écran
+{let n=0,tm=0;$('stats').addEventListener('pointerdown',()=>{const now=Date.now();n=now-tm<500?n+1:1;tm=now;if(n>=4){n=0;toast(LAY.diag||`écran ${screen.width}×${screen.height} · inner ${innerWidth}×${innerHeight}`,6000);}});}
