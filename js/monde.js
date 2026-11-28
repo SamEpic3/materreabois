@@ -34,9 +34,13 @@ PATHS.forEach(P=>{const tr=P.pts,e=(P.w-3)/2;for(let i=0;i<tr.length-1;i++)SEGS.
 const SEGS0=SEGS.slice();   // sentiers d'origine : servent à générer la forêt de départ (sauvegardes compatibles)
 const SEGS_LAKE=SEGS.slice();
 function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;t=clamp(t,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
-function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
-function trailDistLake(x,z){let m=1e9;for(const s of SEGS_LAKE){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
-function trailDist0(x,z){let m=1e9;for(const s of SEGS0){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
+// Grille de 16 m : chaque case connaît les bouts de chemin à moins de 14 m (au-delà, la distance exacte ne sert à rien)
+const TG=16,TGM=14,TRAIL_GRID=new Map();
+SEGS.forEach(s=>{const x0=Math.floor((Math.min(s[0],s[2])-TGM-s[4])/TG),x1=Math.floor((Math.max(s[0],s[2])+TGM+s[4])/TG),z0=Math.floor((Math.min(s[1],s[3])-TGM-s[4])/TG),z1=Math.floor((Math.max(s[1],s[3])+TGM+s[4])/TG);
+  for(let i=x0;i<=x1;i++)for(let j=z0;j<=z1;j++){const k=i*4096+j;let l=TRAIL_GRID.get(k);if(!l)TRAIL_GRID.set(k,l=[]);l.push(s);}});
+function trailDist(x,z){const l=TRAIL_GRID.get(Math.floor(x/TG)*4096+Math.floor(z/TG));if(!l)return TGM;let m=TGM;for(const s of l){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
+const trailDistLake=(x,z)=>trailDist(x,z);
+const trailDist0=(x,z)=>trailDist(x,z);
 function mudAt(x,z){let m=0;for(const p of MUD){m=Math.max(m,smoothstep(p.r,p.r*0.55,Math.hypot(x-p.x,z-p.z)));}return m;}
 function baseH(x,z){return 4.5*Math.sin(x*0.0085+0.4)*Math.cos(z*0.0072+0.9)+4.2*Math.sin(x*0.014+0.8)*Math.cos(z*0.011+0.3)+1.8*Math.sin(x*0.031+2.1)*Math.sin(z*0.027+1.2)
   +1.7*Math.sin(x*0.045+0.5)*Math.cos(z*0.038)+0.8*Math.sin(x*0.1+1.3)*Math.sin(z*0.085+0.7);}
@@ -1043,7 +1047,9 @@ function updateCulling(f){
   // Panneau
   const pan=new T.Mesh(new T.PlaneGeometry(1.4,0.5),new T.MeshBasicMaterial({map:canvasTex(256,92,(c,W,Hh)=>{c.fillStyle='#4d3220';c.fillRect(0,0,W,Hh);c.fillStyle='#f1e6c8';c.font='bold 34px Georgia,serif';c.textAlign='center';c.textBaseline='middle';c.fillText('Mont du Loup',W/2,Hh/2);})}));
   pan.position.set(-w/2-0.6,1.4,d/2+0.8);pan.rotation.y=-0.8;g.add(pan);
-  {const sx=-w/2-0.6,sz=d/2+0.8,bot=H(HILL.x+sx,HILL.z+sz)-H(HILL.x,HILL.z)-0.4;pan.position.y=bot+1.8;g.add(new T.Mesh(new T.BoxGeometry(0.08,1.75,0.08).translate(sx,bot+0.875,sz),post));}
+  {const sx=-w/2-0.6,sz=d/2+0.8,bot=H(HILL.x+sx,HILL.z+sz)-H(HILL.x,HILL.z)-0.4;pan.position.y=bot+1.8;const nx=Math.sin(-0.8)*0.07,nz=Math.cos(-0.8)*0.07;   // le poteau derrière l'affiche, et un dos en bois
+   g.add(new T.Mesh(new T.BoxGeometry(0.08,1.75,0.08).translate(sx-nx,bot+0.875,sz-nz),post));
+   const bk=new T.Mesh(new T.PlaneGeometry(1.4,0.5),new T.MeshPhongMaterial({color:0x4d3220,flatShading:true}));bk.position.set(sx-nx*0.2,bot+1.8,sz-nz*0.2);bk.rotation.y=-0.8+Math.PI;g.add(bk);}
   g.position.set(HILL.x,H(HILL.x,HILL.z),HILL.z);shadows(g);scene.add(g);
   // Garde-corps : on ne tombe pas du belvédère
   for(let k=-w/2;k<=w/2;k+=0.5){addCol(HILL.x+k,HILL.z-d/2,0.12);addCol(HILL.x-w/2,HILL.z+k,0.12);addCol(HILL.x+w/2,HILL.z+k,0.12);}

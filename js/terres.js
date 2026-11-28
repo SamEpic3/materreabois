@@ -28,9 +28,9 @@ function buildFence(k){
     c.fillStyle='#a52a24';c.font='bold 78px Georgia,serif';c.textAlign='center';c.fillText('À VENDRE',W/2,98);
     c.fillStyle='#2b2418';c.font='bold 38px Georgia,serif';c.fillText(L.name,W/2,170);c.font='bold 48px Georgia,serif';c.fillText(L.price.toLocaleString('fr-CA')+' $',W/2,245);});
   const sign=new T.Group(),sm=new T.MeshBasicMaterial({map:tex});
-  sign.add(new T.Mesh(new T.PlaneGeometry(1.5,0.88),sm));const back=new T.Mesh(new T.PlaneGeometry(1.5,0.88),mat(0x7a5a3a));back.rotation.y=Math.PI;sign.add(back);
+  sign.add(new T.Mesh(new T.PlaneGeometry(1.5,0.88),sm));const back=new T.Mesh(new T.PlaneGeometry(1.5,0.88),mat(0x7a5a3a));back.rotation.y=Math.PI;back.position.z=-0.012;sign.add(back);
   sign.children.forEach(m=>m.position.y=1.55);
-  sign.add(new T.Mesh(new T.BoxGeometry(0.08,1.6,0.08).translate(0,0.8,-0.02),mat(0x5e4632)));
+  sign.add(new T.Mesh(new T.BoxGeometry(0.08,1.6,0.08).translate(0,0.8,-0.065),mat(0x5e4632)));
   sign.position.set(sp.x,H(sp.x,sp.z),sp.z);sign.rotation.y=sp.face;g.add(sign);
   shadows(g);scene.add(g);addCol(sp.x,sp.z,0.12);
   fences[k]={g,sign:{x:sp.x,z:sp.z}};
