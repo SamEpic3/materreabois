@@ -8,6 +8,15 @@ let saveOff=false;
 const r3=v=>Math.round(v*1000)/1000;
 function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=c.split;if(c.hu!==undefined&&c.hu<44.9)o.hu=Math.round(c.hu*10)/10;return o;}
 function contSnap(c){return {logs:c.load.map(m=>cOf(m.userData.c)),pails:(c.pails||[]).map(p=>({kind:p.kind,L:p.L}))};}
+// Où on revient en rouvrant le jeu : à côté du véhicule qu'on conduisait (ou dont on était passager), sinon là où on est
+function savedSpot(){
+  if(S.inside)return {x:CABIN_DOOR.x,z:CABIN_DOOR.z+0.5};
+  const v=S.mode==='vtt'?V:S.mode==='pass'?P.ride:null;
+  if(v&&vehicles.includes(v)&&!v.spec.boat){const sx=Math.cos(v.th),sz=-Math.sin(v.th),d=v.spec.side||1.5;
+    for(const s of [1,-1]){const x=v.x+sx*d*s,z=v.z+sz*d*s;if(!hits(x,z,0.35)&&waterDepth(x,z)<0.3)return {x,z};}
+    return {x:v.x+Math.sin(v.th)*(v.spec.cols[0][0]+1.3),z:v.z+Math.cos(v.th)*(v.spec.cols[0][0]+1.3)};}
+  return {x:P.x,z:P.z};
+}
 function snapshot(){
   const f=flatSnapshot(),me={name:ME.name,player:f.player,inv:f.inv,hot:f.hot,t:f.t,hunt:f.hunt};
   delete f.player;delete f.inv;delete f.hot;delete f.hunt;delete f.ver;delete f.sig;
@@ -25,7 +34,7 @@ function flatSnapshot(){
     mkt:S.mkt,mktPrev:S.mktPrev,mktNext:S.mktNext,
     inv:INV.map(s=>s?{id:s.id,n:s.n,w:s.w?s.w.map(r3):undefined,d:cloneD(s.d)}:null),hot:S.hot,
     drops:S.drops.map(d=>({id:d.id,it:d.it,x:r3(d.x),z:r3(d.z)})),
-    player:{x:r3(S.inside?CABIN_DOOR.x:P.x),z:r3(S.inside?CABIN_DOOR.z+0.5:P.z),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:null},   // le seau est dans l'inventaire
+    player:{...(()=>{const q=savedSpot();return {x:r3(q.x),z:r3(q.z)};})(),rot:r3(P.rot),carry:P.carry?cOf(P.carry):null,pail:null},   // le seau est dans l'inventaire
     trees:treeList.map((t,i)=>!t.alive?[i,1,t.stumpGone?1:0]:t.work>0?[i,0,r3(t.work)]:null).filter(Boolean),
     campStumps:campStumps.map((s,i)=>s.gone?[i,1]:s.work>0?[i,0,r3(s.work)]:null).filter(Boolean),
     rocks:ROCKS.filter(r=>r.moved).map(r=>[r.i,r3(r.x),r3(r.z)]),

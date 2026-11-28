@@ -55,7 +55,7 @@ const _mq=new T.Quaternion(),_mz=new T.Vector3(0,0,1);
   let target;
   if(!ridden)target=-0.2;                                    // garée : appuyée sur la béquille, à gauche (+x)
   else if(stopped)target=-0.09;                              // le pied gauche à terre
-  else target=clamp(-Math.atan(sp*v._w/9.8)*1.15,-0.7,0.7);  // dans le virage, comme une vraie
+  else target=clamp(-Math.atan(sp*v._w/9.8)*0.6,-0.42,0.42);  // dans le virage (moins qu'une vraie : plus lisible à l'écran)
   v.lean=(v.lean||0)+(target-(v.lean||0))*Math.min(1,dt*(ridden?6:3));
   v.mesh.g.quaternion.copy(v.q).multiply(_mq.setFromAxisAngle(_mz,v.lean));
   v.mesh.stand.rotation.x=ridden?-1.35:0;v.mesh.stand.rotation.z=ridden?0:0.5;

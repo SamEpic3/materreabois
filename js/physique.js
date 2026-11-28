@@ -41,7 +41,7 @@ function updateVehicle(v,dt){
   if(v.v<-maxR)v.v=lerp(v.v,-maxR,1-Math.exp(-3*dt));
   if(!driving&&Math.abs(v.v)<0.3)v.v=0;
   // braquage limité par la vitesse : on ne dépasse pas ~0,75 g de force dans un virage (plus on va vite, plus on tourne large)
-  const maxSt=Math.min(sp.steer,Math.atan((sp.alat||7.5)*sp.wb/Math.max(1,v.v*v.v)));
+  const maxSt=Math.min(sp.steer,Math.atan((sp.alat||16)*sp.wb/Math.max(1,v.v*v.v)));
   v.steer=lerp(v.steer,steerIn*maxSt,1-Math.exp(-(sp.steerRate||8)*dt));
   if(v.v!==0){
     const step=vv=>{const nth=v.th+vv*Math.tan(v.steer)/sp.wb*dt;const nx=clamp(v.x+Math.sin(nth)*vv*dt,WB.x0+3,WB.x1-3),nz=clamp(v.z+Math.cos(nth)*vv*dt,WB.z0+3,WB.z1-3);
