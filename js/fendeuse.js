@@ -30,7 +30,7 @@ function makeFendeuse(){
   // Poutre en I, timon en V avec attelage
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.22,0.04,2.5).translate(0,0.72,0.05),new T.BoxGeometry(0.22,0.04,2.5).translate(0,0.52,0.05),new T.BoxGeometry(0.05,0.2,2.5).translate(0,0.62,0.05),
     new T.BoxGeometry(0.44,0.4,0.08).translate(0,0.9,-1.16),new T.BoxGeometry(0.36,0.04,0.3).translate(0,0.55,0.25)]),red));
-  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.06,0.06,0.75).rotateY(0.35).translate(0.12,0.55,1.6),new T.BoxGeometry(0.06,0.06,0.75).rotateY(-0.35).translate(-0.12,0.55,1.6),
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.06,0.06,0.75).rotateY(-0.35).translate(0.12,0.55,1.6),new T.BoxGeometry(0.06,0.06,0.75).rotateY(0.35).translate(-0.12,0.55,1.6),
     new T.CylinderGeometry(0.05,0.05,0.06,10).translate(0,0.6,1.95),new T.BoxGeometry(0.12,0.04,0.12).translate(0,0.56,1.95),
     new T.BoxGeometry(0.36,0.04,1.3).translate(0,0.76,-0.3),new T.BoxGeometry(0.03,0.12,1.3).translate(0.17,0.82,-0.3),new T.BoxGeometry(0.03,0.12,1.3).translate(-0.17,0.82,-0.3),
     new T.BoxGeometry(0.04,0.04,0.5).translate(0,0.4,0.2),new T.BoxGeometry(0.5,0.04,0.04).translate(0,0.4,0.2)]),steel));
