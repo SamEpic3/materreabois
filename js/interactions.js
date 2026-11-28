@@ -5,6 +5,8 @@ function doEnter(){
   if(c.wake){wakeUp();return;}
   if(S.mode==='pass'){leavePassenger();return;}
   if(c.enterPass){boardPassenger(c.enterPass);return;}
+  if(c.exitShack){exitShack();return;}
+  if(c.enterShack){enterShack(c.enterShack);return;}
   if(c.exitCabin){exitCabin();return;}
   if(c.enterCabin){enterCabin();return;}
   if(S.mode==='crane'){S.mode='foot';updateToolVisual();return;}

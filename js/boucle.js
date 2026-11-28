@@ -52,6 +52,7 @@ function frame(){
     let cx=camT.x-camFwd.x*dist,cz=camT.z-camFwd.z*dist;
     let cy=Math.max(camT.y+ht,H(cx,cz)+1.2);
     if(S.inside){const l=cabL(cx,cz),w=cabW(clamp(l.x,-CAB_W/2+0.3,CAB_W/2-0.3),clamp(l.z,-CAB_D/2+0.3,CAB_D/2-0.3));cx=w.x;cz=w.z;cy=Math.min(cy,CAMP_H+CAB_H-0.25);}   // la caméra reste dans la cabane
+    else if(S.inShack){const q=shackCamClamp(cx,cy,cz);cx=q.x;cy=q.y;cz=q.z;}
     pcam.position.set(cx,cy,cz);
     // Vue basse : on regarde un peu devant; plus la caméra monte, plus elle vise le joueur lui-même (pivot autour de lui)
     const ahead=2*(1-smoothstep(0.35,1.0,ang));
