@@ -5,6 +5,12 @@ const SAP_PER_SYRUP=40;             // 40 L d'eau d'érable pour 1 L de sirop
 const BOIL_RATE=0.3;                // L d'eau évaporés par seconde quand le feu est pris
 const PAN_CAP=60;                   // capacité de la bouilloire (eau d'érable)
 const FUEL_MAX=600;
+// Bouilloire ou évaporateur (cabane à sucre) : même fonctionnement, capacité et vitesse différentes
+const isBoiler=b=>b&&(b.k==='sucres'||b.k==='evapo');
+const boilCap=b=>b.k==='evapo'?EVAPO.cap:PAN_CAP;
+const boilRate=b=>BOIL_RATE*(b.k==='evapo'?EVAPO.rate:1);
+const boilFuelMax=b=>b.k==='evapo'?EVAPO.fuel:FUEL_MAX;
+const boilName=b=>b.k==='evapo'?'l\'évaporateur':'la bouilloire';
 S.taps=0;                           // (anciennes sauvegardes : les chaudières sont maintenant des objets d'inventaire)
 const taps=[];                      // {t,sap,mesh}
 const pails=[];                     // seaux posés au sol {x,z,kind,L,mesh}
@@ -134,7 +140,7 @@ function setPail(p){
 }
 
 /* ----- Proximité ----- */
-function nearestSugar(){return nearestBuild('sucres',2.4);}
+function nearestSugar(){return nearestBuild('sucres',2.4)||(KINDS.evapo?buildNear('evapo'):null);}
 function nearStore(){return Math.hypot(P.x-STORE_DOOR.x,P.z-STORE_DOOR.z)<3;}
 function tapOf(t){return taps.find(x=>x.t===t)||null;}
 function nearestTap(){let b=null,bd=1.8;taps.forEach(tp=>{const d=Math.hypot(P.x-tp.t.x,P.z-tp.t.z);if(d<bd){bd=d;b=tp;}});return b;}
@@ -174,7 +180,7 @@ function treeContext(t){
 
 /* ----- Seau, feu et bouilloire ----- */
 function collectSap(tp){const take=Math.min(tp.sap,PAIL_CAP-P.pail.L);tp.sap-=take;P.pail.L+=take;P.pail.kind='eau';setPail(P.pail);toast(`+${fmtL(take)} d'eau d'érable (seau : ${fmtL(P.pail.L)})`);}
-function pourSap(b){const put=Math.min(P.pail.L,PAN_CAP-b.sap);if(put<=0.01){toast('La bouilloire est pleine');return;}b.sap+=put;P.pail.L-=put;setPail(P.pail);toast(`Versé ${fmtL(put)} dans la bouilloire`);}
+function pourSap(b){const put=Math.min(P.pail.L,boilCap(b)-b.sap);if(put<=0.01){toast(b.k==='evapo'?'L\'évaporateur est plein':'La bouilloire est pleine');return;}b.sap+=put;P.pail.L-=put;setPail(P.pail);toast(`Versé ${fmtL(put)} dans ${boilName(b)}`);}
 function takeSyrup(b){const take=Math.min(b.syrup,PAIL_CAP-P.pail.L);b.syrup-=take;P.pail.L+=take;P.pail.kind='sirop';setPail(P.pail);toast(`+${fmtL(take)} de sirop 🍯`);}
 function sellSyrup(){const v=Math.round(P.pail.L*syrupPrice());S.money+=v;J.syrup(P.pail.L,v);orderProgress('sirop',Math.round(P.pail.L));toast(`+${v} $ — ${fmtL(P.pail.L)} de sirop vendu`);P.pail.L=0;setPail(P.pail);}
 function dropPail(){const p=P.pail;addGroundPail(P.x+Math.sin(P.rot)*0.7,P.z+Math.cos(P.rot)*0.7,p.kind,p.L);setPail(null);}
@@ -188,7 +194,7 @@ function pickPail(gp){if(!setPail({kind:gp.kind,L:gp.L}))return;scene.remove(gp.
 function fuelOf(c){return Math.round(c.len/FT*25);}
 function boilInfo(b){
   const fire=b.fuel>0?`feu : ${Math.floor(b.fuel/60)} min ${String(Math.floor(b.fuel%60)).padStart(2,'0')} s`:'feu éteint (apporte du bois)';
-  return `Bouilloire : ${fmtL(b.sap)} d'eau · ${fmtL(b.syrup)} de sirop · ${fire}`;
+  return `${b.k==='evapo'?'Évaporateur':'Bouilloire'} : ${fmtL(b.sap)} d'eau · ${fmtL(b.syrup)} de sirop · ${fire}`;
 }
 function pailContext(){
   const p=P.pail;let act=null,info=`Seau : ${pailTxt(p)}`;
@@ -209,7 +215,7 @@ function pailContext(){
     const tp=act||info.startsWith('La ')?null:nearestTap();
     if(tp){
       if(p.kind==='sirop'&&p.L>0.05)info='Ce seau contient du sirop : prends un autre seau pour l\'eau d\'érable';
-      else if(p.L>=PAIL_CAP-0.05)info='Seau plein : va le verser dans la bouilloire';
+      else if(p.L>=PAIL_CAP-0.05)info='Seau plein : va le verser dans la bouilloire ou l\'évaporateur';
       else if(tp.sap<0.3)info=`Chaudière presque vide (${fmtL(tp.sap)}) · seau : ${pailTxt(p)}`;
       else act={label:`Vider la chaudière (${fmtL(tp.sap)}) dans le seau`,fn:()=>collectSap(tp)};
     }
@@ -229,15 +235,17 @@ function updateSugar(dt){
   taps.forEach(tp=>{tp.sap=Math.min(TAP_CAP,tp.sap+SAP_RATE*dt);});
   puffT-=dt;const puff=puffT<=0;if(puff)puffT=0.35;
   S.builds.forEach(b=>{
-    if(b.k!=='sucres')return;
+    if(!isBoiler(b))return;
     const burning=b.fuel>0;
-    if(burning){b.fuel=Math.max(0,b.fuel-dt);if(b.sap>0){const ev=Math.min(b.sap,BOIL_RATE*dt);b.sap-=ev;b.syrup+=ev/SAP_PER_SYRUP;}}
+    if(burning){b.fuel=Math.max(0,b.fuel-dt);if(b.sap>0){const ev=Math.min(b.sap,boilRate(b)*dt);b.sap-=ev;b.syrup+=ev/SAP_PER_SYRUP;}}
     const o=b._o;if(!o)return;
     o.fl.visible=burning;
     if(burning)o.fl.children.forEach((f,i)=>{f.scale.y=0.8+0.35*Math.abs(Math.sin(S.time*(6+i)+i));});
     o.liquid.visible=b.sap+b.syrup>0.05;
     if(o.liquid.visible){const r=b.syrup*SAP_PER_SYRUP/(b.sap+b.syrup*SAP_PER_SYRUP);o.liquid.material.color.set(SAP_COL).lerp(new T.Color(SYRUP_COL),r);}
-    if(burning&&puff){const y=H(b.x,b.z);spawnPuffAt(b.x+(Math.random()-0.5)*0.8,y+0.7,b.z+(Math.random()-0.5)*0.5,false);if(b.sap>0)spawnPuffAt(b.x+(Math.random()-0.5)*0.8,y+1.2,b.z+(Math.random()-0.5)*0.5,true);}
+    if(burning&&puff){const y=H(b.x,b.z);
+      if(b.k==='evapo'){const ch=lw(b,0,-2.3),lt=lw(b,(Math.random()-0.5)*0.6,-0.4+(Math.random()-0.5)*1.8);spawnPuffAt(ch.x,y+SUC_H+3.1,ch.z,false);if(b.sap>0){spawnPuffAt(lt.x,y+SUC_H+1.9,lt.z,true);spawnPuffAt(lt.x,y+SUC_H+1.9,lt.z,true);}}
+      else{spawnPuffAt(b.x+(Math.random()-0.5)*0.8,y+0.7,b.z+(Math.random()-0.5)*0.5,false);if(b.sap>0)spawnPuffAt(b.x+(Math.random()-0.5)*0.8,y+1.2,b.z+(Math.random()-0.5)*0.5,true);}}
   });
   for(let i=puffs.length-1;i>=0;i--){const p=puffs[i];p.life-=dt;p.m.position.y+=dt*0.9;p.m.position.x+=p.vx*dt;p.m.position.z+=p.vz*dt;p.m.scale.setScalar(0.5+(1-p.life/p.max)*1.6);p.m.material.opacity=Math.max(0,p.life/p.max)*0.5;if(p.life<=0){scene.remove(p.m);puffs.splice(i,1);}}
 }
@@ -247,7 +255,7 @@ function tapItemContext(){
   const it=heldItem();if(!it||it.id!=='chaudiere'||!it.d)return null;
   const sap=it.d.sap,b=nearestSugar(),gp=nearestGroundPail();
   const spill={label:'Vider la chaudière par terre',fn:()=>{delete it.d;syncTool();renderInv();toast('Chaudière vidée');}};
-  if(b){const put=Math.min(sap,PAN_CAP-b.sap);return {act:put>0.01?{label:`Verser la chaudière dans la bouilloire (${fmtL(sap)})`,fn:()=>{b.sap+=put;it.d.sap-=put;if(it.d.sap<0.05)delete it.d;syncTool();renderInv();toast(`Versé ${fmtL(put)} dans la bouilloire`);}}:null,act2:spill,info:put>0.01?'':'La bouilloire est pleine'};}
+  if(b){const put=Math.min(sap,boilCap(b)-b.sap);return {act:put>0.01?{label:`Verser la chaudière dans ${boilName(b)} (${fmtL(sap)})`,fn:()=>{b.sap+=put;it.d.sap-=put;if(it.d.sap<0.05)delete it.d;syncTool();renderInv();toast(`Versé ${fmtL(put)} dans la bouilloire`);}}:null,act2:spill,info:put>0.01?'':'La bouilloire est pleine'};}
   if(gp&&gp.kind!=='sirop'&&gp.L<PAIL_CAP-0.05){const put=Math.min(sap,PAIL_CAP-gp.L);return {act:{label:`Verser la chaudière dans le seau (${fmtL(put)})`,fn:()=>{gp.L+=put;gp.kind='eau';setPailLook(gp.mesh,gp);it.d.sap-=put;if(it.d.sap<0.05)delete it.d;syncTool();renderInv();}},act2:spill};}
   return {info:`Chaudière : ${fmtL(sap)} d'eau d'érable · verse-la dans la bouilloire ou dans un seau posé par terre`,act2:spill};
 }

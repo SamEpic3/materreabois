@@ -108,7 +108,7 @@ function loadGame(given){
   let sap=0;taps.forEach(tp=>{const add=Math.min(TAP_CAP-tp.sap,SAP_RATE*away);tp.sap+=add;sap+=add;});
   let ev=0;
   S.builds.forEach(b=>{
-    if(b.k==='sucres'){const burn=Math.min(b.fuel,away),e=Math.min(b.sap,BOIL_RATE*burn);b.sap-=e;b.syrup+=e/SAP_PER_SYRUP;b.fuel-=burn;ev+=e;}
+    if(isBoiler(b)){const burn=Math.min(b.fuel,away),e=Math.min(b.sap,boilRate(b)*burn);b.sap-=e;b.syrup+=e/SAP_PER_SYRUP;b.fuel-=burn;ev+=e;}
     else if(b.k==='feu')b.fuel=Math.max(0,b.fuel-away);else if(b.k==='bbq')b.on=false;
   });
   stove.fuel=Math.max(0,stove.fuel-away);

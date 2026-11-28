@@ -102,7 +102,7 @@ function carryExtras(){
   const sp=splitContext();if(sp)return sp;
   const ch=chipCarryContext();if(ch)return ch;
   const f=buildNear('feu');if(f)return {act:{label:`Mettre la bûche au feu de camp (+${fuelOf(c)} s)`,fn:()=>feed(f,CAMPFIRE_MAX,'Feu de camp')}};
-  const s=buildNear('sucres');if(s)return {act:{label:`Mettre la bûche sous la bouilloire (+${fuelOf(c)} s)`,fn:()=>feed(s,FUEL_MAX,'Bouilloire')}};
+  const s=buildNear('sucres')||(KINDS.evapo?buildNear('evapo'):null);if(s)return {act:{label:`Mettre la bûche ${s.k==='evapo'?'dans le foyer de l\'évaporateur':'sous la bouilloire'} (+${fuelOf(c)} s)`,fn:()=>feed(s,boilFuelMax(s),s.k==='evapo'?'Évaporateur':'Bouilloire')}};
   if(nearStove())return {act:{label:`Mettre la bûche dans le poêle (+${fuelOf(c)} s)`,fn:()=>feed(stove,STOVE_MAX,'Poêle')}};
   const a=nearStack();
   if(a){

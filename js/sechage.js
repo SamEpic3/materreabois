@@ -12,7 +12,7 @@ const isFirewood=c=>c&&c.len<SAW_MIN;
 
 /* ----- Prix et chauffage ----- */
 {const _p=priceOf;priceOf=function(c){const p=_p(c);return isFirewood(c)?Math.max(1,Math.round(p*dryMult(c))):p;};}
-{const _f=fuelOf;fuelOf=function(c){return Math.round(_f(c)*[0.6,0.9,1.25][dryStage(c)]);};}
+{const _f=fuelOf;fuelOf=function(c){return Math.round(_f(c)*[1,1.3,1.6][dryStage(c)]);};}   // le bois sec brûle plus longtemps
 
 /* ----- Apparence : le bois grisonne, le bout se fendille ----- */
 const DRY_RING_TEX=canvasTex(128,128,(g,w)=>{
