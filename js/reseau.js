@@ -44,11 +44,11 @@ const COLS=[
    set:(id,d)=>{const r=ROCKS.find(r=>'r'+r.i===id);if(r&&(Math.abs(r.x-d.x)>0.005||Math.abs(r.z-d.z)>0.005))moveRock(r,d.x,d.z);},
    del:()=>{},get:id=>ROCKS.find(r=>'r'+r.i===id)},
   {c:'pc',items:()=>pieces.map(p=>[p.id,p]),
-   key:p=>`${rd(p.cx,50)},${rd(p.cz,50)},${rd(p.rot,50)},${rd(p.len,1000)},${p.split||0},${p.crown?1:0}`,
-   ser:p=>({cx:rd(p.cx,1000),cz:rd(p.cz,1000),rot:rd(p.rot,1000),len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,hu:p.hu,crown:p.crown?1:0}),
+   key:p=>`${rd(p.cx,50)},${rd(p.cz,50)},${rd(p.rot,50)},${rd(p.len,1000)},${p.split||0},${p.crown?1:0},${rd(p.lift||0,20)}`,
+   ser:p=>({cx:rd(p.cx,1000),cz:rd(p.cz,1000),rot:rd(p.rot,1000),len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,hu:p.hu,crown:p.crown?1:0,lift:rd(p.lift||0,100)}),
    set:(id,d)=>{const o=pieces.find(p=>p.id===id);
-     if(o&&o.len===d.len&&(o.split||0)===(d.split||0)&&o.sp===d.sp&&!!o.crown===!!d.crown){o.cx=d.cx;o.cz=d.cz;o.rot=d.rot;o.hu=d.hu;placePiece(o);return;}
-     if(o)removePiece(o);addPiece(Object.assign({id},d,{crown:!!d.crown}));},
+     if(o&&o.len===d.len&&(o.split||0)===(d.split||0)&&o.sp===d.sp&&!!o.crown===!!d.crown){o.cx=d.cx;o.cz=d.cz;o.rot=d.rot;o.hu=d.hu;if(!o.fy)o.lift=d.lift||0;placePiece(o);return;}
+     if(o)removePiece(o);addPiece(Object.assign({id},d,{crown:!!d.crown,lift:d.lift||0}));},
    del:id=>{const o=pieces.find(p=>p.id===id);if(o)removePiece(o);},
    get:id=>pieces.find(p=>p.id===id)},
   {c:'tr',items:()=>{const sm=stumpOfTree(),a=[];treeList.forEach((t,i)=>{if(t.alive&&!t.work)return;a.push(['t'+i,t,sm.get(t)]);});return a;},
@@ -86,21 +86,22 @@ const COLS=[
    del:id=>{const o=pails.find(p=>p.id===id);if(o){scene.remove(o.mesh);pails.splice(pails.indexOf(o),1);}},
    get:id=>pails.find(p=>p.id===id)},
   {c:'ve',items:()=>vehicles.map(v=>[v.id,v]),
-   key:v=>`${v.type}|${v.driver||''}|${v.resale||''}|`+(v.driver?'':`${rd(v.x,100)},${rd(v.z,100)},${rd(v.th,100)}`),
-   ser:v=>({type:v.type,x:rd(v.x,1000),z:rd(v.z,1000),th:rd(v.th,1000),resale:v.resale,driver:v.driver||null}),
+   key:v=>`${v.type}|${v.driver||''}|${v.resale||''}|`+(v.driver?'':v.onTr?`on${v.onTr.tid},${rd(v.onTr.lz,100)},${rd(v.onTr.lat,100)},${rd(v.onTr.dth,100)}`:`${rd(v.x,100)},${rd(v.z,100)},${rd(v.th,100)}`),
+   ser:v=>({type:v.type,x:rd(v.x,1000),z:rd(v.z,1000),th:rd(v.th,1000),resale:v.resale,driver:v.driver||null,on:v.onTr?[v.onTr.tid,rd(v.onTr.lz,1000),rd(v.onTr.lat,1000),rd(v.onTr.dth,1000)]:null}),
    set:(id,d)=>{let v=vehicles.find(v=>v.id===id);if(!v){v=makeVehicle(d.type,d.x,d.z,d.th,id);if(!V)V=v;}
      if(d.resale!==undefined&&d.resale!==null)v.resale=d.resale;
      if(V===v&&S.mode==='vtt')return;
-     v.driver=d.driver;if(!d.driver){v.x=d.x;v.z=d.z;v.th=d.th;v.v=0;v.net=null;}},
+     v.driver=d.driver;if(!d.driver){v.x=d.x;v.z=d.z;v.th=d.th;v.v=0;v.net=null;v.onTr=d.on?{tid:d.on[0],lz:d.on[1],lat:d.on[2],dth:d.on[3]}:null;}else v.onTr=null;},
    del:id=>{const v=vehicles.find(v=>v.id===id);if(v)removeVehicle(v);},
    get:id=>vehicles.find(v=>v.id===id)},
   {c:'tl',items:()=>trailers.map(t=>[t.id,t]),
-   key:t=>`${t.kind}|${t.hitch?t.hitch.id:''}|${t.resale||''}|${t.boat?1:0}|${Math.round((t.chips||0)*20)}|`+(t.hitch&&t.hitch.driver?'':`${rd(t.x,100)},${rd(t.z,100)},${rd(t.th,100)}`),
-   ser:t=>({kind:t.kind,x:rd(t.x,1000),z:rd(t.z,1000),th:rd(t.th,1000),hitch:t.hitch?t.hitch.id:null,resale:t.resale,boat:t.boat,chips:t.chips||0}),
+   key:t=>`${t.kind}|${t.hitch?t.hitch.id:''}|${t.resale||''}|${t.boat?1:0}|${t.ramps?1:0}|${Math.round((t.chips||0)*20)}|`+(t.hitch&&t.hitch.driver?'':`${rd(t.x,100)},${rd(t.z,100)},${rd(t.th,100)}`),
+   ser:t=>({kind:t.kind,x:rd(t.x,1000),z:rd(t.z,1000),th:rd(t.th,1000),hitch:t.hitch?t.hitch.id:null,resale:t.resale,boat:t.boat,chips:t.chips||0,rp:t.ramps?1:0}),
    set:(id,d)=>{let t=trailers.find(t=>t.id===id);if(!t)t=makeTrailerObj(d.kind,d.x,d.z,d.th,id);
      if(d.resale!==undefined&&d.resale!==null)t.resale=d.resale;
      if(d.boat!==undefined)t.boat=d.boat;
      if(d.chips!==undefined)t.chips=d.chips;
+     if(d.rp!==undefined&&t.spec.plateau)t.ramps=!!d.rp;
      if(t.hitch&&t.hitch===V&&S.mode==='vtt'&&d.hitch===V.id)return;
      t.hitch=d.hitch?vehicles.find(v=>v.id===d.hitch)||null:null;
      if(!(t.hitch&&t.hitch.driver)){t.x=d.x;t.z=d.z;t.th=d.th;t.net=null;}},
@@ -210,7 +211,7 @@ function onPos(from,p){
   // Véhicule conduit par l'autre
   if(p.v){
     const v=vehicles.find(v=>v.id===p.v.id);
-    if(v&&!(V===v&&S.mode==='vtt')){v.driver=from;v.net={x:p.v.x,z:p.v.z,th:p.v.th,sp:p.v.sp||0};
+    if(v&&!(V===v&&S.mode==='vtt')){v.driver=from;v.onTr=null;v.net={x:p.v.x,z:p.v.z,th:p.v.th,sp:p.v.sp||0};
       if(p.v.tw){const t=trailers.find(t=>t.id===p.v.tw.id);if(t){t.hitch=v;t.net={x:p.v.tw.x,z:p.v.tw.z,th:p.v.tw.th};}}}
   }
   // Seau ou bûche dans les mains
@@ -268,7 +269,7 @@ function updateAvatars(dt){
   }
   // Véhicules et remorques conduits par les autres : on glisse vers la dernière position reçue
   vehicles.forEach(v=>{
-    if(!v.net||(V===v&&S.mode==='vtt'))return;
+    if(!v.net||v.onTr||(V===v&&S.mode==='vtt'))return;
     if(!v.driver){v.net=null;return;}
     v.x+=(v.net.x-v.x)*k;v.z+=(v.net.z-v.z)*k;v.th+=wrapAng(v.net.th-v.th)*k;v.v=0;v.spin+=(v.net.sp||0)*dt/v.spec.wr;
     const tw=towed(v);if(tw&&tw.net){tw.x+=(tw.net.x-tw.x)*k;tw.z+=(tw.net.z-tw.z)*k;tw.th+=wrapAng(tw.net.th-tw.th)*k;}

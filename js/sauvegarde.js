@@ -15,7 +15,7 @@ function snapshot(){
 }
 // Ancienne forme « tout à plat » : sert aussi à lire les sauvegardes v1
 function flatSnapshot(){
-  const pcs=pieces.map(p=>({id:p.id,cx:r3(p.cx),cz:r3(p.cz),rot:r3(p.rot),crown:p.crown?1:0,...cOf(p)}));
+  const pcs=pieces.map(p=>({id:p.id,cx:r3(p.cx),cz:r3(p.cz),rot:r3(p.rot),crown:p.crown?1:0,lift:p.lift?r3(p.lift):0,...cOf(p)}));
   vehicles.forEach(v=>{if(!v.drag)return;const {butt,top}=dragEnds(v),d=v.drag;
     pcs.push({cx:(butt.x+top.x)/2,cz:(butt.z+top.z)/2,rot:Math.atan2(top.x-butt.x,top.z-butt.z),...cOf(d)});});
   trailers.forEach(t=>{if(t.crane&&t.crane.held){const g=gripWorld(t);pcs.push({cx:g.x,cz:g.z,rot:t.th+t.crane.slew+t.crane.grip,...cOf(t.crane.held)});}});
@@ -31,8 +31,8 @@ function flatSnapshot(){
     rocks:ROCKS.filter(r=>r.moved).map(r=>[r.i,r3(r.x),r3(r.z)]),
     extraStumps:stumpList.filter(s=>s.tree&&s.tree.planted).map(s=>({id:s.id,x:s.x,z:s.z,s:s.size,type:s.tree.type,work:r3(s.work)})),
     pieces:pcs,
-    vehicles:vehicles.map(v=>({id:v.id,type:v.type,x:r3(v.x),z:r3(v.z),th:r3(v.th),resale:v.resale,bed:v.bed?contSnap(v.bed):null})),
-    trailers:trailers.map(t=>({id:t.id,kind:t.kind,x:r3(t.x),z:r3(t.z),th:r3(t.th),hitch:t.hitch?vehicles.indexOf(t.hitch):-1,resale:t.resale,boat:t.boat,chips:t.chips?r3(t.chips):undefined,c:contSnap(t.c)})),
+    vehicles:vehicles.map(v=>({id:v.id,type:v.type,x:r3(v.x),z:r3(v.z),th:r3(v.th),resale:v.resale,bed:v.bed?contSnap(v.bed):null,on:v.onTr||null})),
+    trailers:trailers.map(t=>({id:t.id,kind:t.kind,x:r3(t.x),z:r3(t.z),th:r3(t.th),hitch:t.hitch?vehicles.indexOf(t.hitch):-1,resale:t.resale,boat:t.boat,chips:t.chips?r3(t.chips):undefined,rp:t.spec.plateau?(t.ramps?1:0):undefined,c:contSnap(t.c)})),
     pails:pails.map(p=>({id:p.id,x:r3(p.x),z:r3(p.z),kind:p.kind,L:p.L})),
     tapsOn:taps.map(tp=>({tree:tp.t.planted?'p'+planted.indexOf(tp.t):treeList.indexOf(tp.t),sap:tp.sap,a:r3(tp.mesh.rotation.y)})),
     planted:planted.map(t=>({id:t.id,type:t.type,x:r3(t.x),z:r3(t.z),s:r3(t.s),rot:r3(t.rot),plantedAt:t.plantedAt,growMs:t.growMs,work:t.work})),
@@ -82,10 +82,10 @@ function loadGame(given){
     (d.rocks||[]).forEach(([i,x,z])=>{const r=ROCKS.find(r=>r.i===i);if(r){r.x=x;r.z=z;r.moved=true;placeRock(r);}});
   }
   (d.extraStumps||[]).forEach(o=>{const st=makeStump({id:o.id,x:o.x,z:o.z,y:H(o.x,o.z),s:o.s,type:o.type,planted:true});st.work=o.work||0;});
-  (d.pieces||[]).forEach(p=>addPiece({id:p.id,cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,hu:p.hu,crown:!!p.crown}));
+  (d.pieces||[]).forEach(p=>addPiece({id:p.id,cx:p.cx,cz:p.cz,rot:p.rot,len:p.len,ra:p.ra,rb:p.rb,sp:p.sp,split:p.split||0,hu:p.hu,crown:!!p.crown,lift:p.lift||0}));
   clearAllVehicles();
-  (d.vehicles||[]).forEach(o=>{const v=makeVehicle(o.type,o.x,o.z,o.th,o.id);if(o.resale!==undefined)v.resale=o.resale;if(o.bed&&v.bed)fillCont(v.bed,o.bed);});
-  (d.trailers||[]).forEach(o=>{const t=makeTrailerObj(o.kind,o.x,o.z,o.th,o.id);if(o.resale!==undefined)t.resale=o.resale;if(o.boat!==undefined)t.boat=o.boat;if(o.chips)t.chips=o.chips;if(o.hitch>=0&&vehicles[o.hitch])t.hitch=vehicles[o.hitch];fillCont(t.c,o.c||{});});
+  (d.vehicles||[]).forEach(o=>{const v=makeVehicle(o.type,o.x,o.z,o.th,o.id);if(o.resale!==undefined)v.resale=o.resale;if(o.bed&&v.bed)fillCont(v.bed,o.bed);if(o.on)v.onTr=o.on;});
+  (d.trailers||[]).forEach(o=>{const t=makeTrailerObj(o.kind,o.x,o.z,o.th,o.id);if(o.resale!==undefined)t.resale=o.resale;if(o.boat!==undefined)t.boat=o.boat;if(o.chips)t.chips=o.chips;if(o.rp!==undefined&&t.spec.plateau)t.ramps=!!o.rp;if(o.hitch>=0&&vehicles[o.hitch])t.hitch=vehicles[o.hitch];fillCont(t.c,o.c||{});});
   V=vehicles[0]||null;
   pails.forEach(p=>scene.remove(p.mesh));pails.length=0;(d.pails||[]).forEach(p=>addGroundPail(p.x,p.z,p.kind,p.L,p.id));
   (d.planted||[]).forEach(o=>addPlanted(o));

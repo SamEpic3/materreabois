@@ -17,6 +17,7 @@ const JACK=110*Math.PI/180;
 function updateVehicle(v,dt){
   if(v.spec.boat){updateBoat(v,dt);return;}
   const sp=v.spec,driving=S.mode==='vtt'&&V===v;
+  if(v.onTr){if(driving||v.driver)v.onTr=null;else return;}   // soudé à une remorque à véhicule : c'est elle qui le place
   let steerIn=0,thr=0;
   if(driving){
     const inp=readInput(false);
@@ -26,7 +27,7 @@ function updateVehicle(v,dt){
   }
   const tw=towed(v);
   const mud=mudAt(v.x,v.z),load=(tw?tw.c.load.length*(tw.kind==='loader'?0.8:1):0)+(v.bed?v.bed.load.length*0.6:0);
-  const gr=ground(v.x,v.z,v.th,sp.hl,sp.hw,null);
+  const gr=ground(v.x,v.z,v.th,sp.hl,sp.hw,null,surfH);
   let maxF=sp.maxF*(1-sp.mudLoss*mud)*(1-0.03*load),maxR=sp.maxR*(1-0.4*mud);
   let acc=sp.acc*(1-Math.max(0,sp.mudLoss-0.05)*mud)/(1+0.1*load);
   if(v.drag){maxF*=0.65;acc*=0.7;}
@@ -53,7 +54,8 @@ function updateVehicle(v,dt){
     const mine=vehCircles(v,st.nx,st.nz,st.nth).concat(st.tr?trCircles(tw,st.tr.x,st.tr.z,st.tr.th):[]);
     // Le conducteur pousse ce qu'il touche (véhicules, remorques, billots); sinon, collision simple comme avant
     const old=vehCircles(v,v.x,v.z,v.th).concat(tw?trCircles(tw,tw.x,tw.z,tw.th):[]);
-    const slow=driving?tryPush(v,tw,mine,old):(circlesHit(mine,bodyCircles(v))?null:0);
+    let slow=driving?tryPush(v,tw,mine,old):(circlesHit(mine,bodyCircles(v))?null:0);
+    if(slow!==null&&platBlock(v,st.nx,st.nz,st.nth))slow=null;   // bord du plateau, ridelle, rampes levées
     if(slow===null){
       if(driving&&Math.abs(v.v)>4)toast('Bang ! 💥');
       v.v=Math.abs(v.v)<1.5?0:-v.v*0.25;
@@ -61,7 +63,7 @@ function updateVehicle(v,dt){
       if(slow>0)v.v*=1-Math.min(0.9,slow*14*dt);}
   }
   v.spin+=v.v*dt/sp.wr;
-  const g1=ground(v.x,v.z,v.th,sp.hl,sp.hw,_q);
+  const g1=ground(v.x,v.z,v.th,sp.hl,sp.hw,_q,surfH);
   v.q.slerp(_q,1-Math.exp(-12*dt));
   v.mesh.g.position.set(v.x,g1.h,v.z);v.mesh.g.quaternion.copy(v.q);
   v.mesh.wheels.forEach(w=>w.rotation.x=v.spin);
@@ -69,6 +71,7 @@ function updateVehicle(v,dt){
   if(v.mesh.front){v.mesh.front.rotation.y=v.steer*0.7;v.mesh.rear.rotation.y=-v.steer*0.7;}
   if(tw)tw.mesh.wheels.forEach(w=>w.rotation.x+=v.v*dt/tw.spec.wr);
   updateDrag(v);if(v.type==='skid')skidClaws(v,dt);
+  weldIfParked(v,driving);
 }
 const TILT={},HITCH_Y=0.55,_hb=new T.Vector3(),_hb2=new T.Vector3(),_he=new T.Euler();
 const skidMark=new T.Mesh(new T.RingGeometry(0.45,0.7,24),new T.MeshBasicMaterial({color:0x5fe07a,transparent:true,opacity:0.85,side:T.DoubleSide,depthTest:false}));

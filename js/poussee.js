@@ -90,7 +90,7 @@ function pushChain(b,p,i,c,B,seen,depth,cap){
   if(staticHit(b.log?a.circles.map(q=>[q[0],q[1],Math.max(0.05,q[2]*0.7)]):a.circles))return null;
   seen.add(b);
   let moves=[a.apply],load=b.mass*b.fr;
-  for(const o of B){if(seen.has(o))continue;const hit=deeper(b.cur,a.circles,o);if(!hit)continue;
+  for(const o of B){if(seen.has(o)||(b.log&&o.log&&!sameLevel(b.o,o.o)))continue;const hit=deeper(b.cur,a.circles,o);if(!hit)continue;
     const r=pushChain(o,hit,hit.i,hit.o,B,seen,depth+1,cap);if(!r)return null;
     moves=moves.concat(r.moves);load+=r.load;if(load>cap)return null;}
   return {moves,load};

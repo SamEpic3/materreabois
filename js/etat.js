@@ -38,9 +38,9 @@ function containerAtYard(c){const p=c.center();return Math.hypot(p.x-YARD.x,p.z-
 
 /* ---------- Orientation selon le terrain ---------- */
 const _x=new T.Vector3(),_y=new T.Vector3(),_z=new T.Vector3(),_m=new T.Matrix4(),_q=new T.Quaternion();
-function ground(x,z,th,hl,hw,out){
-  const fx=Math.sin(th),fz=Math.cos(th),sx=Math.cos(th),sz=-Math.sin(th);
-  const hF=H(x+fx*hl,z+fz*hl),hB=H(x-fx*hl,z-fz*hl),hS=H(x+sx*hw,z+sz*hw),hM=H(x-sx*hw,z-sz*hw);
+function ground(x,z,th,hl,hw,out,hf){   // hf : autre fonction de hauteur (les véhicules montent sur les plateaux)
+  const fx=Math.sin(th),fz=Math.cos(th),sx=Math.cos(th),sz=-Math.sin(th),Hf=hf||H;
+  const hF=Hf(x+fx*hl,z+fz*hl),hB=Hf(x-fx*hl,z-fz*hl),hS=Hf(x+sx*hw,z+sz*hw),hM=Hf(x-sx*hw,z-sz*hw);
   _z.set(fx,(hF-hB)/(2*hl),fz).normalize();
   _x.set(sx,(hS-hM)/(2*hw),sz).normalize();
   _y.crossVectors(_z,_x).normalize();
