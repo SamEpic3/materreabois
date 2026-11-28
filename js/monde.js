@@ -23,7 +23,9 @@ const MUD=[];   // plus de trous de boue sur les sentiers
 const PILE_DEF=[{x:18,z:-65},{x:-49,z:-28},{x:60,z:-3}];
 const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (position fixée plus bas)
 const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même forêt pour les sauvegardes
-const CABIN={x:-7,z:2};
+const CABIN0={x:-7,z:2};             // ancienne place (sert encore à générer les roches d'origine)
+const CABIN={x:-10.2,z:-0.25};        // la cabane, agrandie : 12 m × 9 m (le mur de droite et la façade restent où ils étaient)
+const CAB_W=12,CAB_D=9,CAB_H=3.4,CAB_DOOR_X=2.4,CAB_CHIM={x:4.6,z:-1.7};
 const VILLAGE={x:-50,z:46,r:13};
 // Zones aplanies (plus grandes que les rayons d'origine, qui servent encore à générer la forêt d'origine)
 const CAMP_FLAT=24;
@@ -384,21 +386,26 @@ const CABIN_ROOF=new T.Group();
 {
   // Cabane en rondins : murs empilés, pignons en planches, toit de bardeaux, porte, fenêtres à carreaux, cheminée de pierres
   // Le toit, les pignons et la cheminée sont à part (CABIN_ROOF) : on les cache pour voir l'intérieur d'en haut.
-  const g=new T.Group(),W=6,D=4.5,Hh=2.7,rg=CABIN_ROOF;
-  g.add(new T.Mesh(logWalls(W,D,Hh),[CABIN_LOG,RING_M,RING_M]));
-  const plank=texMat(sidingTex('#7a5232','#4d3220',true),1,1);plank.map.repeat.set(8,1);
-  rg.add(new T.Mesh(mergeGeos([gable(W,D+0.2,Hh+0.1,1.3,W/2),gable(W,D+0.2,Hh+0.1,1.3,-W/2),
-    new T.BoxGeometry(0.24,0.36,D+0.2).translate(W/2,Hh-0.02,0),new T.BoxGeometry(0.24,0.36,D+0.2).translate(-W/2,Hh-0.02,0)]),plank));   // planche qui ferme le haut des murs de côté
-  const sh=texMat(shingleTex('#5a2a22','#3e1c17'),9,8);roofTex(rg,W,D,3.42,sh);
-  const dg=doorGeo(0.95,1.9,1.2,D/2+0.17);const dark=mat(0x4d3220);
+  const g=new T.Group(),W=CAB_W,D=CAB_D,Hh=CAB_H,rg=CABIN_ROOF,PITCH=0.5;
+  g.add(new T.Mesh(logWalls(W,D,Hh,0.17),[CABIN_LOG,RING_M,RING_M]));
+  const plank=texMat(sidingTex('#7a5232','#4d3220',true),1,1);plank.map.repeat.set(14,1);
+  const rise=D/2*Math.tan(PITCH)-0.12;
+  rg.add(new T.Mesh(mergeGeos([gable(W,D+0.2,Hh+0.1,rise,W/2),gable(W,D+0.2,Hh+0.1,rise,-W/2),
+    new T.BoxGeometry(0.28,0.4,D+0.2).translate(W/2,Hh-0.02,0),new T.BoxGeometry(0.28,0.4,D+0.2).translate(-W/2,Hh-0.02,0)]),plank));   // planche qui ferme le haut des murs de côté
+  const sh=texMat(shingleTex('#5a2a22','#3e1c17'),16,14);roofTex(rg,W,D,Hh+1.14,sh,PITCH,0.6);
+  const dg=doorGeo(1.15,2.3,CAB_DOOR_X,D/2+0.19);const dark=mat(0x4d3220);
   g.add(new T.Mesh(dg.door,mat(0x6a4426)),new T.Mesh(dg.frame,dark),new T.Mesh(dg.knob,mat(0x2a2a2a)));
-  const wf=[],wg=[];[[-1.4,D/2+0.17,0],[ -W/2-0.17,0.4,-Math.PI/2],[W/2+0.17,-0.3,Math.PI/2]].forEach(([x,z,ry],i)=>{const w=i?0.7:1.0,ww=windowGeo(w,0.75,i?x:x,1.5,i?z:z,ry);wf.push(ww.frame);wg.push(ww.glass);});
+  const wf=[],wg=[];
+  [[-4.0,D/2+0.19,0,1.3],[-0.8,D/2+0.19,0,1.3],[-W/2-0.19,1.2,-Math.PI/2,1.0],[-W/2-0.19,-2.2,-Math.PI/2,1.0],[W/2+0.19,1.6,Math.PI/2,1.0],[-2.5,-D/2-0.19,Math.PI,1.0],[1.5,-D/2-0.19,Math.PI,1.0]]
+    .forEach(([x,z,ry,w])=>{const ww=windowGeo(w,0.95,x,1.75,z,ry);wf.push(ww.frame);wg.push(ww.glass);});
   g.add(new T.Mesh(mergeGeos(wf),mat(0xe8e0cc)),new T.Mesh(mergeGeos(wg),CABIN_WIN));
-  rg.add(new T.Mesh(stoneStack(0.62,0.62,4.4,2.1,0,-0.8,9),new T.MeshPhongMaterial({color:0x8d8a84,flatShading:true,vertexColors:true,shininess:3})));
-  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(W+0.3,0.18,D+0.3).translate(0,0.02,0),new T.BoxGeometry(1.3,0.16,0.5).translate(1.2,0.08,D/2+0.45)]),mat(0x7a756c)));
+  rg.add(new T.Mesh(stoneStack(0.7,0.7,6.6,CAB_CHIM.x,0,CAB_CHIM.z,9),new T.MeshPhongMaterial({color:0x8d8a84,flatShading:true,vertexColors:true,shininess:3})));
+  g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(W+0.4,0.2,D+0.4).translate(0,0.02,0),new T.BoxGeometry(1.5,0.16,0.55).translate(CAB_DOOR_X,0.08,D/2+0.5)]),mat(0x7a756c)));
   g.position.set(CABIN.x,CAMP_H,CABIN.z);
   bakeStatic(g);g.add(rg);shadows(g);scene.add(g);
-  [[-1.6,-1.1],[1.6,-1.1],[-1.6,1.1],[1.6,1.1]].forEach(([a,b])=>addCol(CABIN.x+a,CABIN.z+b,1.55));
+  // Murs : une rangée de petits cercles tout le tour (l'intérieur est géré à part)
+  for(let x=-W/2;x<=W/2+0.01;x+=0.6){addCol(CABIN.x+x,CABIN.z-D/2,0.42);addCol(CABIN.x+x,CABIN.z+D/2,0.42);}
+  for(let z=-D/2+0.6;z<D/2-0.01;z+=0.6){addCol(CABIN.x-W/2,CABIN.z+z,0.42);addCol(CABIN.x+W/2,CABIN.z+z,0.42);}
 }
 // Cour à bois : anneau au sol
 // Anneau posé au sol qui suit le relief
@@ -427,7 +434,7 @@ function label(text,x,y,z,range,plain){   // plain : sans fond (émoticônes)
 function updateLabels(fx,fz){
   labels.forEach(s=>{const d=Math.hypot(s.position.x-fx,s.position.z-fz),o=clamp((s.userData.range+3-d)/3,0,1);s.visible=o>0.01;s.material.opacity=o;});
 }
-label('Camp',CABIN.x,CAMP_H+5.4,CABIN.z,14);
+label('Camp',CABIN.x,CAMP_H+7.4,CABIN.z,14);
 /* ---------- Village ---------- */
 const VROT=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z);
 const VF={x:Math.sin(VROT),z:Math.cos(VROT)},VR={x:Math.cos(VROT),z:-Math.sin(VROT)};
@@ -906,7 +913,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const stumps=[];
   for(let k=0;k<200&&stumps.length<16;k++){
     const a=rnd()*6.28,d=CAMP.r-1+rnd()*9,x=CAMP.x+Math.cos(a)*d,z=CAMP.z+Math.sin(a)*d;
-    if(trailDist0(x,z)<3||Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<8||Math.hypot(x-CABIN.x,z-CABIN.z)<5)continue;
+    if(trailDist0(x,z)<3||Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<8||Math.hypot(x-CABIN0.x,z-CABIN0.z)<5)continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<1.8))continue;
     const c=addCol(x,z,0.4);stumps.push({x,z,c});
   }

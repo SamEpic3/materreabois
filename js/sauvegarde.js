@@ -101,6 +101,7 @@ function loadGame(given){
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
   // anciennes sauvegardes : les chaudières comptées deviennent des objets d'inventaire
   if(typeof d.taps==='number'&&d.taps>0)giveItem({id:'chaudiere',n:d.taps});
+  evictCabin();
   showOthers();
   S.hot=clamp(d.hot||0,0,HOT_N-1);syncTool();
   // Ce qui a avancé pendant l'absence (48 h maximum)

@@ -3,7 +3,7 @@
 S.camp={};                       // améliorations construites : {galerie:true, poele:true, agrandir:true}
 const stove={fuel:0};
 const STOVE_MAX=1800;
-const CABIN_DOOR={x:CABIN.x+1.2,z:CABIN.z+3.3};
+const CABIN_DOOR={x:CABIN.x+CAB_DOOR_X,z:CABIN.z+CAB_D/2+1.05};
 const seats=[];                  // {x,z,rot,y,grp,kind}
 function addSeat(x,z,rot,y,grp,kind){seats.push({x,z,rot,y,grp,kind});}
 const UPGRADES=[
@@ -30,38 +30,60 @@ function makeRocker(){
   return {g,rock};
 }
 function buildGalerie(){
+  // Galerie couverte le long de la façade (de x0 à x1 dans le repère de la cabane), ouverte devant la porte
   const g=new T.Group(),deck=texMat(sidingTex('#9a7a55','#5e4632',true),1,1),post=new T.MeshPhongMaterial({map:BARK.epinette,flatShading:true,shininess:3}),rail=mat(0x6e5236);
-  deck.map.repeat.set(1,14);
-  g.add(new T.Mesh(new T.BoxGeometry(7.2,0.18,2.6).translate(0,0.09,3.55),deck));
-  g.add(new T.Mesh(mergeGeos([-3.4,-1.1,1.1,3.4].map(x=>new T.CylinderGeometry(0.08,0.09,2.35,8).translate(x,1.25,4.75))),post));
-  // Garde-corps à barreaux, ouvert devant la porte
-  const rp=[];[[-3.4,0.4],[1.9,3.4]].forEach(([a,b])=>{rp.push(new T.BoxGeometry(b-a,0.07,0.09).translate((a+b)/2,0.95,4.78),new T.BoxGeometry(b-a,0.05,0.06).translate((a+b)/2,0.3,4.78));for(let x=a+0.2;x<b-0.05;x+=0.2)rp.push(new T.BoxGeometry(0.04,0.62,0.04).translate(x,0.62,4.78));});
-  [-1,1].forEach(sd=>{rp.push(new T.BoxGeometry(0.07,0.07,2.5).translate(sd*3.5,0.95,3.55));for(let z=2.5;z<4.7;z+=0.2)rp.push(new T.BoxGeometry(0.04,0.62,0.04).translate(sd*3.5,0.62,z));});
-  rp.push(new T.BoxGeometry(1.2,0.09,0.35).translate(1.15,0.045,5.0));  // marche
+  const x0=-CAB_W/2-0.2,x1=CAB_W/2-1.4,f=CAB_D/2,dep=2.8,zp=f+dep-0.1,ph=CAB_H-0.2,dx=CAB_DOOR_X,mx=(x0+x1)/2,w=x1-x0;
+  deck.map.repeat.set(1,24);
+  g.add(new T.Mesh(new T.BoxGeometry(w,0.18,dep).translate(mx,0.09,f+dep/2),deck));
+  const posts=[];for(let k=0;k<=5;k++)posts.push(x0+0.1+k*(w-0.2)/5);
+  g.add(new T.Mesh(mergeGeos(posts.map(x=>new T.CylinderGeometry(0.09,0.1,ph,8).translate(x,ph/2+0.15,zp))),post));
+  const rp=[];[[x0+0.1,dx-0.75],[dx+0.75,x1-0.1]].forEach(([a,b])=>{rp.push(new T.BoxGeometry(b-a,0.07,0.09).translate((a+b)/2,0.95,zp+0.03),new T.BoxGeometry(b-a,0.05,0.06).translate((a+b)/2,0.3,zp+0.03));for(let x=a+0.2;x<b-0.05;x+=0.2)rp.push(new T.BoxGeometry(0.04,0.62,0.04).translate(x,0.62,zp+0.03));});
+  [x0+0.1,x1-0.1].forEach(x=>{rp.push(new T.BoxGeometry(0.07,0.07,dep-0.3).translate(x,0.95,f+dep/2));for(let z=f+0.25;z<zp-0.05;z+=0.2)rp.push(new T.BoxGeometry(0.04,0.62,0.04).translate(x,0.62,z));});
+  rp.push(new T.BoxGeometry(1.5,0.09,0.4).translate(dx,0.045,zp+0.3));  // marche
   g.add(new T.Mesh(mergeGeos(rp),rail));
-  const r=new T.Mesh(new T.BoxGeometry(7.6,0.1,2.9),texMat(shingleTex('#5a2a22','#3e1c17'),9,3));r.position.set(0,2.47,3.6);r.rotation.x=0.2;g.add(r);
-  g.add(new T.Mesh(new T.BoxGeometry(7.2,0.16,0.12).translate(0,2.36,4.75),rail));
+  const r=new T.Mesh(new T.BoxGeometry(w+0.5,0.1,dep+0.4),texMat(shingleTex('#5a2a22','#3e1c17'),16,3));r.position.set(mx,ph+0.42,f+dep/2);r.rotation.x=0.2;g.add(r);
+  g.add(new T.Mesh(new T.BoxGeometry(w,0.16,0.12).translate(mx,ph+0.1,zp),rail));
   g.position.set(CABIN.x,CAMP_H,CABIN.z);bakeStatic(g);shadows(g);scene.add(g);
-  [-3.4,-1.1,1.1,3.4].forEach(x=>addCol(CABIN.x+x,CABIN.z+4.75,0.15));
-  [-2.3,-0.9].forEach(x=>{
-    const ch=makeRocker();ch.g.position.set(CABIN.x+x,CAMP_H+0.18,CABIN.z+3.7);shadows(ch.g);scene.add(ch.g);
-    addSeat(CABIN.x+x,CABIN.z+3.7,0,0.36,ch.rock,'chaise');
+  posts.forEach(x=>addCol(CABIN.x+x,CABIN.z+zp,0.15));
+  [-4.6,-3.1].forEach(x=>{
+    const ch=makeRocker();ch.g.position.set(CABIN.x+x,CAMP_H+0.18,CABIN.z+f+1.4);shadows(ch.g);scene.add(ch.g);
+    addSeat(CABIN.x+x,CABIN.z+f+1.4,0,0.36,ch.rock,'chaise');
   });
 }
 const cabinWinLit=0xffa64a,cabinWinOff=0x8fa3ad;
 function buildPoele(){camp3d.poele=true;}
 function buildAgrandir(){
-  // Rallonge en billots assortie à la cabane
-  const g=new T.Group(),W=3.6,D=4.2,Hh=2.4;
-  g.add(new T.Mesh(logWalls(W,D,Hh),[CABIN_LOG,RING_M,RING_M]));
-  const plank=texMat(sidingTex('#7a5232','#4d3220',true),1,1);plank.map.repeat.set(6,1);
-  g.add(new T.Mesh(gable(W,D+0.2,Hh+0.1,1.2,-W/2),plank));
-  roofTex(g,W+0.4,D,Hh+0.7,texMat(shingleTex('#5a2a22','#3e1c17'),6,8));
-  const wf=[],wg=[];[windowGeo(1.5,0.9,0,1.4,D/2+0.17,0),windowGeo(0.8,0.75,-W/2-0.17,1.4,0,-Math.PI/2)].forEach(w=>{wf.push(w.frame);wg.push(w.glass);});
+  // Rallonge en billots assortie à la cabane, sur le côté gauche
+  const g=new T.Group(),W=6.4,D=7.4,Hh=3.0,ox=-CAB_W/2-W/2+0.05;
+  g.add(new T.Mesh(logWalls(W,D,Hh,0.17),[CABIN_LOG,RING_M,RING_M]));
+  const plank=texMat(sidingTex('#7a5232','#4d3220',true),1,1);plank.map.repeat.set(9,1);
+  g.add(new T.Mesh(gable(W,D+0.2,Hh+0.1,D/2*Math.tan(0.5)-0.12,-W/2),plank));
+  roofTex(g,W+0.4,D,Hh+1.08,texMat(shingleTex('#5a2a22','#3e1c17'),9,12),0.5,0.5);
+  const wf=[],wg=[];[windowGeo(2.0,1.0,0,1.7,D/2+0.19,0),windowGeo(1.0,0.95,-W/2-0.19,1.7,0,-Math.PI/2)].forEach(w=>{wf.push(w.frame);wg.push(w.glass);});
   g.add(new T.Mesh(mergeGeos(wf),mat(0xe8e0cc)),new T.Mesh(mergeGeos(wg),CABIN_WIN));
-  g.add(new T.Mesh(new T.BoxGeometry(W+0.3,0.18,D+0.3).translate(0,0.02,0),mat(0x7a756c)));
-  g.position.set(CABIN.x-4.8,CAMP_H,CABIN.z);bakeStatic(g);shadows(g);scene.add(g);
-  [-1,1].forEach(b=>addCol(CABIN.x-4.8,CABIN.z+b*1.1,1.6));
+  g.add(new T.Mesh(new T.BoxGeometry(W+0.3,0.2,D+0.3).translate(0,0.02,0),mat(0x7a756c)));
+  g.position.set(CABIN.x+ox,CAMP_H,CABIN.z);bakeStatic(g);shadows(g);scene.add(g);
+  for(let x=-W/2;x<=W/2+0.01;x+=0.6){addCol(CABIN.x+ox+x,CABIN.z-D/2,0.42);addCol(CABIN.x+ox+x,CABIN.z+D/2,0.42);}
+  for(let z=-D/2+0.6;z<D/2-0.01;z+=0.6)addCol(CABIN.x+ox-W/2,CABIN.z+z,0.42);
+  evictCabin();
+}
+// Ce qui se trouve dans l'emprise de la cabane (agrandie) est poussé dehors : constructions, billots, véhicules, seaux
+function cabinRects(){const r=[{x0:-CAB_W/2-0.6,x1:CAB_W/2+0.6,z0:-CAB_D/2-0.6,z1:CAB_D/2+(S.camp.galerie?3.2:0.6)}];
+  if(S.camp.agrandir)r.push({x0:-CAB_W/2-6.6,x1:-CAB_W/2,z0:-4.4,z1:4.4});return r;}
+function inCabinRect(x,z,m){const l=cabL(x,z);return cabinRects().some(r=>l.x>r.x0-m&&l.x<r.x1+m&&l.z>r.z0-m&&l.z<r.z1+m);}
+function outOfCabin(x,z,m){   // point dehors le plus proche (on sort par l'arrière ou les côtés plutôt que dans la galerie)
+  for(let k=0;k<40&&inCabinRect(x,z,m);k++){const l=cabL(x,z),r=cabinRects().find(r=>l.x>r.x0-m&&l.x<r.x1+m&&l.z>r.z0-m&&l.z<r.z1+m);
+    const opts=[[r.x0-m-0.1,l.z,l.x-r.x0],[r.x1+m+0.1,l.z,r.x1-l.x],[l.x,r.z0-m-0.1,l.z-r.z0]].sort((a,b)=>a[2]-b[2])[0];const w=cabW(opts[0],opts[1]);x=w.x;z=w.z;}
+  return {x,z};}
+function evictCabin(){
+  S.builds.forEach(b=>{const R=(KINDS[b.k]&&KINDS[b.k].dist||2)*0.6;if(inCabinRect(b.x,b.z,R)){const p=outOfCabin(b.x,b.z,R);despawnBuild(b);b.x=p.x;b.z=p.z;spawnBuild(b);}});
+  pieces.slice().forEach(pc=>{if(inCabinRect(pc.cx,pc.cz,pc.len/2)){const p=outOfCabin(pc.cx,pc.cz,pc.len/2);pc.cx=p.x;pc.cz=p.z;placePiece(pc);}});
+  vehicles.forEach(v=>{if(inCabinRect(v.x,v.z,2.5)){const p=outOfCabin(v.x,v.z,2.5);v.x=p.x;v.z=p.z;}});
+  trailers.forEach(t=>{if(!t.hitch&&inCabinRect(t.x,t.z,2)){const p=outOfCabin(t.x,t.z,2);t.x=p.x;t.z=p.z;}});
+  if(typeof pails!=='undefined')pails.forEach(gp=>{if(inCabinRect(gp.x,gp.z,0.3)){const p=outOfCabin(gp.x,gp.z,0.3);gp.x=p.x;gp.z=p.z;gp.mesh.position.set(p.x,H(p.x,p.z),p.z);}});
+  if(!S.inside&&inCabinRect(P.x,P.z,0.3)){P.x=CABIN_DOOR.x;P.z=CABIN_DOOR.z+0.5;}
+  stumpList.slice().forEach(s=>{if(inCabinRect(s.x,s.z,0.4))removeStump(s,true);});
+  if(typeof ROCKS!=='undefined')ROCKS.forEach(r=>{if(inCabinRect(r.x,r.z,0.9*r.s)){const p=outOfCabin(r.x,r.z,0.9*r.s);moveRock(r,p.x,p.z);}});
 }
 const BUILD={galerie:buildGalerie,poele:buildPoele,agrandir:buildAgrandir};
 function buildUpgrade(id){if(camp3d['_'+id]||!BUILD[id])return;S.camp[id]=true;camp3d['_'+id]=true;BUILD[id]();}
@@ -142,7 +164,7 @@ function standUp(){
 function sitContext(){return {enter:'Se lever',act:null,act2:null,full:false,info:P.seat.kind==='chaise'?'Tu te berces sur la galerie 😌':'Il fait bon près du feu'};}
 
 /* ----- Animation ----- */
-const chimney={x:CABIN.x+2.1,z:CABIN.z-0.8,y:CAMP_H+4.2};
+const chimney={x:CABIN.x+CAB_CHIM.x,z:CABIN.z+CAB_CHIM.z,y:CAMP_H+6.7};
 let campPuffT=0;
 function updateCamp(dt){
   stove.fuel=Math.max(0,stove.fuel-dt);
@@ -221,7 +243,8 @@ function bbqContext(q){
    g.add(new T.Mesh(mergeGeos([-0.4,0.4].map(x=>new T.BoxGeometry(0.015,0.015,L).translate(x,2.17,L/2))),mat(0xdddddd)));
    [[-0.4,1.2,0xb3241f,0.75],[-0.4,2.4,0x2d5b9a,0.75],[0.4,1.8,0xf2f2f2,0.6],[0.4,3.6,0x2f6b3a,0.75],[-0.4,4.4,0xe8c23a,0.5]].forEach(([x,z,c,h])=>{
      const m=new T.Mesh(new T.BoxGeometry(0.03,h,0.6).translate(x,2.15-h/2,z),new T.MeshLambertMaterial({color:c,side:T.DoubleSide}));m.rotation.z=0;g.add(m);});
-   put(g,-19,1,0.12);addCol(-19,1,0.25);addCol(-19+Math.sin(0.12)*L,1+Math.cos(0.12)*L,0.25);}
+   const cx=-14,cz=8.6,ry=0.06;   // devant la rallonge, à gauche de la galerie
+   put(g,cx,cz,ry);addCol(cx,cz,0.25);addCol(cx+Math.sin(ry)*L,cz+Math.cos(ry)*L,0.25);}
   // Table à pique-nique
   {const g=new T.Group(),p=[new T.BoxGeometry(1.9,0.07,0.8).translate(0,0.76,0),new T.BoxGeometry(1.9,0.06,0.28).translate(0,0.45,0.62),new T.BoxGeometry(1.9,0.06,0.28).translate(0,0.45,-0.62)];
    [-0.75,0.75].forEach(x=>{p.push(new T.BoxGeometry(0.08,0.85,0.08).rotateX(0.55).translate(x,0.38,0.28),new T.BoxGeometry(0.08,0.85,0.08).rotateX(-0.55).translate(x,0.38,-0.28),new T.BoxGeometry(0.07,0.07,1.5).translate(x,0.38,0));});
@@ -232,3 +255,4 @@ function bbqContext(q){
    g.add(new T.Mesh(new T.BoxGeometry(0.03,0.2,0.06).translate(0.16,1.4,-0.1),mat(0xc22a1e)));
    put(g,-1.2,14.5,0.3);addCol(-1.2,14.5,0.2);}
 }
+addEventListener('load',()=>evictCabin());   // partie neuve : rien dans l'emprise de la cabane agrandie

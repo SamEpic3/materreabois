@@ -244,7 +244,7 @@ function updateSugar(dt){
     o.liquid.visible=b.sap+b.syrup>0.05;
     if(o.liquid.visible){const r=b.syrup*SAP_PER_SYRUP/(b.sap+b.syrup*SAP_PER_SYRUP);o.liquid.material.color.set(SAP_COL).lerp(new T.Color(SYRUP_COL),r);}
     if(burning&&puff){const y=H(b.x,b.z);
-      if(b.k==='evapo'){const ch=lw(b,0,-2.3),lt=lw(b,(Math.random()-0.5)*0.6,-0.4+(Math.random()-0.5)*1.8);spawnPuffAt(ch.x,y+SUC_H+3.1,ch.z,false);if(b.sap>0){spawnPuffAt(lt.x,y+SUC_H+1.9,lt.z,true);spawnPuffAt(lt.x,y+SUC_H+1.9,lt.z,true);}}
+      if(b.k==='evapo'){const ch=lw(b,...EVP(0,-2.3)),lt=lw(b,(Math.random()-0.5)*0.9,-0.6+(Math.random()-0.5)*3.6);spawnPuffAt(ch.x,y+SUC_H+SUC_RISE+1.7,ch.z,false);if(b.sap>0){spawnPuffAt(lt.x,y+SUC_H+SUC_RISE+0.8,lt.z,true);spawnPuffAt(lt.x,y+SUC_H+SUC_RISE+0.8,lt.z,true);}}
       else{spawnPuffAt(b.x+(Math.random()-0.5)*0.8,y+0.7,b.z+(Math.random()-0.5)*0.5,false);if(b.sap>0)spawnPuffAt(b.x+(Math.random()-0.5)*0.8,y+1.2,b.z+(Math.random()-0.5)*0.5,true);}}
   });
   for(let i=puffs.length-1;i>=0;i--){const p=puffs[i];p.life-=dt;p.m.position.y+=dt*0.9;p.m.position.x+=p.vx*dt;p.m.position.z+=p.vz*dt;p.m.scale.setScalar(0.5+(1-p.life/p.max)*1.6);p.m.material.opacity=Math.max(0,p.life/p.max)*0.5;if(p.life<=0){scene.remove(p.m);puffs.splice(i,1);}}
