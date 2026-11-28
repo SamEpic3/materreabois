@@ -26,14 +26,15 @@ function updateVehicle(v,dt){
     thr=clamp(ky+(pedal.gas?1:0)-(pedal.brake?1:0),-1,1);
   }
   const tw=towed(v);
-  const mud=mudAt(v.x,v.z),load=(tw?tw.c.load.length*(tw.kind==='loader'?0.8:1):0)+(v.bed?v.bed.load.length*0.6:0);
+  const mud=mudAt(v.x,v.z),mV=MASS_V[v.type]||1500,load=((tw?trailerMass(tw):0)+vehMass(v)-mV)/mV;   // poids tiré et chargé, par rapport au véhicule vide
   const gr=ground(v.x,v.z,v.th,sp.hl,sp.hw,null,surfH);
-  let maxF=sp.maxF*(1-sp.mudLoss*mud)*(1-0.03*load),maxR=sp.maxR*(1-0.4*mud);
-  let acc=sp.acc*(1-Math.max(0,sp.mudLoss-0.05)*mud)/(1+0.1*load);
+  let maxF=sp.maxF*(1-sp.mudLoss*mud)*(1-0.1*Math.min(load,3)),maxR=sp.maxR*(1-0.4*mud);
+  let acc=sp.acc*(1-Math.max(0,sp.mudLoss-0.05)*mud)/(1+0.55*load);
+  const brk=1/(1+0.4*load);   // plus c'est lourd, plus c'est long à arrêter
   if(v.drag){maxF*=0.65;acc*=0.7;}
-  if(thr>0.05){if(v.v<-0.2)v.v+=11*thr*dt;else v.v+=acc*thr*dt;}
-  else if(thr<-0.05){if(v.v>0.2)v.v-=13*(-thr)*dt;else v.v-=acc*0.6*(-thr)*dt;}
-  else{const dec=(2.6+4*mud)*dt;v.v=Math.abs(v.v)<dec?0:v.v-Math.sign(v.v)*dec;}
+  if(thr>0.05){if(v.v<-0.2)v.v+=11*brk*thr*dt;else v.v+=acc*thr*dt;}
+  else if(thr<-0.05){if(v.v>0.2)v.v-=13*brk*(-thr)*dt;else v.v-=acc*0.6*(-thr)*dt;}
+  else{const dec=(2.6*brk+4*mud)*dt;v.v=Math.abs(v.v)<dec?0:v.v-Math.sign(v.v)*dec;}
   v.v-=9.8*gr.slope*0.3*dt;
   if(v.v>maxF)v.v=lerp(v.v,maxF,1-Math.exp(-3*dt));
   if(v.v<-maxR)v.v=lerp(v.v,-maxR,1-Math.exp(-3*dt));

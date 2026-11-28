@@ -2,12 +2,14 @@
    (en chaîne). Plus la masse totale poussée est grande, plus le pousseur ralentit; au-delà de 7× sa masse, il bloque.
    Corps poussables : véhicules (avec leur remorque), remorques libres, billots/tiges/cimes au sol, roches.
    Seul le joueur qui conduit calcule la poussée; les positions passent ensuite par la synchro habituelle. */
-const MASS_V={vtt:350,pickup:2200,skid:9000,abat:14000,chaloupe:120};
-const MASS_T={small:250,loader:1600,dechiq:900,fendeuse:450,chaloupe:300};
+const MASS_V={vtt:350,pickup:2200,skid:9000,abat:14000,chaloupe:120,moto:110};
+const MASS_T={small:250,loader:1600,dechiq:900,fendeuse:450,chaloupe:300,plateau:900};
 const WOOD_KG=650;   // kg par m³ de bois vert (moyenne)
 function logMass(c){const r=((c.ra||0.1)+(c.rb||0.1))/2;return Math.PI*r*r*(c.len||1)*WOOD_KG*(c.crown?0.35:1);}
-function trailerMass(t){let m=MASS_T[t.kind]||500;(t.c&&t.c.load||[]).forEach(l=>m+=logMass(l));if(t.boat)m+=120;return m;}
-function vehMass(v){let m=MASS_V[v.type]||1500;if(v.bed)v.bed.load.forEach(l=>m+=logMass(l));return m;}
+const loadC=l=>(l&&l.userData&&l.userData.c)||l;   // dans une remorque, la charge est le modèle 3D du billot
+function trailerMass(t){let m=MASS_T[t.kind]||500;(t.c&&t.c.load||[]).forEach(l=>m+=logMass(loadC(l)));if(t.boat)m+=120;
+  vehicles.forEach(v=>{if(v.onTr&&v.onTr.tid===t.id)m+=vehMass(v);});return m;}   // + les véhicules soudés sur un plateau
+function vehMass(v){let m=MASS_V[v.type]||1500;if(v.bed)v.bed.load.forEach(l=>m+=logMass(loadC(l)));return m;}
 function rockMass(r){return 150+1800*r.s*r.s*r.s;}
 function pieceRadius(pc,s){return pc.ra+(pc.rb-pc.ra)*clamp(s/pc.len+0.5,0,1);}
 

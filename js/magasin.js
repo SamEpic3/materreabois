@@ -28,16 +28,22 @@ function thumb(id,build,side){   // side : outils vus de profil, en entier
 }
 // Orientation à l'apparition : dos au bâtiment le plus proche, le devant (ou le timon) vers la rue
 function spawnHeading(x,z){const [lx]=vilLocal(x,z);return lx>2?VROT-Math.PI/2:lx<-2?VROT+Math.PI/2:VROT;}
-function findSpawn(cols,th0,pref){
+// Places du stationnement du concessionnaire (repère du village), de chaque côté du cercle de vente
+const DEALER_SLOTS=[[14.4,15.6],[14.4,18.4],[14.4,29.6],[14.4,32.4]],DEALER_LOT=[14.4,24];
+function findSpawn(cols,th0,pref,front){   // front : pour une remorque, la place libre qu'il faut devant le timon
   const others=bodyCircles(null);
-  const free=(x,z)=>{const th=spawnHeading(x,z),fx=Math.sin(th),fz=Math.cos(th);const list=cols.map(([o,r])=>[x+fx*o,z+fz*o,r+0.4]);
+  const free=(x,z,m)=>{const th=spawnHeading(x,z),fx=Math.sin(th),fz=Math.cos(th);const list=cols.map(([o,r])=>[x+fx*o,z+fz*o,r+(m===undefined?0.4:m)]);
     if(circlesHit(list,others))return false;
+    if(front&&circlesHit(front.map(([o,r])=>[x+fx*o,z+fz*o,r]),others))return false;
+    if(list.some(c=>outW(c[0],c[1],2)||waterDepth(c[0],c[1])>0))return false;
     if(list.some(c=>inSale(c[0],c[1])||Math.hypot(c[0]-YARD.x,c[1]-YARD.z)<YARD.r+c[2]))return false;
     return list.every(c=>Math.hypot(c[0]-P.x,c[1]-P.z)>c[2]+0.6);};
-  const cand=[[14.6,15.6],[14.6,32.4],[-14.5,-19.5],[-14.5,-7.5],pref,[0,-18],[1,-7],[0,14],[0,27],[2,9],[-1,-22]];   // stationnements, puis la rue
   const out=p=>({x:p.x,z:p.z,th:spawnHeading(p.x,p.z)});
-  for(const [lx,lz] of cand){const p=vpos(lx,lz);if(free(p.x,p.z))return out(p);}
-  for(let r=4;r<30;r+=2)for(let a=0;a<Math.PI*2;a+=0.4){const x=VILLAGE.x+Math.cos(a)*r,z=VILLAGE.z+Math.sin(a)*r;if(free(x,z))return out({x,z});}
+  // 1) une place libre du stationnement du concessionnaire
+  for(const [lx,lz] of DEALER_SLOTS){const p=vpos(lx,lz);if(free(p.x,p.z,0.12))return out(p);}   // dans une place : on serre un peu
+  // 2) sinon, l'endroit libre le plus proche du stationnement (on s'éloigne peu à peu)
+  const c=vpos(...DEALER_LOT);
+  for(let r=3;r<60;r+=1.5){const n=Math.max(8,Math.round(r*2));for(let k=0;k<n;k++){const a=k/n*Math.PI*2,x=c.x+Math.cos(a)*r,z=c.z+Math.sin(a)*r;if(free(x,z))return out({x,z});}}
   return out(vpos(pref[0],pref[1]));
 }
 function toolThumbModel(t){
@@ -123,7 +129,7 @@ function renderShop(){
     const have=isT?trailers.filter(x=>x.kind===t.id).length:vehicles.filter(v=>v.type===t.id).length;
     if(have)d.querySelector('.stats').textContent+=` · Tu en as ${have}`;
     {b.textContent=have?(isT?'En acheter une autre':'En acheter un autre'):'Acheter';b.disabled=S.money<t.price;b.onclick=()=>{if(S.money<t.price)return;S.money-=t.price;J.buy(t.name.toLowerCase(),t.price);
-      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,[0,-13]);
+      const th=VROT+Math.PI/2,sp=isT?TSPECS[t.id]:SPECS[t.id],p=findSpawn(sp.cols,th,[0,-13],isT?[[sp.tl+1.6,1.1],[sp.tl+3.6,1.1],[sp.tl+5.6,1.1]]:null);
       if(isT)makeTrailerObj(t.id,p.x,p.z,p.th);else makeVehicle(t.id,p.x,p.z,p.th);
       toast(`${t.name} : ${isT?'elle t\'attend':'il t\'attend'} devant le magasin !`);renderShop();};}
     d.appendChild(b);L.appendChild(d);

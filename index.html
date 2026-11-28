@@ -82,6 +82,7 @@
     <button class="pedal" id="gripR">⟳<br>billot</button>
   </div>
   <div id="pedals" class="hidden">
+    <button class="pedal horn" id="btnHorn" aria-label="Klaxon">📯</button>
     <button class="pedal" id="btnBrake">Frein<br>/ recul</button>
     <button class="pedal" id="btnGas">Gaz</button>
   </div>
@@ -105,7 +106,7 @@
     <ul>
       <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou les flèches : marcher, ou conduire (gaz, frein et recul, direction)</li>
       <li>Clic sur le terrain : marcher jusque-là · <kbd>Maj</kbd> : courir</li>
-      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>1</kbd> à <kbd>6</kbd> : choisir une case de la barre · <kbd>I</kbd> ou 🎒 : inventaire · <kbd>Q</kbd> : jeter l'objet tenu · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
+      <li><kbd>E</kbd> : embarquer ou débarquer · <kbd>H</kbd> ou 📯 : klaxon · <kbd>1</kbd> à <kbd>6</kbd> : choisir une case de la barre · <kbd>I</kbd> ou 🎒 : inventaire · <kbd>Q</kbd> : jeter l'objet tenu · <kbd>Espace</kbd> : action (coup de hachette, prendre, déposer) · <kbd>F</kbd> : couper ici (sur un billot qu'on pourrait prendre) · <kbd>R</kbd> : atteler ou dételer la remorque</li>
       <li>Grue : <kbd>E</kbd> près de la grue pour l'opérer · <kbd>W</kbd>/<kbd>S</kbd> portée · <kbd>A</kbd>/<kbd>D</kbd> pivot · <kbd>Espace</kbd> prendre ou déposer · <kbd>Q</kbd>/<kbd>R</kbd> tourner le billot</li>
       <li><kbd>Z</kbd> / <kbd>C</kbd> : tourner la caméra · molette : zoom · <kbd>V</kbd> ou 🎥 : changer de vue (3e personne, 1re personne, iso), glisser la souris pour tourner autour · en 1re personne, la souris tourne la vue sans cliquer : <kbd>Alt</kbd> (ou <kbd>Échap</kbd>) libère le curseur, un clic le reprend</li>
       <li><b>Chasse :</b> achète un permis, une carabine ou un arc et des munitions au magasin. Vise et tire (clic en 1re personne, ou Espace). Avec un couteau dans l'inventaire, dépèce le gibier, puis vends la viande au magasin. Les collets se posent au pied d'un arbre en forêt.</li>
@@ -233,6 +234,7 @@
 <script src="js/physique.js"></script>
 <script src="js/poussee.js"></script>
 <script src="js/plateau.js"></script>
+<script src="js/moto.js"></script>
 <script src="js/empilage.js"></script>
 <script src="js/hud.js"></script>
 <script src="js/ciel.js"></script>
@@ -240,6 +242,7 @@
 <script src="js/oiseaux.js"></script>
 <script src="js/animaux.js"></script>
 <script src="js/chasse.js"></script>
+<script src="js/klaxon.js"></script>
 <script src="js/drone.js"></script>
 <script src="js/joueurs.js"></script>
 <script src="js/sauvegarde.js"></script>

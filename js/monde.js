@@ -710,7 +710,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     for(let z=-21;z<=-5.9;z+=3)lineW.push(new T.PlaneGeometry(5,0.12).rotateX(-Math.PI/2).translate(-15,0.06,z));
     lineW.push(new T.PlaneGeometry(0.12,15).rotateX(-Math.PI/2).translate(-17.4,0.06,-13.5));
     // stationnement du concessionnaire, de chaque côté du cercle de vente
-    [14.2,17,31,33.8].forEach(z=>lineW.push(new T.PlaneGeometry(5,0.12).rotateX(-Math.PI/2).translate(15.5,0.06,z)));
+    [14.2,17,19.8,28.2,31,33.8].forEach(z=>lineW.push(new T.PlaneGeometry(5.8,0.12).rotateX(-Math.PI/2).translate(14.5,0.06,z)));
     const lm=(c)=>new T.MeshBasicMaterial({color:c,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
     const lines=new T.Group();lines.add(new T.Mesh(mergeGeos(lineY),lm(0xe8c23a)),new T.Mesh(mergeGeos(lineW),lm(0xf2f2f2)),road);
     const q=vpos(0,0);lines.position.set(q.x,VIL_H,q.z);lines.rotation.y=VROT;scene.add(lines);
