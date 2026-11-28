@@ -21,7 +21,8 @@ function updateVehicle(v,dt){
   let steerIn=0,thr=0;
   if(driving){
     const inp=readInput(false);
-    steerIn=-inp.x;
+    // au joystick, une courbe douce : les petits mouvements tournent peu, le plein braquage reste au bout
+    const jx=joy.active?joy.x:0,kx=inp.x-jx;steerIn=-clamp(kx+Math.sign(jx)*Math.pow(Math.abs(jx),1.8),-1,1);
     const ky=((keys.KeyW||keys.ArrowUp)?1:0)-((keys.KeyS||keys.ArrowDown)?1:0);
     thr=clamp(ky+(pedal.gas?1:0)-(pedal.brake?1:0),-1,1);
   }
@@ -39,7 +40,8 @@ function updateVehicle(v,dt){
   if(v.v>maxF)v.v=lerp(v.v,maxF,1-Math.exp(-3*dt));
   if(v.v<-maxR)v.v=lerp(v.v,-maxR,1-Math.exp(-3*dt));
   if(!driving&&Math.abs(v.v)<0.3)v.v=0;
-  const maxSt=sp.steer*(1-0.45*Math.min(1,Math.abs(v.v)/sp.maxF));
+  // braquage limité par la vitesse : on ne dépasse pas ~0,75 g de force dans un virage (plus on va vite, plus on tourne large)
+  const maxSt=Math.min(sp.steer,Math.atan((sp.alat||7.5)*sp.wb/Math.max(1,v.v*v.v)));
   v.steer=lerp(v.steer,steerIn*maxSt,1-Math.exp(-(sp.steerRate||8)*dt));
   if(v.v!==0){
     const step=vv=>{const nth=v.th+vv*Math.tan(v.steer)/sp.wb*dt;const nx=clamp(v.x+Math.sin(nth)*vv*dt,WB.x0+3,WB.x1-3),nz=clamp(v.z+Math.cos(nth)*vv*dt,WB.z0+3,WB.z1-3);

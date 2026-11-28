@@ -355,3 +355,5 @@ body.rot #stats{max-width:calc(var(--appW,100vw) * .6)}
 #hint.in{animation:hintIn .3s ease-out}
 
 .pedal.horn{width:56px;height:56px;font-size:24px;align-self:flex-end}
+
+.appver{margin:-6px 0 8px;font-size:12px;opacity:.6;font-weight:600;letter-spacing:.3px}
