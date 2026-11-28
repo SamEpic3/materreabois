@@ -68,7 +68,7 @@ function boarding(v,t){
   if(!v||!t.spec.plateau||t.hitch===v)return false;
   const l=platLocal(t,v.x,v.z);
   if(onDeck(t,l,0.1))return true;
-  return !!t.ramps&&Math.abs(l.lat)<PLAT.W/2-0.2&&l.lz<-PLAT.L/2&&l.lz>-PLAT.L/2-PLAT.RH-v.spec.hl-1.6&&Math.abs(Math.sin(wrapAng(v.th-t.th)))<0.45;
+  return !!t.ramps&&Math.abs(l.lat)<PLAT.W/2+0.4&&l.lz<-PLAT.L/2&&l.lz>-PLAT.L/2-PLAT.RH-v.spec.hl-2.2&&Math.abs(Math.sin(wrapAng(v.th-t.th)))<0.62;
 }
 // Sur le plateau : on ne tombe pas par les côtés, la ridelle arrête à l'avant et, rampes levées, on ne recule pas dans le vide
 function platBlock(v,x,z,th){
@@ -77,12 +77,23 @@ function platBlock(v,x,z,th){
     const c=platLocal(t,x,z);
     const onIt=onDeck(t,c,0.1),onR=onRamp(t,c);if(!onIt&&!onR)continue;
     for(const [a,b] of [[1,1],[1,-1],[-1,1],[-1,-1]]){const l=platLocal(t,x+fx*hl*a+sx*hw*b,z+fz*hl*a+sz*hw*b);
-      if(Math.abs(l.lat)>PLAT.W/2+0.35)return true;
+      if(Math.abs(l.lat)>PLAT.W/2+(onR?0.7:0.35))return true;
       if(l.lz>PLAT.L/2+0.05)return true;
       if(l.lz<-PLAT.L/2-0.1&&!t.ramps)return true;}
   }
   return false;
 }
+
+/* ----- Guidage : en montant, le véhicule se recentre et s'aligne sur le plateau (comme des rails) ----- */
+function guideOnPlat(v,dt){
+  if(Math.abs(v.v)<0.1)return;
+  for(const t of trailers){if(!t.spec.plateau||!boarding(v,t))continue;
+    const l=platLocal(t,v.x,v.z);if(l.lz<-PLAT.L/2-PLAT.RH-v.spec.hl-1.2)continue;
+    const k=Math.min(1,Math.abs(v.v)*dt*1.4),s=Math.sin(t.th),c=Math.cos(t.th);
+    const want=Math.cos(wrapAng(v.th-t.th))>=0?t.th:t.th+Math.PI;   // en marche avant ou à reculons
+    v.th+=wrapAng(want-v.th)*k;v.x-=c*l.lat*k;v.z+=s*l.lat*k;return;}
+}
+{const _uv=updateVehicle;updateVehicle=function(v,dt){_uv(v,dt);if(!v.onTr&&!v.spec.boat&&(v.driver||(S.mode==='vtt'&&V===v)))guideOnPlat(v,dt);};}
 
 /* ----- Soudé à la remorque ----- */
 function deckUnder(v){
@@ -116,7 +127,10 @@ function weldedOn(v,t){return !!(v.onTr&&v.onTr.tid===t.id);}
   const B=_bb(v,tw);
   return B.filter(b=>{
     if(b.kind==='tr'&&boarding(v,b.o))return false;
+    if(b.kind==='tr'&&b.o.spec.plateau)b.locked=true;   // une remorque à véhicule dételée ne se pousse pas (elle est lourde et sur son cric)
     if(b.kind==='tr'&&b.o.spec.plateau&&vehicles.some(o=>weldedOn(o,b.o)))b.locked=true;   // chargée : on ne la pousse pas
+    if(b.kind==='veh'&&b.t&&b.t.spec.plateau){b.locked=true;   // véhicule attelé à un plateau qu'on charge : il ne bouge pas
+      if(boarding(v,b.t)){const o=b.o;b.circles=()=>vehCircles(o,o.x,o.z,o.th);b.cur=b.circles();}}
     if(b.kind==='veh'&&b.o.onTr){const t=trailers.find(t=>t.id===b.o.onTr.tid);if(t&&(t===tw||t.hitch===v))return false;b.locked=true;}
     return true;});};}
 {const _u=updateVTT;updateVTT=function(dt){
