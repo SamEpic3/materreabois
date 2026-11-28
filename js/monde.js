@@ -95,10 +95,13 @@ ROAD_T=(()=>{const out=[];
     const pts=[];for(let i=0;i<P.pts.length-1;i++){const [ax,az]=P.pts[i],[bx,bz]=P.pts[i+1],n=Math.ceil(Math.hypot(bx-ax,bz-az)/2);for(let k=0;k<n;k++)pts.push([lerp(ax,bx,k/n),lerp(az,bz,k/n)]);}
     pts.push(P.pts[P.pts.length-1]);
     const route=P.kind==='route',W=route?14:6,MG=(route?0.05:0.09)*2;   // fenêtre de lissage (échantillons de 2 m) et pente max par échantillon
-    let h=pts.map(p=>H(p[0],p[1]));
-    for(let pass=0;pass<3;pass++)h=h.map((_,i)=>{let s=0,n=0;for(let k=-W;k<=W;k++){const j=i+k;if(j>=0&&j<h.length){s+=h[j];n++;}}return s/n;});
-    const f=h.slice(),b=h.slice();for(let i=1;i<f.length;i++)f[i]=clamp(f[i],f[i-1]-MG,f[i-1]+MG);for(let i=b.length-2;i>=0;i--)b[i]=clamp(b[i],b[i+1]-MG,b[i+1]+MG);
-    h=h.map((_,i)=>(f[i]+b[i])/2);
+    const pin=pts.map(p=>route&&Math.hypot(p[0]-VILLAGE.x,p[1]-ROUTE_Z)<14);   // au croisement de la rue : exactement au niveau du village
+    let h=pts.map((p,i)=>pin[i]?VIL_H:H(p[0],p[1]));
+    for(let pass=0;pass<3;pass++)h=h.map((v,i)=>{if(pin[i])return v;let s=0,n=0;for(let k=-W;k<=W;k++){const j=i+k;if(j>=0&&j<h.length){s+=h[j];n++;}}return s/n;});
+    for(let it=0;it<6;it++){   // pente max partout, sans saut au bord du croisement
+      for(let i=1;i<h.length;i++)if(!pin[i])h[i]=clamp(h[i],h[i-1]-MG,h[i-1]+MG);
+      for(let i=h.length-2;i>=0;i--)if(!pin[i])h[i]=clamp(h[i],h[i+1]-MG,h[i+1]+MG);
+      h=h.map((v,i)=>pin[i]||i==0||i==h.length-1?v:(h[i-1]+2*v+h[i+1])/4);}
     const segs=[];for(let i=0;i<pts.length-1;i++)segs.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],h[i],h[i+1]]);
     const xs=pts.map(p=>p[0]),zs=pts.map(p=>p[1]),m=P.w/2+12;
     out.push({segs,hw:P.w/2,sh:route?9:5,bb:{x0:Math.min(...xs)-m,x1:Math.max(...xs)+m,z0:Math.min(...zs)-m,z1:Math.max(...zs)+m}});
@@ -689,7 +692,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     const asph=canvasTex(256,256,(c,w,h)=>{c.fillStyle='#3d3f42';c.fillRect(0,0,w,h);for(let i=0;i<3500;i++){const v=40+Math.random()*50|0;c.fillStyle=`rgba(${v},${v+2},${v+5},0.55)`;c.fillRect(Math.random()*w,Math.random()*h,2,2);}});
     asph.wrapS=asph.wrapT=T.RepeatWrapping;
     const am=new T.MeshLambertMaterial({map:asph,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
-    const rects=[[-4.4,4.4,-34,37],[-17.5,-4.4,-21.5,-5.5],[4.4,18,14,34]];
+    const rects=[[-4.4,4.4,-37.4,37],[-17.5,-4.4,-21.5,-5.5],[4.4,18,14,34]];
     const gs=rects.map(([x0,x1,z0,z1])=>{const g=new T.PlaneGeometry(x1-x0,z1-z0).rotateX(-Math.PI/2).translate((x0+x1)/2,0.04,(z0+z1)/2);
       const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(x1-x0)/6,uv.getY(i)*(z1-z0)/6);return g;});
     const road=new T.Mesh(mergeGeos(gs),am);road.receiveShadow=true;
@@ -709,7 +712,7 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
       pts.push(P.pts[P.pts.length-1]);
       const A=[-1,-0.5,0,0.5,1],pos=[],uv=[],idx=[],ly=[],lw=[];let s=0;
       const strip=(arr,off,hw,dash)=>{const base=arr.length/3,ok=[];pts.forEach((p,i)=>{const q=pts[Math.min(i+1,pts.length-1)],r=pts[Math.max(i-1,0)],tx=q[0]-r[0],tz=q[1]-r[1],l=Math.hypot(tx,tz)||1,nx=-tz/l,nz=tx/l;
-        [off-hw,off+hw].forEach(o=>{const x=p[0]+nx*o,z=p[1]+nz*o;arr.push(x,H(x,z)+0.1,z);});ok.push(!dash||(i%6)<3);});return {base,ok};};
+        [off-hw,off+hw].forEach(o=>{const x=p[0]+nx*o,z=p[1]+nz*o;arr.push(x,H(x,z)+0.1,z);});ok.push((!dash||(i%6)<3)&&!(off<-1&&Math.abs(p[0]-VILLAGE.x)<4.6));});return {base,ok};};
       pts.forEach((p,i)=>{const q=pts[Math.min(i+1,pts.length-1)],r=pts[Math.max(i-1,0)],tx=q[0]-r[0],tz=q[1]-r[1],l=Math.hypot(tx,tz)||1,nx=-tz/l,nz=tx/l;
         if(i)s+=Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1]);
         A.forEach(a=>{const o=a*P.w/2,x=p[0]+nx*o,z=p[1]+nz*o;pos.push(x,H(x,z)+0.08,z);uv.push(a*P.w/12,s/6);});});
@@ -767,68 +770,54 @@ const SPECIES={epinette:{n:'Épinette',p:30},sapin:{n:'Sapin',p:25},erable:{n:'�
 const TREE_INST={},REG_INST={};
 const REG_RECT={};   // boîte de chaque carré de forêt
 const treeList=[];
-for(let k=0;k<5200&&treeList.length<900;k++){
-  const x=(rnd()*2-1)*(WORLD-1),z=(rnd()*2-1)*(WORLD-1);
-  const dc=Math.hypot(x-CAMP.x,z-CAMP.z);
-  if(dc<CAMP.r+1.5)continue;
-  if(Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+4)continue;
-  if(trailDist0(x,z)<3.4)continue;
-  if(Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<9)continue;
-  const p=0.1+0.85*smoothstep(CAMP.r+2,CAMP.r+28,dc);
-  if(rnd()>p)continue;
-  if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2.3))continue;
-  const r=rnd();
-  const type=r<0.33?'epinette':r<0.52?'sapin':r<0.82?'erable':'bouleau';
-  const s=0.8+rnd()*0.5;
-  const t={x,z,y:H(x,z),type,s,rot:rnd()*6.28,alive:true,work:0,base:Math.round(5+s*5)};
-  t.col=addCol(x,z,0.32*s);t.col.tree=t;
-  treeList.push(t);
+// La forêt, zone par zone (chaque zone a son hasard, ses essences et sa densité)
+const FOREST=[
+  {id:'main',r:MAIN_LAND,n:850,seed:601,gap:2.4,s:[0.8,1.3],mix:'centre'},
+  {id:'erab',r:LANDS.erab,n:600,seed:602,gap:2.5,s:[0.95,1.45],types:[['erable',0.78],['bouleau',0.1],['sapin',0.06],['epinette',0.06]]},
+  {id:'coupe',r:LANDS.coupe,n:600,seed:603,gap:2.6,s:[1.0,1.55],types:[['epinette',0.48],['sapin',0.32],['bouleau',0.12],['erable',0.08]]},
+  {id:'sudouest',r:RESERVED[1],n:160,seed:604,gap:2.6,s:[0.7,1.1],types:[['erable',0.45],['bouleau',0.25],['sapin',0.15],['epinette',0.15]]},
+  {id:'sudest',r:RESERVED[2],n:160,seed:605,gap:2.6,s:[0.7,1.1],types:[['epinette',0.4],['sapin',0.3],['bouleau',0.2],['erable',0.1]]},
+  {id:'nord',r:{x0:WB.x0,x1:WB.x1,z0:WB.z0,z1:MAIN_LAND.z0},n:650,seed:606,gap:2.5,s:[0.8,1.3],mix:'nord'},
+  {id:'sud',r:{x0:WB.x0,x1:WB.x1,z0:190,z1:WB.z1},n:90,seed:607,gap:2.6,s:[0.8,1.2],types:[['erable',0.35],['bouleau',0.25],['epinette',0.2],['sapin',0.2]]}
+];
+// bosquets et petites clairières : la densité varie doucement
+const groveN=(x,z)=>0.5+0.3*Math.sin(x*0.045+1.3)*Math.cos(z*0.05+0.4)+0.2*Math.sin(x*0.11+z*0.07);
+function forestTypes(Z,x,z){
+  if(Z.mix==='centre'){const w=clamp((x+80)/160,0,1);   // érables à l'ouest, résineux à l'est
+    return [['erable',0.5-0.3*w],['bouleau',0.18],['epinette',0.17+0.2*w],['sapin',0.15+0.1*w]];}
+  if(Z.mix==='nord'){const up=clamp(hillH(x,z)/HILL.h,0,1);   // plus on monte, plus c'est résineux
+    return [['epinette',0.3+0.3*up],['sapin',0.22+0.15*up],['erable',0.28-0.25*up],['bouleau',0.2-0.2*up]];}
+  return Z.types;
 }
-const ORIG_TREE_N=treeList.length;
-// Le nouveau sentier passe dans la forêt de départ : ces arbres-là sont déjà coupés (sans souche)
-treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||nearLake(t.x,t.z)&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6||Math.hypot(t.x-CAMP.x,t.z-CAMP.z)<CAMP_FLAT-2||vilOut(t.x,t.z)<1.5){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
-// Forêt de la terre agrandie (son propre hasard : ne change rien à la forêt de départ)
-const rng2=mulberry32(4242);
-for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){
-  const x=81+rng2()*58,z=-79+rng2()*158;
-  const e=lakeE(x,z);if(e<1.28)continue;
-  if(trailDistLake(x,z)<3.4||(x<DOCK.x1+4&&Math.abs(z-LAKE.z)<5&&x>DOCK.x0-6))continue;
-  if(rng2()>0.9)continue;
-  if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2.3))continue;
-  const r=rng2(),near=e<1.8;
-  const type=near?(r<0.35?'epinette':r<0.6?'sapin':r<0.72?'erable':'bouleau'):(r<0.3?'epinette':r<0.48?'sapin':r<0.8?'erable':'bouleau');
-  const s=0.8+rng2()*0.5;
-  const t={x,z,y:H(x,z),type,s,rot:rng2()*6.28,alive:true,work:0,base:Math.round(5+s*5),ext:true};
-  t.col=addCol(x,z,0.32*s);t.col.tree=t;
-  treeList.push(t);
+function forestOk(x,z){
+  if(outW(x,z,2))return false;
+  if(trailDist(x,z)<3.4)return false;
+  if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP_FLAT-1)return false;
+  if(vilOut(x,z)<4)return false;
+  if(reservedAt(x,z,2))return false;
+  if(nearLake(x,z)&&lakeE(x,z)<1.3)return false;
+  if(nearRiver(x,z)&&riverInfo(x,z).d<4.5)return false;
+  if(Math.hypot(x-HILL.x,z-HILL.z)<9)return false;
+  if(PILE_DEF.some(pp=>Math.hypot(x-pp.x,z-pp.z)<5))return false;
+  if(x>DOCK.x0-6&&x<DOCK.x1+4&&Math.abs(z-LAKE.z)<5)return false;
+  return true;
 }
-const LAKE_TREE_N=treeList.length;
-treeList.forEach(t=>t.region='main');
-// Les nouvelles terres et le territoire public : chacune sa forêt (et son propre hasard)
-const REGIONS={
-  erab:{x0:-79,x1:19,z0:-179,z1:-81,n:520,seed:501,types:[['erable',0.78],['bouleau',0.1],['sapin',0.06],['epinette',0.06]],s:[0.95,1.45],gap:2.5},
-  coupe:{x0:-79,x1:59,z0:81,z1:169,n:470,seed:502,types:[['epinette',0.45],['sapin',0.3],['bouleau',0.13],['erable',0.12]],s:[1.05,1.6],gap:2.7},
-  pubN:{x0:21,x1:169,z0:-179,z1:-81,n:360,seed:503,types:[['epinette',0.35],['sapin',0.25],['erable',0.22],['bouleau',0.18]],s:[0.8,1.3],gap:2.4},
-  pubS:{x0:61,x1:169,z0:81,z1:169,n:230,seed:504,types:[['erable',0.35],['bouleau',0.2],['epinette',0.25],['sapin',0.2]],s:[0.8,1.3],gap:2.4},
-  pubE:{x0:141,x1:169,z0:-79,z1:79,n:80,seed:505,types:[['epinette',0.4],['sapin',0.3],['bouleau',0.3]],s:[0.8,1.3],gap:2.4}
-};
-for(const rk in REGIONS){
-  const R=REGIONS[rk],rr=mulberry32(R.seed);R.rng=rr;const start=treeList.length;
-  for(let k=0;k<R.n*8&&treeList.length<start+R.n;k++){
+for(const Z of FOREST){
+  const rr=mulberry32(Z.seed),R=Z.r,start=treeList.length;
+  for(let k=0;k<Z.n*10&&treeList.length<start+Z.n;k++){
     const x=R.x0+rr()*(R.x1-R.x0),z=R.z0+rr()*(R.z1-R.z0);
-    if(trailDist(x,z)<3.4)continue;
-    if(nearLake(x,z)&&lakeE(x,z)<1.3)continue;
-    if(nearRiver(x,z)&&riverInfo(x,z).d<4.5)continue;
-    if(Math.hypot(x-HILL.x,z-HILL.z)<15)continue;
-    if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<R.gap))continue;
-    let r=rr(),type='erable';for(const [tp,p] of R.types){if(r<p){type=tp;break;}r-=p;}
-    const s=R.s[0]+rr()*(R.s[1]-R.s[0]);
-    const t={x,z,y:H(x,z),type,s,rot:rr()*6.28,alive:true,work:0,base:Math.round(5+s*5),region:rk,rr};
-    t.col=addCol(x,z,0.32*s);t.col.tree=t;treeList.push(t);
+    if(rr()>0.25+0.75*groveN(x,z))continue;
+    if(!forestOk(x,z))continue;
+    if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP_FLAT+10&&rr()<0.6)continue;   // le bois s'éclaircit près du camp
+    if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<Z.gap))continue;
+    let r=rr(),type='erable';for(const [tp,p] of forestTypes(Z,x,z)){if(r<p){type=tp;break;}r-=p;}
+    const s=Z.s[0]+rr()*(Z.s[1]-Z.s[0]);
+    const tr={x,z,y:H(x,z),type,s,rot:rr()*6.28,alive:true,work:0,base:Math.round(5+s*5),region:Z.id,rr};
+    tr.col=addCol(x,z,0.32*s);tr.col.tree=tr;treeList.push(tr);
   }
 }
-// Deuxième ménage : arbres sur les nouveaux sentiers ou dans la rivière
-treeList.forEach((t,i)=>{if(t.cleared||i>=LAKE_TREE_N)return;if(trailDist(t.x,t.z)<3.2||nearRiver(t.x,t.z)&&riverInfo(t.x,t.z).d<4.5||Math.hypot(t.x-HILL.x,t.z-HILL.z)<6){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+const ORIG_TREE_N=treeList.length;
+const rng2=mulberry32(4242);
 
 /* Arbres : géométries détaillées, partagées et dessinées en lots (une seule commande par sorte de pièce).
    Les couleurs par sommet donnent du relief (ombre dans le feuillage, taches des bouleaux). */
@@ -909,12 +898,14 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
 
   // Roches
   const rocks=[];
-  for(let k=0;k<400&&rocks.length<55;k++){
-    const x=(rnd()*2-1)*(WORLD-2),z=(rnd()*2-1)*(WORLD-2);
-    if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP.r+3||trailDist0(x,z)<3.5||Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)continue;
+  const rkR=mulberry32(707);
+  for(let k=0;k<3000&&rocks.length<150;k++){
+    const x=WB.x0+rkR()*(WB.x1-WB.x0),z=WB.z0+rkR()*(WB.z1-WB.z0);
+    if(hillH(x,z)<4&&rkR()<0.5)continue;                       // un peu plus de roches dans la montagne
+    if(!forestOk(x,z)||Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP_FLAT+2)continue;
     if(PILE_DEF.some(pp=>Math.hypot(x-pp.x,z-pp.z)<6))continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2))continue;
-    const s=0.4+rnd()*0.6;rocks.push({x,z,s,col:addCol(x,z,0.85*s)});
+    const s=0.4+rkR()*(hillH(x,z)>4?0.9:0.6);rocks.push({x,z,s,col:addCol(x,z,0.85*s)});
   }
   // Deux formes de roches bosselées, mousse sur le dessus (couleurs par sommet)
   const rockGeo=sd=>{const g=new T.IcosahedronGeometry(1,1),pa=g.attributes.position,v=new T.Vector3();
@@ -930,7 +921,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   // Souches autour du camp (on a déjà bûché ici)
   const stumpG=STUMP_GEO;
   const stumps=[];
-  for(let k=0;k<200&&stumps.length<16;k++){
+  for(let k=0;k<0;k++){   // plus de souches sauvages
     const a=rnd()*6.28,d=CAMP.r-1+rnd()*9,x=CAMP.x+Math.cos(a)*d,z=CAMP.z+Math.sin(a)*d;
     if(trailDist0(x,z)<3||Math.hypot(x-OLD_YARD.x,z-OLD_YARD.z)<8||Math.hypot(x-CABIN0.x,z-CABIN0.z)<5)continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<1.8))continue;
