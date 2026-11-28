@@ -20,11 +20,11 @@ function bakeMapImage(){
   // Lumière de midi, sans brouillard; le soleil vise très loin pour que la carte d'ombres soit vide (pas de tache d'ombre autour du joueur)
   const L={hi:hemi.intensity,hc:hemi.color.clone(),hg:hemi.groundColor.clone(),si:sun.intensity,sc:sun.color.clone(),sp:sun.position.clone(),st:sun.target.position.clone(),fn:FOG.near,ff:FOG.far,bg:scene.background};
   hemi.intensity=0.8;hemi.color.set(0xe4ecf2);hemi.groundColor.set(0x4a4030);sun.intensity=0.8;sun.color.set(0xfff0d4);
-  sun.target.position.set(0,-5000,0);sun.position.set(300,-4000,200);sun.target.updateMatrixWorld();
+  sun.target.position.set(0,0,0);sun.position.set(-220,320,-160);sun.target.updateMatrixWorld();const SC=sun.castShadow;sun.castShadow=false;   // lumière du nord-ouest : le relief ressort, sans ombres portées
   FOG.near=1e5;FOG.far=2e5;scene.background=new T.Color(0x56703c);
   renderer.setRenderTarget(rt);renderer.render(scene,cam);
   const px=new Uint8Array(PW*PH*4);renderer.readRenderTargetPixels(rt,0,0,PW,PH,px);
-  renderer.setRenderTarget(null);rt.dispose();
+  renderer.setRenderTarget(null);rt.dispose();sun.castShadow=SC;
   hemi.intensity=L.hi;hemi.color.copy(L.hc);hemi.groundColor.copy(L.hg);sun.intensity=L.si;sun.color.copy(L.sc);sun.position.copy(L.sp);sun.target.position.copy(L.st);sun.target.updateMatrixWorld();
   FOG.near=L.fn;FOG.far=L.ff;scene.background=L.bg;
   for(let i=saved.length-1;i>=0;i--)saved[i][0].visible=saved[i][1];
@@ -55,8 +55,8 @@ function centerOnMe(){const m=mePose();CARTE.cx=m.x;CARTE.cz=m.z;clampView();}
 // ---- Dessin ----
 const PLACES=()=>{const L=[];const v=vpos(0,4);
   L.push({x:CAMP.x,z:CAMP.z+11,t:'Le camp',k:'big'},{x:v.x,z:v.z,t:'Le village',k:'big'},{x:LAKE.x,z:LAKE.z+4,t:'Lac',k:'water'},
-    {x:HILL.x,z:HILL.z+9,t:'Mont du Loup',k:'mid'},{x:BELV.x0+2.6,z:BELV.z0+2.6,t:'Belvédère',k:'small',dot:'#f2e6c8'},
-    {x:DOCK.x1,z:DOCK.z0-3,t:'Quai',k:'small'},{x:121,z:-120,t:'Rivière',k:'water',rot:-1.35});
+    {x:HILL.x,z:HILL.z+9,t:'Montagne',k:'mid'},{x:BELV.x0+2.6,z:BELV.z0+2.6,t:'Belvédère',k:'small',dot:'#f2e6c8'},
+    {x:DOCK.x1,z:DOCK.z0-3,t:'Quai',k:'small'},{x:(RIVER[2][0]+RIVER[3][0])/2+10,z:(RIVER[2][1]+RIVER[3][1])/2+4,t:'Rivière',k:'water',rot:-0.85});
   if(STORE_DOOR)L.push({x:STORE_DOOR.x,z:STORE_DOOR.z,t:'Magasin',k:'small',dot:'#ffd76a'});
   if(DEALER_DOOR)L.push({x:DEALER_DOOR.x,z:DEALER_DOOR.z,t:'Équipement',k:'small',dot:'#ffd76a'});
   L.push({x:YARD.x,z:YARD.z,t:'Scierie',k:'small',dot:'#ffd76a'},{x:SALE.x,z:SALE.z,t:'Vente',k:'small',dot:'#ffd76a'});
@@ -84,7 +84,9 @@ function drawMap(){
   for(const k in LANDS){const L=LANDS[k],own=S.lands&&S.lands[k];landRect(L,own?'rgba(255,214,90,0.95)':'rgba(255,255,255,0.8)',own?null:[9,6],own?null:'rgba(0,0,0,0.12)');
     const [a,b]=w2s((L.x0+L.x1)/2,(L.z0+L.z1)/2);mapText(L.name,a,b-9*zf,12*zf,'#fff');mapText(own?'Ta terre':`À vendre · ${L.price.toLocaleString('fr-CA')} $`,a,b+8*zf,10*zf,own?'#ffe08a':'#e8e8e8',null,600);}
   {const [a,b]=w2s(MAIN_LAND.x0+6,MAIN_LAND.z0+5);mctx.textAlign='left';mctx.font=`700 ${11*zf}px system-ui,sans-serif`;mctx.lineWidth=3;mctx.strokeStyle='rgba(20,24,18,0.85)';mctx.strokeText('Ta terre',a,b+6*zf);mctx.fillStyle='#ffe08a';mctx.fillText('Ta terre',a,b+6*zf);}
-  {const [a,b]=w2s(150,45);mapText('Territoire public',a,b,10*zf,'#e8e8e8',null,600);}
+  {const [a,b]=w2s((WB.x0+WB.x1)/2,MAIN_LAND.z0-70);mapText('Territoire public',a,b,12*zf,'#e8e8e8',null,700);mapText('chasse et pêche',a,b+15*zf,10*zf,'#d8d8d8',null,600);}
+  // Lots réservés pour plus tard
+  RESERVED.forEach(r=>{landRect(r,'rgba(170,210,255,0.75)',[4,5],'rgba(120,170,230,0.12)');const [a,b]=w2s((r.x0+r.x1)/2,(r.z0+r.z1)/2);mapText(r.name,a,b-6*zf,10*zf,'#dcebff',null,700);mapText('réservé · '+r.note,a,b+8*zf,9*zf,'#c8dcf2',null,600);});
   // Noms des lieux
   if(!_places)_places=PLACES();
   for(const p of _places){const [x,y]=w2s(p.x,p.z);if(p.k==='small'&&s<CARTE.fit*1.9)continue;

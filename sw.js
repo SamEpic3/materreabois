@@ -8,7 +8,7 @@ const FICHIERS=[
   'manifest.webmanifest',
   'css/style.css',
   'js/outils.js',
-  'js/monde.js',
+  'js/plan.js','js/monde.js',
   'js/personnage.js',
   'js/vehicules.js',
   'js/etat.js',

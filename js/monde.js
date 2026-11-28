@@ -1,24 +1,9 @@
 /* Le monde : relief, chemins, rendu, terrain, collisions, camp, village, billots et forêt */
 /* ---------- Monde ---------- */
 const WORLD=80;                                     // terre d'origine : -80..80 (la forêt de départ)
-const WB={x0:-80,x1:170,z0:-180,z1:170};            // tout le territoire : ta terre, les terres à vendre, le territoire public
-// Les terres : la tienne (avec le lac), deux à vendre, et le territoire public tout autour
-const LANDS={
-  erab:{name:'Érablière du rang Nord',short:'l\'érablière',price:30000,x0:-80,x1:20,z0:-180,z1:-80,desc:'Une belle érablière, presque juste des érables à sucre.'},
-  coupe:{name:'Terre à bois du Sud',short:'la terre du Sud',price:40000,x0:-80,x1:60,z0:80,z1:170,desc:'Des épinettes et des sapins bien gros, parfaits pour le bois de sciage.'}
-};
-const MAIN_LAND={x0:-80,x1:140,z0:-80,z1:80};
-function inRect(x,z,r){return x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1;}
-function landAt(x,z){if(inRect(x,z,LANDS.erab))return 'erab';if(inRect(x,z,LANDS.coupe))return 'coupe';if(inRect(x,z,MAIN_LAND))return 'main';return 'pub';}
 function clampW(p,m){p.x=clamp(p.x,WB.x0+m,WB.x1-m);p.z=clamp(p.z,WB.z0+m,WB.z1-m);return p;}
 function outW(x,z,m){return x<WB.x0+m||x>WB.x1-m||z<WB.z0+m||z>WB.z1-m;}
-const CAMP={x:0,z:0,r:14};
-const TRAILS=[
-  [[0,0],[8,-14],[22,-28],[30,-46],[18,-62]],
-  [[8,-14],[-12,-30],[-32,-42],[-46,-30]],
-  [[22,-28],[44,-24],[58,-6]],
-  [[0,0],[-4,12],[-20,26],[-36,38],[-44,41]]
-];
+const TRAILS=[];   // chemins : étape 2 du nouveau plan
 const MUD=[];   // plus de trous de boue sur les sentiers
 const PILE_DEF=[{x:18,z:-65},{x:-49,z:-28},{x:60,z:-3}];
 const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (position fixée plus bas)
@@ -26,9 +11,6 @@ const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même 
 const CABIN0={x:-7,z:2};             // ancienne place (sert encore à générer les roches d'origine)
 const CABIN={x:-10.2,z:-0.25};        // la cabane, agrandie : 12 m × 9 m (le mur de droite et la façade restent où ils étaient)
 const CAB_W=12,CAB_D=9,CAB_H=3.4,CAB_DOOR_X=2.4,CAB_CHIM={x:4.6,z:-1.7};
-const VILLAGE={x:-50,z:46,r:13};
-// Zones aplanies (plus grandes que les rayons d'origine, qui servent encore à générer la forêt d'origine)
-const CAMP_FLAT=24;
 // Village le long d'une rue : repère local (lx vers la droite, lz vers le camp) et rectangle aplani
 const VIL_A=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z),VIL_S=Math.sin(VIL_A),VIL_C=Math.cos(VIL_A);
 function vilLocal(x,z){const dx=x-VILLAGE.x,dz=z-VILLAGE.z;return [dx*VIL_C-dz*VIL_S,dx*VIL_S+dz*VIL_C];}
@@ -39,41 +21,19 @@ const CAP=6;
 const SEGS=[];
 TRAILS.forEach(tr=>{for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1]]);});
 const SEGS0=SEGS.slice();   // sentiers d'origine : servent à générer la forêt de départ (sauvegardes compatibles)
-// Nouveau sentier vers le lac
-const LAKE_TRAIL=[[58,-6],[68,-5],[78,-2],[87,2]];
-for(let i=0;i<LAKE_TRAIL.length-1;i++)SEGS.push([LAKE_TRAIL[i][0],LAKE_TRAIL[i][1],LAKE_TRAIL[i+1][0],LAKE_TRAIL[i+1][1]]);
 const SEGS_LAKE=SEGS.slice();
-// Sentiers vers les nouvelles terres et le belvédère
-const NEW_TRAILS=[
-  [[18,-62],[12,-78],[5,-95],[-8,-115],[-25,-138],[-40,-160]],          // vers l'érablière (nord)
-  [[-20,26],[-10,50],[0,78],[4,100],[-8,128],[-30,152]],                 // vers la terre du Sud
-  [[78,-2],[74,-38],[69,-74],[62,-100],[66,-118],[75,-136]]              // vers le belvédère (territoire public)
-];
-NEW_TRAILS.forEach(tr=>{for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1]]);});
-// Le chemin du camp arrive maintenant dans l'axe de la rue asphaltée; celui de la terre du Sud contourne la scierie.
-// (SEGS0 et SEGS_LAKE, qui ont servi à générer la forêt, ne changent pas.)
-{
-  const L=(lx,lz)=>{const a=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z);return [VILLAGE.x+Math.cos(a)*lx+Math.sin(a)*lz,VILLAGE.z-Math.sin(a)*lx+Math.cos(a)*lz];};
-  const same=(s,a,b)=>s[0]===a[0]&&s[1]===a[1]&&s[2]===b[0]&&s[3]===b[1];
-  const drop=[[[-4,12],[-20,26]],[[-20,26],[-36,38]],[[-36,38],[-44,41]],[[-20,26],[-10,50]]];
-  for(let i=SEGS.length-1;i>=0;i--)if(drop.some(([a,b])=>same(SEGS[i],a,b)))SEGS.splice(i,1);
-  const add=(pts)=>{for(let i=0;i<pts.length-1;i++)SEGS.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]]);};
-  add([[-4,12],L(0,46),L(0,37)]);
-  add([L(0,40),L(-18,42),L(-38,38),[0,78]]);
-}
 function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;t=clamp(t,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
 function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function trailDistLake(x,z){let m=1e9;for(const s of SEGS_LAKE){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function trailDist0(x,z){let m=1e9;for(const s of SEGS0){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
 function mudAt(x,z){let m=0;for(const p of MUD){m=Math.max(m,smoothstep(p.r,p.r*0.55,Math.hypot(x-p.x,z-p.z)));}return m;}
-function baseH(x,z){return 1.7*Math.sin(x*0.045+0.5)*Math.cos(z*0.038)+0.8*Math.sin(x*0.1+1.3)*Math.sin(z*0.085+0.7);}
+function baseH(x,z){return 4.5*Math.sin(x*0.0085+0.4)*Math.cos(z*0.0072+0.9)+4.2*Math.sin(x*0.014+0.8)*Math.cos(z*0.011+0.3)+1.8*Math.sin(x*0.031+2.1)*Math.sin(z*0.027+1.2)
+  +1.7*Math.sin(x*0.045+0.5)*Math.cos(z*0.038)+0.8*Math.sin(x*0.1+1.3)*Math.sin(z*0.085+0.7);}
 function detailH(x,z){return 0.32*Math.sin(x*0.33)*Math.cos(z*0.29)+0.15*Math.sin(x*0.7+z*0.5);}
 const CAMP_H=baseH(CAMP.x,CAMP.z),VIL_H=baseH(VILLAGE.x,VILLAGE.z);
-/* ---------- Le mont du Loup (colline avec belvédère) et la rivière (territoire public) ---------- */
-const HILL={x:75,z:-140,r:40,h:22};
+/* ---------- La montagne (avec belvédère) et la rivière (territoire public) ---------- */
 // petit plateau plat au sommet (5 m) pour que le belvédère et son panneau reposent sur le sol
 function hillH(x,z){const d=Math.max(0,Math.hypot(x-HILL.x,z-HILL.z)-5);return d<HILL.r-5?HILL.h*(0.5+0.5*Math.cos(Math.PI*d/(HILL.r-5))):0;}
-const RIVER=[[128,-182],[122,-158],[129,-134],[119,-110],[123,-86],[115,-62],[113,-36],[113,-22]];
 const RIVER_L=(()=>{const a=[0];for(let i=1;i<RIVER.length;i++)a.push(a[i-1]+Math.hypot(RIVER[i][0]-RIVER[i-1][0],RIVER[i][1]-RIVER[i-1][1]));return a;})();
 function riverInfo(x,z){
   let best=1e9,bs=0;
@@ -81,9 +41,12 @@ function riverInfo(x,z){
     const d=Math.hypot(x-(ax+t*dx),z-(az+t*dz));if(d<best){best=d;bs=(RIVER_L[i]+t*Math.sqrt(l2))/RIVER_L[RIVER_L.length-1];}}
   return {d:best,s:bs};
 }
-function riverY(s){return LAKE_Y+3.4*(1-Math.min(1,s/0.93));}
-/* ---------- Le lac (au bout est de la terre) ---------- */
-const LAKE={x:113,z:2,rx:23,rz:33};
+// Niveau de l'eau le long de la rivière (s : 0 à la source, 1 au lac), avec une chute
+function riverY(s){return LAKE_Y+2.2*(1-Math.min(1,s/0.95))+RIVER_FALL.h*smoothstep(RIVER_FALL.s+0.012,RIVER_FALL.s-0.012,s);}
+const RIVER_BB=(()=>{const xs=RIVER.map(p=>p[0]),zs=RIVER.map(p=>p[1]);return {x0:Math.min(...xs)-14,x1:Math.max(...xs)+14,z0:Math.min(...zs)-14,z1:Math.max(...zs)+14};})();
+const nearRiver=(x,z)=>inRect(x,z,RIVER_BB);
+const nearLake=(x,z)=>Math.abs(x-LAKE.x)<LAKE.rx*2.2&&Math.abs(z-LAKE.z)<LAKE.rz*2.2;
+/* ---------- Le lac (territoire public, au nord) ---------- */
 function lakeE(x,z){const dx=(x-LAKE.x)/LAKE.rx,dz=(z-LAKE.z)/LAKE.rz,a=Math.atan2(dz,dx);return Math.hypot(dx,dz)/(1+0.07*Math.sin(3*a+1)+0.05*Math.sin(5*a+2));}
 const LAKE_Y=(()=>{let s=0;for(let i=0;i<32;i++){const a=i/32*Math.PI*2;s+=baseH(LAKE.x+Math.cos(a)*LAKE.rx*1.45,LAKE.z+Math.sin(a)*LAKE.rz*1.45);}return s/32-0.25;})();
 function H(x,z){
@@ -93,18 +56,19 @@ function H(x,z){
   const tv=smoothstep(8,0,vilOut(x,z));
   h+=detailH(x,z)*(1-Math.max(tc,tt,tv));
   h+=hillH(x,z);
+  for(const r of RESERVED){if(r.land)continue;const d=Math.hypot(Math.max(r.x0-x,0,x-r.x1),Math.max(r.z0-z,0,z-r.z1));if(d<8){if(r.h===undefined)r.h=baseH((r.x0+r.x1)/2,(r.z0+r.z1)/2);h=lerp(h,r.h,smoothstep(8,0,d));}}   // lots réservés : aplanis
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
   h-=0.18*mudAt(x,z);
-  if(x>60){const e=lakeE(x,z);if(e<2.0){h=lerp(h,LAKE_Y+0.35,smoothstep(2.0,1.1,e));h-=3.2*smoothstep(1.0,0.5,e);}}
-  if(x>100&&z<-15){const ri=riverInfo(x,z);if(ri.d<11){const ys=riverY(ri.s),le=lakeE(x,z),out=smoothstep(0.95,1.3,le);
+  if(nearLake(x,z)){const e=lakeE(x,z);if(e<2.0){h=lerp(h,LAKE_Y+0.35,smoothstep(2.0,1.1,e));h-=3.2*smoothstep(1.0,0.5,e);}}
+  if(nearRiver(x,z)){const ri=riverInfo(x,z);if(ri.d<11){const ys=riverY(ri.s),le=lakeE(x,z),out=smoothstep(0.95,1.3,le);
     const hr=lerp(h,ys+0.45,smoothstep(11,3.4,ri.d)*out)-1.5*smoothstep(2.9,0.9,ri.d);
     h=out<1?Math.min(h,hr):hr;}}   // dans le lac, la rivière ne fait que creuser (pas de berge)
   return h;
 }
 // Profondeur d'eau (négatif : pas d'eau)
-function waterDepth(x,z){if(x>60&&lakeE(x,z)<1.15)return LAKE_Y-H(x,z);if(x>100&&z<-15){const ri=riverInfo(x,z);if(ri.d<3)return riverY(ri.s)-H(x,z);}return -1;}
+function waterDepth(x,z){if(nearLake(x,z)&&lakeE(x,z)<1.15)return LAKE_Y-H(x,z);if(nearRiver(x,z)){const ri=riverInfo(x,z);if(ri.d<3)return riverY(ri.s)-H(x,z);}return -1;}
 // Le quai : on y marche au-dessus de l'eau
-const DOCK=(()=>{let sx=88;for(let x=86;x<LAKE.x;x+=0.1){if(H(x,LAKE.z)<LAKE_Y){sx=x;break;}}return {x0:sx-2.6,x1:sx+6.5,z0:LAKE.z-0.85,z1:LAKE.z+0.85,y:LAKE_Y+0.48};})();
+const DOCK=(()=>{let sx=LAKE.x-LAKE.rx;for(let x=LAKE.x-LAKE.rx*1.4;x<LAKE.x;x+=0.1){if(H(x,LAKE.z)<LAKE_Y){sx=x;break;}}return {x0:sx-2.6,x1:sx+6.5,z0:LAKE.z-0.85,z1:LAKE.z+0.85,y:LAKE_Y+0.48};})();
 function onDock(x,z){return x>DOCK.x0&&x<DOCK.x1&&z>DOCK.z0&&z<DOCK.z1;}
 // Belvédère au sommet du mont du Loup : une plate-forme où l'on monte
 const BELV=(()=>{const y=H(HILL.x,HILL.z)+0.45;return {x0:HILL.x-2.6,x1:HILL.x+2.6,z0:HILL.z-2.6,z1:HILL.z+2.6,y};})();
@@ -287,7 +251,7 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-37,-33,vl[1])*smoothstep(41,37,vl[1]);
     const yardF=smoothstep(-24,-22.5,vl[0])*smoothstep(-3.6,-5,vl[0])*smoothstep(11.5,13,vl[1])*smoothstep(43,41,vl[1]);   // la cour rejoint les chemins de terre (camp et terre du Sud)
     const patch=Math.max(road*0.95,yardF*0.8);
-    const le=x>60?lakeE(x,z):9,rd=x>100&&z<-15?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
+    const le=nearLake(x,z)?lakeE(x,z):9,rd=nearRiver(x,z)?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
     dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);
     let r=0.88+0.22*n,gg=0.88+0.2*n,b=0.86+0.18*n;
@@ -767,7 +731,7 @@ for(let k=0;k<5200&&treeList.length<900;k++){
 }
 const ORIG_TREE_N=treeList.length;
 // Le nouveau sentier passe dans la forêt de départ : ces arbres-là sont déjà coupés (sans souche)
-treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||t.x>60&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6||Math.hypot(t.x-CAMP.x,t.z-CAMP.z)<CAMP_FLAT-2||vilOut(t.x,t.z)<1.5){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+treeList.forEach(t=>{if(trailDistLake(t.x,t.z)<3.2||nearLake(t.x,t.z)&&lakeE(t.x,t.z)<1.25||Math.hypot(t.x-YARD.x,t.z-YARD.z)<YARD.r+1.6||Math.hypot(t.x-CAMP.x,t.z-CAMP.z)<CAMP_FLAT-2||vilOut(t.x,t.z)<1.5){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
 // Forêt de la terre agrandie (son propre hasard : ne change rien à la forêt de départ)
 const rng2=mulberry32(4242);
 for(let k=0;k<4000&&treeList.length<ORIG_TREE_N+280;k++){
@@ -798,8 +762,8 @@ for(const rk in REGIONS){
   for(let k=0;k<R.n*8&&treeList.length<start+R.n;k++){
     const x=R.x0+rr()*(R.x1-R.x0),z=R.z0+rr()*(R.z1-R.z0);
     if(trailDist(x,z)<3.4)continue;
-    if(x>60&&lakeE(x,z)<1.3)continue;
-    if(x>100&&z<-15&&riverInfo(x,z).d<4.5)continue;
+    if(nearLake(x,z)&&lakeE(x,z)<1.3)continue;
+    if(nearRiver(x,z)&&riverInfo(x,z).d<4.5)continue;
     if(Math.hypot(x-HILL.x,z-HILL.z)<15)continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<R.gap))continue;
     let r=rr(),type='erable';for(const [tp,p] of R.types){if(r<p){type=tp;break;}r-=p;}
@@ -809,7 +773,7 @@ for(const rk in REGIONS){
   }
 }
 // Deuxième ménage : arbres sur les nouveaux sentiers ou dans la rivière
-treeList.forEach((t,i)=>{if(t.cleared||i>=LAKE_TREE_N)return;if(trailDist(t.x,t.z)<3.2||t.x>100&&t.z<-15&&riverInfo(t.x,t.z).d<4.5||Math.hypot(t.x-HILL.x,t.z-HILL.z)<6){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
+treeList.forEach((t,i)=>{if(t.cleared||i>=LAKE_TREE_N)return;if(trailDist(t.x,t.z)<3.2||nearRiver(t.x,t.z)&&riverInfo(t.x,t.z).d<4.5||Math.hypot(t.x-HILL.x,t.z-HILL.z)<6){t.cleared=true;t.alive=false;t.stumpGone=true;removeCol(t.col);}});
 
 /* Arbres : géométries détaillées, partagées et dessinées en lots (une seule commande par sorte de pièce).
    Les couleurs par sommet donnent du relief (ombre dans le feuillage, taches des bouleaux). */
