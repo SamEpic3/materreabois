@@ -71,10 +71,10 @@ function makeBbqModel(){
   // Tablettes de côté en lattes
   g.add(new T.Mesh(mergeGeos([0.6,-0.6].flatMap(x=>[0,1,2,3].map(k=>new T.BoxGeometry(0.34,0.035,0.1).translate(x+(x>0?0.04:-0.04),1.0,-0.17+k*0.115)))),wood));
   // Bonbonne de propane
-  g.add(new T.Mesh(mergeGeos([new T.CylinderGeometry(0.15,0.15,0.34,14).translate(0.2,0.5,0),new T.SphereGeometry(0.15,14,6,0,Math.PI*2,0,Math.PI/2).translate(0.2,0.67,0),new T.CylinderGeometry(0.09,0.09,0.08,10).translate(0.2,0.84,0)]),mat(0xe8e4da)));
+  const tankM=new T.Mesh(mergeGeos([new T.CylinderGeometry(0.15,0.15,0.34,14).translate(0.2,0.5,0),new T.SphereGeometry(0.15,14,6,0,Math.PI*2,0,Math.PI/2).translate(0.2,0.67,0),new T.CylinderGeometry(0.09,0.09,0.08,10).translate(0.2,0.84,0)]),mat(0xe8e4da));g.add(tankM);
   const glow=new T.Mesh(new T.BoxGeometry(0.7,0.04,0.02),new T.MeshBasicMaterial({color:0x3a2a20}));glow.position.set(0,0.87,0.3);g.add(glow);
   const fishG=new T.Group();g.add(fishG);
-  Object.assign(g.userData,{glow,lid,flames,burn,fishG});return g;
+  Object.assign(g.userData,{glow,lid,flames,burn,fishG,tankM});return g;
 }
 // Passage du repère d'une construction au monde
 function lw(b,lx,lz){const c=Math.cos(b.rot||0),s=Math.sin(b.rot||0);return {x:b.x+c*lx+s*lz,z:b.z-s*lx+c*lz};}
@@ -165,8 +165,8 @@ const KINDS={
        desc:`Pour corder des bûches de chauffage de 3 pi maximum, sur deux cordes de profond (${SHED_CAP} bûches).`},
   sucres:{name:'Bouilloire à sirop',art:'la',price:400,icon:'🍁',dist:2.8,foot:[[0,0,1.3]],model:makeSucresModel,create:createSucres,init:()=>({fuel:0,sap:0,syrup:0}),near:b=>b,nearR:2.4,
        desc:'Un foyer avec une bouilloire pour faire bouillir l\'eau d\'érable en sirop.'},
-  bbq:{name:'Barbecue',art:'le',price:600,icon:'🍖',dist:2.4,foot:[[0,0,1.0]],model:makeBbqModel,create:createBbq,init:()=>({on:false,open:false,fish:[null,null,null,null]}),near:b=>b,nearR:1.7,
-       desc:'Un barbecue au propane : ouvre le couvercle, allume-le et mets-y jusqu\'à 4 poissons. Ils cuisent en 2 minutes.'},
+  bbq:{name:'Barbecue',art:'le',price:600,icon:'🍖',dist:2.4,foot:[[0,0,1.0]],model:makeBbqModel,create:createBbq,init:()=>({on:false,open:false,fish:[null,null,null,null],tank:1}),near:b=>b,nearR:1.7,
+       desc:'Un barbecue au propane, livré avec une bonbonne pleine (environ 30 cuissons) : ouvre le couvercle, allume-le et mets-y jusqu\'à 4 poissons. Ils cuisent en 2 minutes. Bonbonnes et échanges au magasin général.'},
   garage:{name:'Garage',art:'le',price:5000,icon:'🛠️',dist:7.5,foot:[[-1.6,-2.1,2.5],[1.6,-2.1,2.5],[-1.6,2.1,2.5],[1.6,2.1,2.5]],model:makeGarageModel,create:createGarage,init:()=>({}),near:b=>b,nearR:0,
        desc:'Un grand garage avec une porte à l\'avant pour rentrer le pick-up ou la débusqueuse à l\'abri, avec un établi au fond.'},
   becosse:{name:'Bécosse',art:'la',price:300,icon:'🚽',dist:2.6,foot:[[0,0,1.0]],model:makeBecosseModel,create:createBecosse,init:()=>({}),near:b=>b,nearR:0,

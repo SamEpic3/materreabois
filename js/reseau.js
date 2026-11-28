@@ -112,7 +112,7 @@ const COLS=[
    set:(id,d)=>{const c=contOf(id);if(!c)return;c.load.forEach(m=>c.cargo.remove(m));c.load.length=0;(c.pails||[]).forEach(p=>c.cargo.remove(p.mesh));if(c.pails)c.pails.length=0;fillCont(c,d);},
    del:()=>{},get:id=>contOf(id)},
   {c:'bu',items:()=>S.builds.map(b=>[b.id,b]),
-   key:b=>`${b.k},${rd(b.x,50)},${rd(b.z,50)},${rd(b.rot,50)}|${b.fuel!==undefined?Math.round(b.fuel/15):''},${b.sap!==undefined?rd(b.sap,2):''},${b.syrup!==undefined?rd(b.syrup,20):''},${b.logs?b.logs.length+':'+Math.round(b.logs.reduce((s,c)=>s+(c.hu??45),0)/8):''},${b.lit!==undefined?Math.round(b.lit/30):''}|${b.on?1:0}${b.open?1:0}|${b.fish?b.fish.map(f=>f?f.k+Math.floor(f.c/10):'-').join(','):''}`,
+   key:b=>`${b.k},${rd(b.x,50)},${rd(b.z,50)},${rd(b.rot,50)}|${b.fuel!==undefined?Math.round(b.fuel/15):''},${b.sap!==undefined?rd(b.sap,2):''},${b.syrup!==undefined?rd(b.syrup,20):''},${b.logs?b.logs.length+':'+Math.round(b.logs.reduce((s,c)=>s+(c.hu??45),0)/8):''},${b.lit!==undefined?Math.round(b.lit/30):''}|${b.on?1:0}${b.open?1:0}${b.tank===undefined?'':b.tank===null?'n':Math.round(b.tank*20)}|${b.fish?b.fish.map(f=>f?f.k+Math.floor(f.c/10):'-').join(','):''}`,
    ser:b=>{const o={};for(const k in b){if(k==='_o')continue;o[k]=k==='logs'?b.logs.map(cOf):b[k];}return o;},
    set:(id,d)=>{const b=S.builds.find(b=>b.id===id);
      if(!b){const st=Object.assign({},d);delete st.k;delete st.x;delete st.z;delete st.rot;addBuild(d.k,{x:d.x,z:d.z,rot:d.rot},st);return;}
