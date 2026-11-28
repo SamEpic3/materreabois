@@ -82,9 +82,10 @@ function drawMap(){
   // Les terres
   landRect(MAIN_LAND,'rgba(255,214,90,0.95)',null);
   for(const k in LANDS){const L=LANDS[k],own=S.lands&&S.lands[k];landRect(L,own?'rgba(255,214,90,0.95)':'rgba(255,255,255,0.8)',own?null:[9,6],own?null:'rgba(0,0,0,0.12)');
-    const [a,b]=w2s((L.x0+L.x1)/2,(L.z0+L.z1)/2);mapText(L.name,a,b-9*zf,12*zf,'#fff');mapText(own?'Ta terre':`À vendre · ${L.price.toLocaleString('fr-CA')} $`,a,b+8*zf,10*zf,own?'#ffe08a':'#e8e8e8',null,600);}
+    const [a,b]=w2s((L.x0+L.x1)/2,(L.z0+L.z1)/2);mapText(L.name,a,b-9*zf,12*zf,'#fff');mapText(own?'Ta terre':`À vendre · ${L.price.toLocaleString('fr-CA')} $`,a,b+8*zf,10*zf,own?'#ffe08a':'#e8e8e8',null,600);
+    if(!own&&fences[k]){const [sx,sy]=w2s(fences[k].sign.x,fences[k].sign.z);mctx.beginPath();mctx.arc(sx,sy,4,0,7);mctx.fillStyle='#c0392b';mctx.fill();mctx.strokeStyle='#fff';mctx.lineWidth=1.5;mctx.stroke();mapText('Panneau à vendre',sx,sy-11,10,'#fff',null,700);}}
   {const [a,b]=w2s(MAIN_LAND.x0+6,MAIN_LAND.z0+5);mctx.textAlign='left';mctx.font=`700 ${11*zf}px system-ui,sans-serif`;mctx.lineWidth=3;mctx.strokeStyle='rgba(20,24,18,0.85)';mctx.strokeText('Ta terre',a,b+6*zf);mctx.fillStyle='#ffe08a';mctx.fillText('Ta terre',a,b+6*zf);}
-  {const [a,b]=w2s((WB.x0+WB.x1)/2,MAIN_LAND.z0-70);mapText('Territoire public',a,b,12*zf,'#e8e8e8',null,700);mapText('chasse et pêche',a,b+15*zf,10*zf,'#d8d8d8',null,600);}
+  {const [a,b]=w2s((WB.x0+WB.x1)/2,MAIN_LAND.z0-70);mapText('Territoire public',a,b,12*zf,'#e8e8e8',null,700);mapText('chasse et pêche · pas de coupe',a,b+15*zf,10*zf,'#d8d8d8',null,600);}
   // Lots réservés pour plus tard
   RESERVED.forEach(r=>{landRect(r,'rgba(170,210,255,0.75)',[4,5],'rgba(120,170,230,0.12)');const [a,b]=w2s((r.x0+r.x1)/2,(r.z0+r.z1)/2);mapText(r.name,a,b-6*zf,10*zf,'#dcebff',null,700);mapText('réservé · '+r.note,a,b+8*zf,9*zf,'#c8dcf2',null,600);});
   // Noms des lieux

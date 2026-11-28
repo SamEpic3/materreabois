@@ -338,6 +338,7 @@ function onMessage(m){
     NET.welcomed=true;NET.hostId=m.host;NET.host=m.host===ME.id;NET.lastSeq=m.seq;
     NET.online={};(m.online||[]).forEach(o=>{NET.online[o.id]={name:o.name};});
     let d=m.snap;
+    if(d&&!String(d.sig||'').startsWith(MAP_TAG)){d=null;m.ops=[];}   // terre de l'ancienne carte : on repart à neuf
     if(d&&m.players){d.players=Object.assign({},m.players,d.players||{});for(const id in m.players)if(d.players[id])d.players[id].name=m.players[id].name||d.players[id].name;}
     const fresh=!d;
     if(!d){d=Stockage.charger()||Stockage.charger(SAVE_KEY);}   // nouvelle terre : on part de ta partie

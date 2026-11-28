@@ -2,7 +2,8 @@
    (chaudières, bouilloire, feux, arbres plantés) continue pendant l'absence. */
 const SAVE_VER=2;   // v2 : monde et joueurs séparés (v1 encore lue)
 // Signature de la forêt de départ : si le code du monde change, on ne réapplique pas l'état des arbres.
-const WORLD_SIG=`${ORIG_TREE_N}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[ORIG_TREE_N-1].z*1000)}`;   // forêt de départ seulement
+const MAP_TAG='carte2:';   // nouvelle carte : les anciennes parties ne se chargent plus (nouvelle partie)
+const WORLD_SIG=MAP_TAG+`${ORIG_TREE_N}-${campStumps.length}-${Math.round(treeList[0].x*1000)}-${Math.round(treeList[ORIG_TREE_N-1].z*1000)}`;   // forêt de départ seulement
 let saveOff=false;
 const r3=v=>Math.round(v*1000)/1000;
 function cOf(c){const o={sp:c.sp,len:r3(c.len),ra:r3(c.ra),rb:r3(c.rb)};if(c.split)o.split=c.split;if(c.hu!==undefined&&c.hu<44.9)o.hu=Math.round(c.hu*10)/10;return o;}
@@ -54,7 +55,7 @@ function clearAllVehicles(){
 }
 function loadGame(given){
   let d=given||Stockage.charger();
-  if(!d||(d.ver!==1&&d.ver!==2))return null;
+  if(!d||(d.ver!==1&&d.ver!==2)||!String(d.sig||'').startsWith(MAP_TAG))return null;
   if(d.ver===2){   // on remet le monde et MON joueur à plat; les autres joueurs sont gardés à part
     const me=(d.players||{})[ME.id]||null;
     S.others={};for(const id in d.players||{})if(id!==ME.id)S.others[id]=d.players[id];

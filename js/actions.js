@@ -92,7 +92,7 @@ function context(){
     else if(cont&&cont.pails.length){const pp=cont.pails[cont.pails.length-1];act={label:`Prendre un seau (${pailTxt(pp)}) dans la ${cont.name}`,fn:()=>takePailFrom(cont)};}
     else if(cont&&cont.load.length){const top=cont.load[cont.load.length-1].userData.c;if(top.len<=CARRY_MAX)act={label:`Prendre un billot (${cont.name})`,fn:()=>takeFrom(cont)};else info=`Billot de ${ftin(top.len)} : trop long pour l'épaule, utilise la grue`;}
     else if(TOOL&&TOOL.kind==='plant'){plant=plantContext();act=plant.act;act2=plant.act2;info=plant.info;}
-    else{const t=nearestTree(1.3);if(t&&isPublic(t.x,t.z))info='Territoire public : défendu de bûcher ou d\'entailler ici';else if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
+    else{const t=nearestTree(1.3);if(t&&notMine(t.x,t.z))info=notMine(t.x,t.z);else if(t){const r=treeContext(t);act=r.act||null;act2=r.act2||null;info=r.info||'';}}
   }
   if(!act&&!info){const sb=nearestSugar();if(sb)info=boilInfo(sb);}
   if(!act&&!info&&!P.carry&&!P.pail&&nearestStump(1.2))info='Souche : prends une pelle pour l\'arracher';

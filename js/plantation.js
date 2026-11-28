@@ -37,7 +37,7 @@ function plantProblem(x,z){
   const it=heldItem();if(!it||!it.id.startsWith('plant:'))return 'Prends des plants en main';
   if(outW(x,z,3))return 'Trop près du bout de la terre';
   if(waterDepth(x,z)>-0.15||onDock(x,z))return 'Pas dans l\'eau';
-  if(isPublic(x,z))return 'Pas sur le territoire public';
+  {const m=notMine(x,z,'de planter');if(m)return m;}
   if(trailDist(x,z)<3)return 'Pas sur un chemin';
   if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP.r)return 'Pas dans le camp';
   if(vilOut(x,z)<4)return 'Pas au village';

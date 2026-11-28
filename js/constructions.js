@@ -254,8 +254,7 @@ function placeProblem(k,pos,moving){
     const c=lw(pos,lx,lz);
     if(outW(c.x,c.z,r+2))return 'Trop près du bout de la terre';
     if(waterDepth(c.x,c.z)>-0.15||onDock(c.x,c.z))return 'Pas dans l\'eau';
-    if(isPublic(c.x,c.z))return 'Pas sur le territoire public';
-    if(landBlocked(c.x,c.z))return 'Cette terre n\'est pas à vous';
+    {const m=notMine(c.x,c.z,'de construire');if(m)return m;}
     if(vilOut(c.x,c.z)<r||inSale(c.x,c.z))return 'Pas au village';
     if(Math.hypot(c.x-YARD.x,c.z-YARD.z)<YARD.r+r)return 'Pas dans la cour à bois';
     if(trailDist(c.x,c.z)<r*0.5+1.4)return 'Pas sur un chemin';

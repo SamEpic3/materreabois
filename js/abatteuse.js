@@ -52,8 +52,7 @@ function distToPiece(p,pc){const b=pieceButt(pc),ux=Math.sin(pc.rot),uz=Math.cos
 function harvPiece(v){const h=harvHead(v);let best=null,bd=2.0;pieces.forEach(pc=>{if(pc.crown||pc.split||pc.len<LOG8+0.4)return;const d=distToPiece(h,pc);if(d<bd){bd=d;best=pc;}});return best;}
 function harvWhyNot(t){
   if(t.planted&&t.grow<1)return 'Trop petit : c\'est un jeune plant';
-  if(isPublic(t.x,t.z))return 'Territoire public : défendu de bûcher ici';
-  if(landBlocked(t.x,t.z))return 'Cette terre n\'est pas à vous';
+  {const m=notMine(t.x,t.z,'de bûcher');if(m)return m;}
   if(typeof tapOf==='function'&&tapOf(t))return 'Érable entaillé : retire la chaudière d\'abord';
   return '';
 }
