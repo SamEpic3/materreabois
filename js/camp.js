@@ -233,22 +233,10 @@ function bbqContext(q){
   return fishAct?{act:fishAct,act2:lid,info}:{act:lid,act2:onOff,info};
 }
 
-/* ---------- Décor en bordure du camp agrandi (la bécosse est une construction déplaçable) : corde à linge, table à pique-nique, boîte aux lettres ---------- */
+/* ---------- Décor en bordure du camp (la bécosse est une construction déplaçable) : boîte aux lettres ---------- */
 {
   const put=(g,x,z,ry)=>{g.position.set(x,H(x,z),z);g.rotation.y=ry;bakeStatic(g);shadows(g);scene.add(g);};
   const plankV=texMat(sidingTex('#7d5a3a','#4e3622',true),5,1),wd=mat(0x7a5232),dk=mat(0x3b2a1e);
-  // Corde à linge : deux poteaux en T, chemises et une serviette
-  {const g=new T.Group(),L=6;
-   g.add(new T.Mesh(mergeGeos([0,L].map(z=>new T.BoxGeometry(0.12,2.3,0.12).translate(0,1.15,z)).concat([0,L].map(z=>new T.BoxGeometry(1.0,0.1,0.1).translate(0,2.2,z)))),wd));
-   g.add(new T.Mesh(mergeGeos([-0.4,0.4].map(x=>new T.BoxGeometry(0.015,0.015,L).translate(x,2.17,L/2))),mat(0xdddddd)));
-   [[-0.4,1.2,0xb3241f,0.75],[-0.4,2.4,0x2d5b9a,0.75],[0.4,1.8,0xf2f2f2,0.6],[0.4,3.6,0x2f6b3a,0.75],[-0.4,4.4,0xe8c23a,0.5]].forEach(([x,z,c,h])=>{
-     const m=new T.Mesh(new T.BoxGeometry(0.03,h,0.6).translate(x,2.15-h/2,z),new T.MeshLambertMaterial({color:c,side:T.DoubleSide}));m.rotation.z=0;g.add(m);});
-   const cx=-14,cz=8.6,ry=0.06;   // devant la rallonge, à gauche de la galerie
-   put(g,cx,cz,ry);addCol(cx,cz,0.25);addCol(cx+Math.sin(ry)*L,cz+Math.cos(ry)*L,0.25);}
-  // Table à pique-nique
-  {const g=new T.Group(),p=[new T.BoxGeometry(1.9,0.07,0.8).translate(0,0.76,0),new T.BoxGeometry(1.9,0.06,0.28).translate(0,0.45,0.62),new T.BoxGeometry(1.9,0.06,0.28).translate(0,0.45,-0.62)];
-   [-0.75,0.75].forEach(x=>{p.push(new T.BoxGeometry(0.08,0.85,0.08).rotateX(0.55).translate(x,0.38,0.28),new T.BoxGeometry(0.08,0.85,0.08).rotateX(-0.55).translate(x,0.38,-0.28),new T.BoxGeometry(0.07,0.07,1.5).translate(x,0.38,0));});
-   g.add(new T.Mesh(mergeGeos(p),mat(0x8a6040)));put(g,14,10,0.5);addCol(14,10,1.1);}
   // Boîte aux lettres au bord du chemin du village
   {const g=new T.Group();g.add(new T.Mesh(new T.BoxGeometry(0.1,1.1,0.1).translate(0,0.55,0),wd));
    g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.28,0.22,0.5).translate(0,1.2,0),new T.CylinderGeometry(0.14,0.14,0.5,10,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(-Math.PI/2).translate(0,1.31,0)]),mat(0x4a5a4a)));
