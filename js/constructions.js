@@ -157,7 +157,7 @@ function makeBecosseModel(){
   return g;
 }
 function createBecosse(b,o){o.add(makeBecosseModel());o.col(b.x,b.z,0.95);}
-const BECOSSE_START={x:-17,z:-8,rot:Math.PI/2};
+const BECOSSE_START={x:CAMP.x-17,z:CAMP.z-8,rot:Math.PI/2};
 const KINDS={
   feu:{name:'Feu de camp',art:'le',price:250,icon:'🔥',dist:4.3,foot:[[0,0,2.7]],model:makeFeuModel,create:createFeu,init:()=>({fuel:0}),near:b=>b,nearR:2.2,
        desc:'Un rond de pierres et trois bûches pour s\'asseoir. On y fait brûler du bois de chauffage.'},

@@ -5,11 +5,11 @@ function clampW(p,m){p.x=clamp(p.x,WB.x0+m,WB.x1-m);p.z=clamp(p.z,WB.z0+m,WB.z1-
 function outW(x,z,m){return x<WB.x0+m||x>WB.x1-m||z<WB.z0+m||z>WB.z1-m;}
 const TRAILS=PATHS.map(p=>p.pts);   // les chemins viennent du plan
 const MUD=[];   // plus de trous de boue sur les sentiers
-const PILE_DEF=[{x:18,z:-65},{x:-49,z:-28},{x:60,z:-3}];
+const PILE_DEF=[{x:-58,z:-19},{x:58,z:-55},{x:6,z:-96}];   // piles de billots le long des sentiers
 const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (position fixée plus bas)
-const OLD_YARD={x:8,z:6};             // ancienne cour au camp : garde la même forêt pour les sauvegardes
-const CABIN0={x:-7,z:2};             // ancienne place (sert encore à générer les roches d'origine)
-const CABIN={x:-10.2,z:-0.25};        // la cabane, agrandie : 12 m × 9 m (le mur de droite et la façade restent où ils étaient)
+const OLD_YARD={x:CAMP.x+8,z:CAMP.z+6};             // ancienne cour au camp : garde la même forêt pour les sauvegardes
+const CABIN0={x:CAMP.x-7,z:CAMP.z+2};             // ancienne place (sert encore à générer les roches d'origine)
+const CABIN={x:CAMP.x-10.2,z:CAMP.z-0.25};        // la cabane, agrandie : 12 m × 9 m (le mur de droite et la façade restent où ils étaient)
 const CAB_W=12,CAB_D=9,CAB_H=3.4,CAB_DOOR_X=2.4,CAB_CHIM={x:4.6,z:-1.7};
 // Village le long d'une rue : repère local (lx vers la droite, lz vers le camp) et rectangle aplani
 const VIL_A=Math.atan2(CAMP.x-VILLAGE.x,CAMP.z-VILLAGE.z),VIL_S=Math.sin(VIL_A),VIL_C=Math.cos(VIL_A);
@@ -74,12 +74,35 @@ function H(x,z){
   for(const r of RESERVED){if(r.land)continue;const d=Math.hypot(Math.max(r.x0-x,0,x-r.x1),Math.max(r.z0-z,0,z-r.z1));if(d<8){if(r.h===undefined)r.h=baseH((r.x0+r.x1)/2,(r.z0+r.z1)/2);h=lerp(h,r.h,smoothstep(8,0,d));}}   // lots réservés : aplanis
   h=lerp(h,CAMP_H,tc);h=lerp(h,VIL_H,tv);
   h-=0.18*mudAt(x,z);
+  if(ROAD_T)h=roadLevel(x,z,h);
   if(nearLake(x,z)){const e=lakeE(x,z);if(e<2.0){h=lerp(h,LAKE_Y+0.35,smoothstep(2.0,1.1,e));h-=3.2*smoothstep(1.0,0.5,e);}}
   if(nearRiver(x,z)){const ri=riverInfo(x,z);if(ri.d<11){const ys=riverY(ri.s),le=lakeE(x,z),out=smoothstep(0.95,1.3,le);
     const hr=lerp(h,ys+0.45,smoothstep(11,3.4,ri.d)*out)-1.5*smoothstep(2.9,0.9,ri.d);
     h=out<1?Math.min(h,hr):hr;}}   // dans le lac, la rivière ne fait que creuser (pas de berge)
   return h;
 }
+/* Routes : un profil en long adouci (pente max, pas de bosses) et plat d'un bord à l'autre */
+let ROAD_T=null;
+function roadLevel(x,z,h){
+  for(const R of ROAD_T){if(x<R.bb.x0||x>R.bb.x1||z<R.bb.z0||z>R.bb.z1)continue;
+    let best=1e9,hy=0;for(const s of R.segs){const dx=s[2]-s[0],dz=s[3]-s[1],l2=dx*dx+dz*dz;let u=((x-s[0])*dx+(z-s[1])*dz)/l2;u=u<0?0:u>1?1:u;
+      const d=Math.hypot(x-s[0]-u*dx,z-s[1]-u*dz);if(d<best){best=d;hy=s[4]+(s[5]-s[4])*u;}}
+    if(best<R.hw+R.sh)h=lerp(h,hy,smoothstep(R.hw+R.sh,R.hw+0.6,best));}
+  return h;
+}
+ROAD_T=(()=>{const out=[];
+  PATHS.filter(P=>P.kind!=='sentier'&&P.id!=='rue').forEach(P=>{
+    const pts=[];for(let i=0;i<P.pts.length-1;i++){const [ax,az]=P.pts[i],[bx,bz]=P.pts[i+1],n=Math.ceil(Math.hypot(bx-ax,bz-az)/2);for(let k=0;k<n;k++)pts.push([lerp(ax,bx,k/n),lerp(az,bz,k/n)]);}
+    pts.push(P.pts[P.pts.length-1]);
+    const route=P.kind==='route',W=route?14:6,MG=(route?0.05:0.09)*2;   // fenêtre de lissage (échantillons de 2 m) et pente max par échantillon
+    let h=pts.map(p=>H(p[0],p[1]));
+    for(let pass=0;pass<3;pass++)h=h.map((_,i)=>{let s=0,n=0;for(let k=-W;k<=W;k++){const j=i+k;if(j>=0&&j<h.length){s+=h[j];n++;}}return s/n;});
+    const f=h.slice(),b=h.slice();for(let i=1;i<f.length;i++)f[i]=clamp(f[i],f[i-1]-MG,f[i-1]+MG);for(let i=b.length-2;i>=0;i--)b[i]=clamp(b[i],b[i+1]-MG,b[i+1]+MG);
+    h=h.map((_,i)=>(f[i]+b[i])/2);
+    const segs=[];for(let i=0;i<pts.length-1;i++)segs.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],h[i],h[i+1]]);
+    const xs=pts.map(p=>p[0]),zs=pts.map(p=>p[1]),m=P.w/2+12;
+    out.push({segs,hw:P.w/2,sh:route?9:5,bb:{x0:Math.min(...xs)-m,x1:Math.max(...xs)+m,z0:Math.min(...zs)-m,z1:Math.max(...zs)+m}});
+  });return out;})();
 // Profondeur d'eau (négatif : pas d'eau)
 function waterDepth(x,z){if(nearLake(x,z)&&lakeE(x,z)<1.15)return LAKE_Y-H(x,z);if(nearRiver(x,z)){const ri=riverInfo(x,z);if(ri.d<3)return riverY(ri.s)-H(x,z);}return -1;}
 // Le quai : on y marche au-dessus de l'eau
@@ -888,7 +911,7 @@ const ZERO_M=new T.Matrix4().makeScale(0,0,0);
   const rocks=[];
   for(let k=0;k<400&&rocks.length<55;k++){
     const x=(rnd()*2-1)*(WORLD-2),z=(rnd()*2-1)*(WORLD-2);
-    if(Math.hypot(x,z)<CAMP.r+3||trailDist0(x,z)<3.5||Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)continue;
+    if(Math.hypot(x-CAMP.x,z-CAMP.z)<CAMP.r+3||trailDist0(x,z)<3.5||Math.hypot(x-VILLAGE.x,z-VILLAGE.z)<VILLAGE.r+3)continue;
     if(PILE_DEF.some(pp=>Math.hypot(x-pp.x,z-pp.z)<6))continue;
     if(eachNear(x,z,c=>Math.hypot(x-c.x,z-c.z)<2))continue;
     const s=0.4+rnd()*0.6;rocks.push({x,z,s,col:addCol(x,z,0.85*s)});

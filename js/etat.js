@@ -1,7 +1,7 @@
 /* État de la partie : argent, joueur, outils, catalogue du magasin, véhicules de départ */
 /* ---------- État ---------- */
 const S={mode:'foot',money:35000,delivered:0,time:0};
-const P={x:1,z:4,rot:Math.PI*0.75,phase:0,target:null,carry:null,swing:0,struck:false,cool:0,chopTree:null,crTr:null};
+const P={x:CAMP.x+1,z:CAMP.z+4,rot:Math.PI*0.75,phase:0,target:null,carry:null,swing:0,struck:false,cool:0,chopTree:null,crTr:null};
 const TOOLS=[
   {id:'hachette',name:'Vieille hachette',kind:'axe',delay:1.5,fell:1,cut:4,price:0,desc:'Celle de grand-papa. Elle fait la job, lentement.'},
   {id:'hache',name:'Hache de bûcheron',kind:'axe',delay:1.3,fell:0.7,cut:3,price:150,desc:'Plus lourde et bien affûtée : moins de coups par arbre.'},
@@ -50,5 +50,5 @@ function ground(x,z,th,hl,hw,out){
   return {h:(hF+hB+hS+hM)/4,slope:(hF-hB)/(2*hl)};
 }
 
-V=makeVehicle('vtt',4,-4,Math.PI);
+V=makeVehicle('vtt',CAMP.x+4,CAMP.z-4,Math.PI);
 {const t=makeTrailerObj('small',0,0,Math.PI);t.x=V.x-Math.sin(V.th)*(V.spec.hitch+t.spec.tl);t.z=V.z-Math.cos(V.th)*(V.spec.hitch+t.spec.tl);t.hitch=V;}

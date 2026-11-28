@@ -94,9 +94,9 @@ function loadGame(given){
   if(d.builds)d.builds.forEach(o=>{const {k,x,z,rot}=o;if(!KINDS[k])return;const st=Object.assign({},o);delete st.k;delete st.x;delete st.z;delete st.rot;addBuild(k,{x,z,rot},st);});
   else{   // anciennes sauvegardes : une seule construction de chaque sorte
     const cp=d.campPos||{},c=d.camp||{},b=d.boil||{};
-    if(c.feu)addBuild('feu',cp.feu||{x:-3.5,z:-6.5,rot:0},{fuel:d.campFire||0});
-    if(c.abri)addBuild('abri',cp.abri||{x:-13.6,z:-3.2,rot:Math.atan2(13.6,3.2)},{logs:d.shed||[]});
-    if(c.sucres||!d.campPos)addBuild('sucres',cp.sucres||{x:-10,z:-7,rot:0},{fuel:b.fuel||0,sap:b.sap||0,syrup:b.syrup||0});
+    if(c.feu)addBuild('feu',cp.feu||{x:CAMP.x-3.5,z:CAMP.z-6.5,rot:0},{fuel:d.campFire||0});
+    if(c.abri)addBuild('abri',cp.abri||{x:CAMP.x-13.6,z:CAMP.z-3.2,rot:Math.atan2(13.6,3.2)},{logs:d.shed||[]});
+    if(c.sucres||!d.campPos)addBuild('sucres',cp.sucres||{x:CAMP.x-10,z:CAMP.z-7,rot:0},{fuel:b.fuel||0,sap:b.sap||0,syrup:b.syrup||0});
   }
   if(d.player){P.x=d.player.x;P.z=d.player.z;P.rot=d.player.rot;if(d.player.carry)setCarry(d.player.carry);if(d.player.pail)setPail(d.player.pail);}
   // anciennes sauvegardes : les chaudières comptées deviennent des objets d'inventaire
