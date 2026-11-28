@@ -99,8 +99,11 @@ ROAD_T=(()=>{const out=[];
     const pts=[];for(let i=0;i<P.pts.length-1;i++){const [ax,az]=P.pts[i],[bx,bz]=P.pts[i+1],n=Math.ceil(Math.hypot(bx-ax,bz-az)/2);for(let k=0;k<n;k++)pts.push([lerp(ax,bx,k/n),lerp(az,bz,k/n)]);}
     pts.push(P.pts[P.pts.length-1]);
     const route=P.kind==='route',W=route?14:6,MG=(route?0.05:0.09)*2;   // fenêtre de lissage (échantillons de 2 m) et pente max par échantillon
-    const pin=pts.map(p=>route&&Math.hypot(p[0]-VILLAGE.x,p[1]-ROUTE_Z)<14);   // au croisement de la rue : exactement au niveau du village
-    let h=pts.map((p,i)=>pin[i]?VIL_H:H(p[0],p[1]));
+    // points fixés : le croisement de la route, et les deux bouts du rang (au niveau du village et du camp)
+    const p0=P.pts[0],pN=P.pts[P.pts.length-1];
+    const pinV=pts.map(p=>route?(Math.hypot(p[0]-VILLAGE.x,p[1]-ROUTE_Z)<14?VIL_H:null):Math.hypot(p[0]-p0[0],p[1]-p0[1])<10?VIL_H:Math.hypot(p[0]-pN[0],p[1]-pN[1])<12?CAMP_H:null);
+    const pin=pinV.map(v=>v!==null);
+    let h=pts.map((p,i)=>pin[i]?pinV[i]:H(p[0],p[1]));
     for(let pass=0;pass<3;pass++)h=h.map((v,i)=>{if(pin[i])return v;let s=0,n=0;for(let k=-W;k<=W;k++){const j=i+k;if(j>=0&&j<h.length){s+=h[j];n++;}}return s/n;});
     for(let it=0;it<6;it++){   // pente max partout, sans saut au bord du croisement
       for(let i=1;i<h.length;i++)if(!pin[i])h[i]=clamp(h[i],h[i-1]-MG,h[i-1]+MG);
@@ -295,7 +298,8 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
     const vl=vilLocal(x,z);
     const yardF=smoothstep(-24,-22.5,vl[0])*smoothstep(-3.6,-5,vl[0])*smoothstep(11.5,13,vl[1])*smoothstep(43,41,vl[1]);   // la cour rejoint les chemins de terre (camp et terre du Sud)
-    const patch=yardF*0.8;
+    const cyd=Math.hypot(Math.max(CAMP.x-12-x,0,x-CAMP.x-7),Math.max(CAMP.z+6-z,0,z-CAMP.z-15))+0.8*Math.sin(x*0.7+z*0.5),campYard=smoothstep(2.6,0.4,cyd);   // la cour de terre devant le camp, où arrive le rang
+    const patch=Math.max(yardF*0.8,campYard*0.9);
     const le=nearLake(x,z)?lakeE(x,z):9,rd=nearRiver(x,z)?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
     dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);

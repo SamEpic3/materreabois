@@ -39,7 +39,7 @@ const DOCK_X=44;                                      // le bout du sentier du l
 const PATHS=[
   {id:'route',kind:'route',w:8,pts:[[-200,ROUTE_Z+3],[-130,ROUTE_Z-1],[-60,ROUTE_Z+1],[0,ROUTE_Z],[60,ROUTE_Z-1],[130,ROUTE_Z+2],[200,ROUTE_Z-2]]},
   {id:'rue',kind:'route',w:7,pts:[[0,ROUTE_Z],[0,175]]},                                   // la rue du village (son asphalte est dessiné avec le village)
-  {id:'rang',kind:'rang',w:5,pts:[[0,175],[4,152],[8,126],[5,98],[-5,70],[-6,42],[1,14],[0,-12]]},   // le rang, du village au camp
+  {id:'rang',kind:'rang',w:6,pts:[[0,171],[0,162],[4,148],[8,126],[5,98],[-5,70],[-6,42],[1,14],[2,-12],[3,-21]]},   // le rang, du village au camp
   {id:'ouest',kind:'sentier',w:3,pts:[[-22,-35],[-45,-29],[-70,-22],[-96,-15],[-126,-6],[-155,5],[-182,19]]},
   {id:'est',kind:'sentier',w:3,pts:[[22,-38],[46,-46],[70,-50],[96,-44],[126,-35],[152,-22],[180,-6]]},
   {id:'nord',kind:'sentier',w:3,pts:[[0,-59],[-3,-86],[4,-112],[10,-132]]},
