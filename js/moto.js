@@ -34,7 +34,7 @@ function makeMoto(){
   shadows(g);addSilhouette(g);
   return {g,wheels,pivots,bars,stand};
 }
-SPECS.moto={name:'Motocross',build:makeMoto,hitch:null,wb:1.44,wr:0.34,maxF:20,maxR:2.2,acc:8,mudLoss:0.35,steer:0.5,steerRate:6,hl:0.75,hw:0.12,
+SPECS.moto={name:'Motocross',build:makeMoto,hitch:null,wb:1.44,wr:0.34,maxF:20,maxR:2.2,acc:8,mudLoss:0.35,steer:0.36,steerRate:3.2,alat:5,expo:2.4,hl:0.75,hw:0.12,
   cols:[[0.6,0.42],[-0.55,0.42]],enterR:2.3,ride:true,seat:[0,0.04,-0.24],hide:false,eye:[0,1.9,-0.1],side:1.0,cam:[6.5,2.6],arrowY:2.3};
 VEH_SHOP.push({id:'moto',kind:'veh',name:'Motocross',price:4200,desc:'Moto hors route légère et rapide : la plus vive dans les sentiers. Elle penche dans les virages; à l\'arrêt, le pilote pose le pied par terre. Pas d\'attelage.'});
 

@@ -22,7 +22,7 @@ function updateVehicle(v,dt){
   if(driving){
     const inp=readInput(false);
     // au joystick, une courbe douce : les petits mouvements tournent peu, le plein braquage reste au bout
-    const jx=joy.active?joy.x:0,kx=inp.x-jx;steerIn=-clamp(kx+Math.sign(jx)*Math.pow(Math.abs(jx),1.8),-1,1);
+    const jx=joy.active?joy.x:0,kx=inp.x-jx;steerIn=-clamp(kx+Math.sign(jx)*Math.pow(Math.abs(jx),sp.expo||1.8),-1,1);
     const ky=((keys.KeyW||keys.ArrowUp)?1:0)-((keys.KeyS||keys.ArrowDown)?1:0);
     thr=clamp(ky+(pedal.gas?1:0)-(pedal.brake?1:0),-1,1);
   }
