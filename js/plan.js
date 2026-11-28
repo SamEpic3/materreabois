@@ -22,7 +22,7 @@ const LANDS={
 
 // Territoire public au nord : le lac, la rivière qui l'alimente (avec une chute) et la montagne
 const LAKE={x:90,z:-182,rx:32,rz:24};
-const HILL={x:-115,z:-198,r:62,h:38};
+const HILL={x:-118,z:-202,r:105,h:40};          // le mont du Loup : pente douce et irrégulière, belvédère au sommet
 const RIVER=[[150,-268],[146,-246],[138,-226],[126,-210],[112,-198]];   // du nord vers le lac
 const RIVER_FALL={s:0.38,h:2.2};                      // la chute : à 38 % du parcours, la rivière descend de 2,2 m
 
@@ -32,6 +32,21 @@ const RESERVED=[
   {id:'sudouest',name:'Terre du Sud-Ouest',x0:-200,x1:-80,z0:125,z1:190,land:true,note:'future terre à vendre'},
   {id:'sudest',name:'Terre du Sud-Est',x0:80,x1:200,z0:125,z1:190,land:true,note:'future terre à vendre'},
   {id:'village2',name:'Terrain du village',x0:40,x1:80,z0:185,z1:230,note:'futurs bâtiments'}
+];
+
+// Chemins : 'route' (asphalte), 'rang' (gravier, large), 'sentier' (terre, étroit). w = largeur en m.
+const DOCK_X=44;                                      // le bout du sentier du lac (le quai est juste à côté)
+const PATHS=[
+  {id:'route',kind:'route',w:8,pts:[[-200,ROUTE_Z+3],[-130,ROUTE_Z-1],[-60,ROUTE_Z+1],[0,ROUTE_Z],[60,ROUTE_Z-1],[130,ROUTE_Z+2],[200,ROUTE_Z-2]]},
+  {id:'rue',kind:'route',w:7,pts:[[0,ROUTE_Z],[0,175]]},                                   // la rue du village (son asphalte est dessiné avec le village)
+  {id:'rang',kind:'rang',w:5,pts:[[0,175],[4,152],[8,126],[5,98],[-5,70],[-6,42],[1,14],[0,-12]]},   // le rang, du village au camp
+  {id:'ouest',kind:'sentier',w:3,pts:[[-22,-35],[-45,-29],[-70,-22],[-96,-15],[-126,-6],[-155,5],[-182,19]]},
+  {id:'est',kind:'sentier',w:3,pts:[[22,-38],[46,-46],[70,-50],[96,-44],[126,-35],[152,-22],[180,-6]]},
+  {id:'nord',kind:'sentier',w:3,pts:[[0,-59],[-3,-86],[4,-112],[10,-132]]},
+  {id:'lac',kind:'sentier',w:3,pts:[[10,-132],[26,-148],[38,-164],[DOCK_X,-178]]},
+  {id:'tourlac',kind:'sentier',w:3,pts:(()=>{const a=[];for(let k=0;k<=24;k++){const an=(-12+k*12)*Math.PI/180;a.push([LAKE.x+Math.cos(an)*LAKE.rx*1.45,LAKE.z+Math.sin(an)*LAKE.rz*1.45]);}return a;})()},
+  {id:'quai',kind:'sentier',w:3,pts:[[DOCK_X,-182],[60,-182]]},
+  {id:'montagne',kind:'sentier',w:3,pts:[[10,-132],[-14,-146],[-40,-157]],climb:true}   // monde.js prolonge ce sentier jusqu'au sommet (lacets à pente douce)
 ];
 
 function inRect(x,z,r){return x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1;}

@@ -3,7 +3,7 @@
 const WORLD=80;                                     // terre d'origine : -80..80 (la forêt de départ)
 function clampW(p,m){p.x=clamp(p.x,WB.x0+m,WB.x1-m);p.z=clamp(p.z,WB.z0+m,WB.z1-m);return p;}
 function outW(x,z,m){return x<WB.x0+m||x>WB.x1-m||z<WB.z0+m||z>WB.z1-m;}
-const TRAILS=[];   // chemins : étape 2 du nouveau plan
+const TRAILS=PATHS.map(p=>p.pts);   // les chemins viennent du plan
 const MUD=[];   // plus de trous de boue sur les sentiers
 const PILE_DEF=[{x:18,z:-65},{x:-49,z:-28},{x:60,z:-3}];
 const YARD={x:0,z:0,r:4.2};          // cour à bois de la scierie, au village (position fixée plus bas)
@@ -18,14 +18,25 @@ const VIL_RECTS=[{x0:-19,x1:29,z0:-32,z1:12},{x0:-36,x1:33,z0:8,z1:38}];   // ru
 function vilOut(x,z){const [a,b]=vilLocal(x,z);let m=1e9;for(const R of VIL_RECTS)m=Math.min(m,Math.hypot(Math.max(R.x0-a,0,a-R.x1),Math.max(R.z0-b,0,b-R.z1)));return m;}
 const CAP=6;
 
+// Le sentier de la montagne : on monte par petits pas en gardant une pente douce (lacets naturels)
+PATHS.filter(P=>P.climb).forEach(P=>{
+  const hR=(x,z)=>baseH(x,z)+hillH(x,z),ST=3,MAXG=0.12;let [x,z]=P.pts[P.pts.length-1],dir=Math.atan2(HILL.z-z,HILL.x-x),k=0;
+  for(let n=0;n<400&&Math.hypot(x-HILL.x,z-HILL.z)>4.5;n++){
+    let best=null;for(let da=-0.9;da<=0.9;da+=0.1){const a=dir+da,nx=x+Math.cos(a)*ST,nz=z+Math.sin(a)*ST,g=(hR(nx,nz)-hR(x,z))/ST;if(g<-0.02||g>MAXG)continue;
+      const sc=Math.hypot(nx-HILL.x,nz-HILL.z)-g*30;if(!best||sc<best.sc)best={a,nx,nz,sc};}
+    if(!best){const a=dir+0.5;best={a,nx:x+Math.cos(a)*ST,nz:z+Math.sin(a)*ST};}
+    dir=best.a;x=best.nx;z=best.nz;if(++k%2===0)P.pts.push([x,z]);
+  }
+  P.pts.push([HILL.x,HILL.z]);
+});
 const SEGS=[];
-TRAILS.forEach(tr=>{for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1]]);});
+PATHS.forEach(P=>{const tr=P.pts,e=(P.w-3)/2;for(let i=0;i<tr.length-1;i++)SEGS.push([tr[i][0],tr[i][1],tr[i+1][0],tr[i+1][1],e]);});   // e : demi-largeur en plus d'un sentier
 const SEGS0=SEGS.slice();   // sentiers d'origine : servent à générer la forêt de départ (sauvegardes compatibles)
 const SEGS_LAKE=SEGS.slice();
 function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;t=clamp(t,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
-function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
-function trailDistLake(x,z){let m=1e9;for(const s of SEGS_LAKE){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
-function trailDist0(x,z){let m=1e9;for(const s of SEGS0){const d=segDist(x,z,s[0],s[1],s[2],s[3]);if(d<m)m=d;}return m;}
+function trailDist(x,z){let m=1e9;for(const s of SEGS){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
+function trailDistLake(x,z){let m=1e9;for(const s of SEGS_LAKE){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
+function trailDist0(x,z){let m=1e9;for(const s of SEGS0){const d=segDist(x,z,s[0],s[1],s[2],s[3])-s[4];if(d<m)m=d;}return m;}
 function mudAt(x,z){let m=0;for(const p of MUD){m=Math.max(m,smoothstep(p.r,p.r*0.55,Math.hypot(x-p.x,z-p.z)));}return m;}
 function baseH(x,z){return 4.5*Math.sin(x*0.0085+0.4)*Math.cos(z*0.0072+0.9)+4.2*Math.sin(x*0.014+0.8)*Math.cos(z*0.011+0.3)+1.8*Math.sin(x*0.031+2.1)*Math.sin(z*0.027+1.2)
   +1.7*Math.sin(x*0.045+0.5)*Math.cos(z*0.038)+0.8*Math.sin(x*0.1+1.3)*Math.sin(z*0.085+0.7);}
@@ -33,7 +44,11 @@ function detailH(x,z){return 0.32*Math.sin(x*0.33)*Math.cos(z*0.29)+0.15*Math.si
 const CAMP_H=baseH(CAMP.x,CAMP.z),VIL_H=baseH(VILLAGE.x,VILLAGE.z);
 /* ---------- La montagne (avec belvédère) et la rivière (territoire public) ---------- */
 // petit plateau plat au sommet (5 m) pour que le belvédère et son panneau reposent sur le sol
-function hillH(x,z){const d=Math.max(0,Math.hypot(x-HILL.x,z-HILL.z)-5);return d<HILL.r-5?HILL.h*(0.5+0.5*Math.cos(Math.PI*d/(HILL.r-5))):0;}
+function hillH(x,z){const dx=x-HILL.x,dz=z-HILL.z,d=Math.hypot(dx,dz);if(d>HILL.r*1.3)return 0;
+  const a=Math.atan2(dz,dx),R=HILL.r*(1+0.18*Math.sin(3*a+1)+0.1*Math.sin(5*a+2.5)+0.05*Math.sin(9*a+0.7));   // contour irrégulier (épaulements, vallons)
+  const t=clamp((d-4)/(R-4),0,1);if(t>=1)return 0;
+  const E=Math.exp(-3.4),f=(Math.exp(-3.4*Math.pow(t,1.6))-E)/(1-E);           // sommet arrondi, longs piémonts en pente douce
+  return HILL.h*f*(1+0.08*Math.sin(4*a+d*0.07)*t)+2.6*Math.sin(x*0.09+1)*Math.cos(z*0.075)*t*(1-t)*4*f;}
 const RIVER_L=(()=>{const a=[0];for(let i=1;i<RIVER.length;i++)a.push(a[i-1]+Math.hypot(RIVER[i][0]-RIVER[i-1][0],RIVER[i][1]-RIVER[i-1][1]));return a;})();
 function riverInfo(x,z){
   let best=1e9,bs=0;
@@ -53,7 +68,7 @@ function H(x,z){
   let h=baseH(x,z);
   const tc=smoothstep(CAMP_FLAT+8,CAMP_FLAT,Math.hypot(x-CAMP.x,z-CAMP.z));
   const tt=smoothstep(4,1.8,trailDist(x,z));
-  const tv=smoothstep(8,0,vilOut(x,z));
+  const tv=smoothstep(20,0,vilOut(x,z));
   h+=detailH(x,z)*(1-Math.max(tc,tt,tv));
   h+=hillH(x,z);
   for(const r of RESERVED){if(r.land)continue;const d=Math.hypot(Math.max(r.x0-x,0,x-r.x1),Math.max(r.z0-z,0,z-r.z1));if(d<8){if(r.h===undefined)r.h=baseH((r.x0+r.x1)/2,(r.z0+r.z1)/2);h=lerp(h,r.h,smoothstep(8,0,d));}}   // lots réservés : aplanis
@@ -248,9 +263,9 @@ const dirtTex=tileTex('#86674a',(c,r,wrap,N)=>{
     const n=0.5+0.5*Math.sin(x*0.21+Math.cos(z*0.17)*2)*Math.cos(z*0.13);
     const dc=Math.hypot(x-CAMP.x,z-CAMP.z),campF=smoothstep(CAMP_FLAT-1,CAMP_FLAT-7,dc);
     const mud=mudAt(x,z),tr=smoothstep(2.9,1.6,trailDist(x,z));
-    const vl=vilLocal(x,z),road=smoothstep(4.8,3.4,Math.abs(vl[0]))*smoothstep(-37,-33,vl[1])*smoothstep(41,37,vl[1]);
+    const vl=vilLocal(x,z);
     const yardF=smoothstep(-24,-22.5,vl[0])*smoothstep(-3.6,-5,vl[0])*smoothstep(11.5,13,vl[1])*smoothstep(43,41,vl[1]);   // la cour rejoint les chemins de terre (camp et terre du Sud)
-    const patch=Math.max(road*0.95,yardF*0.8);
+    const patch=yardF*0.8;
     const le=nearLake(x,z)?lakeE(x,z):9,rd=nearRiver(x,z)?riverInfo(x,z).d:99,beach=Math.max(smoothstep(1.22,1.02,le),smoothstep(5,2.6,rd));
     const top=smoothstep(9,4,Math.hypot(x-HILL.x,z-HILL.z));
     dirt[i]=Math.max(tr,mud,patch,beach*0.9,top*0.7);
@@ -665,6 +680,23 @@ const VIL_POOL=new T.MeshBasicMaterial({map:canvasTex(64,64,(c,w,h)=>{const g=c.
     const lm=(c)=>new T.MeshBasicMaterial({color:c,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
     const lines=new T.Group();lines.add(new T.Mesh(mergeGeos(lineY),lm(0xe8c23a)),new T.Mesh(mergeGeos(lineW),lm(0xf2f2f2)),road);
     const q=vpos(0,0);lines.position.set(q.x,VIL_H,q.z);lines.rotation.y=VROT;scene.add(lines);
+    // La route asphaltée (est-ouest) : un ruban qui suit le relief, ligne jaune pointillée et lignes blanches de côté
+    PATHS.filter(P=>P.kind==='route'&&P.id!=='rue').forEach(P=>{
+      const pts=[];for(let i=0;i<P.pts.length-1;i++){const [ax,az]=P.pts[i],[bx,bz]=P.pts[i+1],n=Math.ceil(Math.hypot(bx-ax,bz-az));for(let k=0;k<n;k++)pts.push([lerp(ax,bx,k/n),lerp(az,bz,k/n)]);}
+      pts.push(P.pts[P.pts.length-1]);
+      const A=[-1,-0.5,0,0.5,1],pos=[],uv=[],idx=[],ly=[],lw=[];let s=0;
+      const strip=(arr,off,hw,dash)=>{const base=arr.length/3,ok=[];pts.forEach((p,i)=>{const q=pts[Math.min(i+1,pts.length-1)],r=pts[Math.max(i-1,0)],tx=q[0]-r[0],tz=q[1]-r[1],l=Math.hypot(tx,tz)||1,nx=-tz/l,nz=tx/l;
+        [off-hw,off+hw].forEach(o=>{const x=p[0]+nx*o,z=p[1]+nz*o;arr.push(x,H(x,z)+0.1,z);});ok.push(!dash||(i%6)<3);});return {base,ok};};
+      pts.forEach((p,i)=>{const q=pts[Math.min(i+1,pts.length-1)],r=pts[Math.max(i-1,0)],tx=q[0]-r[0],tz=q[1]-r[1],l=Math.hypot(tx,tz)||1,nx=-tz/l,nz=tx/l;
+        if(i)s+=Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1]);
+        A.forEach(a=>{const o=a*P.w/2,x=p[0]+nx*o,z=p[1]+nz*o;pos.push(x,H(x,z)+0.08,z);uv.push(a*P.w/12,s/6);});});
+      for(let i=0;i<pts.length-1;i++)for(let j=0;j<4;j++){const a=i*5+j,b=a+5;idx.push(a,a+1,b,a+1,b+1,b);}
+      const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+      const rm=new T.Mesh(g,am);rm.receiveShadow=true;scene.add(rm);
+      const lineGeo=(off,hw,dash)=>{const arr=[],ix=[],st=strip(arr,off,hw,dash);for(let i=0;i<pts.length-1;i++)if(st.ok[i]){const a=i*2;ix.push(a,a+1,a+2,a+1,a+3,a+2);}
+        const lg=new T.BufferGeometry();lg.setAttribute('position',new T.Float32BufferAttribute(arr,3));lg.setIndex(ix);return lg;};
+      scene.add(new T.Mesh(lineGeo(0,0.08,true),lm(0xe8c23a)),new T.Mesh(lineGeo(-P.w/2+0.35,0.07),lm(0xf2f2f2)),new T.Mesh(lineGeo(P.w/2-0.35,0.07),lm(0xf2f2f2)));
+    });
   }
 
   /* ===== Grands lampadaires de chaque côté de la rue ===== */
