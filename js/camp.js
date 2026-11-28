@@ -233,14 +233,4 @@ function bbqContext(q){
   return fishAct?{act:fishAct,act2:lid,info}:{act:lid,act2:onOff,info};
 }
 
-/* ---------- Décor en bordure du camp (la bécosse est une construction déplaçable) : boîte aux lettres ---------- */
-{
-  const put=(g,x,z,ry)=>{g.position.set(x,H(x,z),z);g.rotation.y=ry;bakeStatic(g);shadows(g);scene.add(g);};
-  const plankV=texMat(sidingTex('#7d5a3a','#4e3622',true),5,1),wd=mat(0x7a5232),dk=mat(0x3b2a1e);
-  // Boîte aux lettres au bord du chemin du village
-  {const g=new T.Group();g.add(new T.Mesh(new T.BoxGeometry(0.1,1.1,0.1).translate(0,0.55,0),wd));
-   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.28,0.22,0.5).translate(0,1.2,0),new T.CylinderGeometry(0.14,0.14,0.5,10,1,false,0,Math.PI).rotateX(Math.PI/2).rotateZ(-Math.PI/2).translate(0,1.31,0)]),mat(0x4a5a4a)));
-   g.add(new T.Mesh(new T.BoxGeometry(0.03,0.2,0.06).translate(0.16,1.4,-0.1),mat(0xc22a1e)));
-   put(g,-1.2,14.5,0.3);addCol(-1.2,14.5,0.2);}
-}
 addEventListener('load',()=>evictCabin());   // partie neuve : rien dans l'emprise de la cabane agrandie

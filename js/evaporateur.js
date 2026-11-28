@@ -4,7 +4,7 @@ const EVAPO={cap:300,rate:3.5,fuel:1500};   // 300 L, bout 3,5× plus vite, rés
 const SUC_W=9.2,SUC_D=10.8,SUC_H=3.6,EVS=1.4,SUC_RISE=2.5;   // cabane 2× plus grande, évaporateur 1,4×
 const EVP=(x,z)=>[x*EVS,z*EVS-0.6];   // repère de l'évaporateur → repère de la cabane
 function makeEvapoRoof(){
-  const g=new T.Group(),W=SUC_W,D=SUC_D,Hh=SUC_H,boards=texMat(sidingTex('#7b5236','#4b311f',true),1,1),dark=mat(0x262422);
+  const g=new T.Group(),W=SUC_W,D=SUC_D,Hh=SUC_H,boards=texMat(sidingTex('#7b5236','#4b311f',true),2,2),dark=mat(0x262422);   // pignons : même pas de planches que les murs
   // Pignons (devant et derrière), alignés sur les murs et sous les versants
   g.add(new T.Mesh(mergeGeos([gable(0,W+0.16,Hh,SUC_RISE-0.12,D/2),gable(0,W+0.16,Hh,SUC_RISE-0.12,-D/2)]).rotateY(-Math.PI/2),boards));
   // Toit à deux versants (faîte de l'avant vers l'arrière) et lanterneau à vapeur sur le faîte
@@ -20,12 +20,16 @@ function makeEvapoRoof(){
 function makeEvapoModel(){
   const g=new T.Group(),W=SUC_W,D=SUC_D,Hh=SUC_H;
   const boards=texMat(sidingTex('#7b5236','#4b311f',true),1,1),trim=mat(0xe2d9c6),dark=mat(0x262422);
-  const wall=(w,h,d,x,y,z,rx)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d).translate(x,y,z),boards.clone());m.material.map=boards.map.clone();m.material.map.needsUpdate=true;m.material.map.repeat.set(rx,1);return m;};
+  const wall=(w,h,d,x,y,z,rx)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d).translate(x,y,z),boards.clone());m.material.map=boards.map.clone();m.material.map.needsUpdate=true;m.material.map.repeat.set(Math.max(w,d)/0.5,1);return m;};   // une planche aux 0,5 m sur tous les murs
   // Murs : arrière, côtés, et devant de chaque côté de la grande porte ouverte
   const DOOR=2.8,side=(W-DOOR)/2;
   g.add(wall(W,Hh,0.16,0,Hh/2,-D/2,18),wall(0.16,Hh,D,W/2,Hh/2,0,22),wall(0.16,Hh,D,-W/2,Hh/2,0,22),
         wall(side,Hh,0.16,(DOOR+side)/2,Hh/2,D/2,7),wall(side,Hh,0.16,-(DOOR+side)/2,Hh/2,D/2,7),wall(DOOR,0.5,0.16,0,Hh-0.25,D/2,4));
   g.add(new T.Mesh(mergeGeos([new T.BoxGeometry(0.18,Hh,0.2).translate(DOOR/2,Hh/2,D/2+0.02),new T.BoxGeometry(0.18,Hh,0.2).translate(-DOOR/2,Hh/2,D/2+0.02),new T.BoxGeometry(DOOR+0.3,0.16,0.2).translate(0,Hh-0.5,D/2+0.02)]),trim));
+  // Fenêtres sur les côtés et à l'arrière (cadre et vitre des deux côtés du mur)
+  {const wf=[],wg=[],add=(x,z,ry)=>{[1,-1].forEach(io=>{const nx=Math.round(Math.sin(ry)),nz=Math.round(Math.cos(ry)),o=io*0.1,w=windowGeo(1.1,0.85,x+nx*o,2.0,z+nz*o,io>0?ry:ry+Math.PI);wf.push(w.frame);wg.push(w.glass);});};
+   [-3.2,0,3.2].forEach(z=>{add(W/2,z,Math.PI/2);add(-W/2,z,-Math.PI/2);});[-2.5,2.5].forEach(x=>add(x,-D/2,Math.PI));
+   g.add(new T.Mesh(mergeGeos(wf),mat(0xe2d9c6)),new T.Mesh(mergeGeos(wg),new T.MeshBasicMaterial({color:0x9fb6c4})));}
   // Grande porte fermée : deux battants de grange avec traverses en Z
   {const dm=texMat(sidingTex('#6a4426','#3e2716',true),4,1),pz=D/2+0.03,dh=Hh-0.62,parts=[];
    [-1,1].forEach(s=>{const cx=s*DOOR/4;parts.push(new T.BoxGeometry(DOOR/2-0.03,dh,0.08).translate(cx,dh/2+0.04,pz));});
